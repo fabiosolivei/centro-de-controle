@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0d1117">
+    <meta name="description" content="Centro de Controle - Dashboard do Fábio">
+    <title>🎛️ Centro de Controle</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Auth Check -->
+    <script>
+        const AUTH_HASH = 'f379eaffb6d3420d190c693e60b4e0c50f018cca3ec9c9bea2ca3ee069ae1f4d';
+        if (sessionStorage.getItem('auth_token') !== AUTH_HASH) {
+            window.location.href = 'login.html';
+        }
+    </script>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="logo">🎛️ Centro de Controle</h1>
+            <div class="header-date" id="current-date"></div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content">
+        <!-- QUICK ACCESS PROJECTS BAR -->
+        <div class="projects-bar" id="projects-bar">
+            <!-- Populated by JS -->
+        </div>
+
+        <!-- TODAY SUMMARY -->
+        <section class="card card-today" id="today-section">
+            <div class="card-header">
+                <h2>📅 Hoje</h2>
+                <button class="btn-icon" onclick="refreshToday()">🔄</button>
+            </div>
+            <div class="card-body">
+                <div class="stats-grid" id="today-stats">
+                    <div class="stat-item stat-todo">
+                        <span class="stat-number" id="stat-todo">0</span>
+                        <span class="stat-label">A fazer</span>
+                    </div>
+                    <div class="stat-item stat-doing">
+                        <span class="stat-number" id="stat-doing">0</span>
+                        <span class="stat-label">Fazendo</span>
+                    </div>
+                    <div class="stat-item stat-done">
+                        <span class="stat-number" id="stat-done">0</span>
+                        <span class="stat-label">Feito hoje</span>
+                    </div>
+                </div>
+                
+                <!-- Eventos do dia -->
+                <div class="today-events" id="today-events">
+                    <h3>🗓️ Agenda</h3>
+                    <div class="events-list" id="events-list">
+                        <p class="empty-state">Sem eventos hoje</p>
+                    </div>
+                </div>
+                
+                <!-- Tarefas urgentes -->
+                <div class="urgent-tasks" id="urgent-section">
+                    <h3>🔥 Urgente</h3>
+                    <div class="urgent-list" id="urgent-list">
+                        <p class="empty-state">Nenhuma tarefa urgente</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- KANBAN BOARD -->
+        <section class="card card-kanban" id="kanban-section">
+            <div class="card-header">
+                <h2>📋 Tarefas</h2>
+                <button class="btn-primary" onclick="openTaskModal()">+ Nova</button>
+            </div>
+            <div class="card-body">
+                <div class="kanban-board">
+                    <!-- TODO Column -->
+                    <div class="kanban-column" data-status="todo">
+                        <div class="column-header">
+                            <span class="column-title">🔴 A Fazer</span>
+                            <span class="column-count" id="count-todo">0</span>
+                        </div>
+                        <div class="column-tasks" id="tasks-todo"></div>
+                    </div>
+                    
+                    <!-- DOING Column -->
+                    <div class="kanban-column" data-status="doing">
+                        <div class="column-header">
+                            <span class="column-title">🟡 Fazendo</span>
+                            <span class="column-count" id="count-doing">0</span>
+                        </div>
+                        <div class="column-tasks" id="tasks-doing"></div>
+                    </div>
+                    
+                    <!-- DONE Column -->
+                    <div class="kanban-column" data-status="done">
+                        <div class="column-header">
+                            <span class="column-title">🟢 Feito</span>
+                            <span class="column-count" id="count-done">0</span>
+                        </div>
+                        <div class="column-tasks" id="tasks-done"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PROJECTS (hidden, managed via top bar) -->
+        <div id="projects-list" style="display:none;"></div>
+
+        <!-- REMINDERS -->
+        <section class="card card-reminders" id="reminders-section">
+            <div class="card-header">
+                <h2>🔔 Lembretes</h2>
+                <button class="btn-primary" onclick="openReminderModal()">+ Novo</button>
+            </div>
+            <div class="card-body">
+                <div class="reminders-list" id="reminders-list">
+                    <p class="empty-state">Sem lembretes</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- NOTES -->
+        <section class="card card-notes" id="notes-section">
+            <div class="card-header">
+                <h2>🗒️ Notas de Reuniões</h2>
+                <button class="btn-primary" onclick="openNoteModal()">+ Nova</button>
+            </div>
+            <div class="card-body">
+                <div class="notes-list" id="notes-list">
+                    <p class="empty-state">Sem notas</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SHARED FILES -->
+        <section class="card card-files" id="files-section">
+            <div class="card-header">
+                <a href="/files" style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:8px;">
+                    <h2>📁 Arquivos Compartilhados</h2>
+                    <span style="font-size:0.8rem; color:var(--text-muted);">→ Abrir</span>
+                </a>
+                <span class="files-count" id="files-count"></span>
+            </div>
+            <div class="card-body">
+                <!-- Drop Zone -->
+                <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+                    <input type="file" id="file-input" multiple style="display:none" onchange="handleFileSelect(event)">
+                    <div class="upload-icon">📤</div>
+                    <div class="upload-text">Arraste arquivos aqui ou clique para selecionar</div>
+                    <div class="upload-hint">Máximo 50MB por arquivo</div>
+                </div>
+                
+                <!-- Progress -->
+                <div class="upload-progress" id="upload-progress" style="display:none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="upload-progress-fill"></div>
+                    </div>
+                    <span id="upload-status">Enviando...</span>
+                </div>
+                
+                <!-- Files List -->
+                <div class="shared-files-list" id="shared-files-list">
+                    <p class="empty-state">Nenhum arquivo compartilhado</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- BOTTOM NAV (Mobile) -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="scrollToSection('today-section')">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">Hoje</span>
+        </button>
+        <button class="nav-item" onclick="scrollToSection('kanban-section')">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">Tarefas</span>
+        </button>
+        <button class="nav-item" onclick="scrollToSection('projects-section')">
+            <span class="nav-icon">🚀</span>
+            <span class="nav-label">Projetos</span>
+        </button>
+        <button class="nav-item" onclick="scrollToSection('reminders-section')">
+            <span class="nav-icon">🔔</span>
+            <span class="nav-label">Lembretes</span>
+        </button>
+    </nav>
+
+    <!-- TASK MODAL -->
+    <div class="modal" id="task-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="task-modal-title">Nova Tarefa</h3>
+                <button class="btn-close" onclick="closeTaskModal()">✕</button>
+            </div>
+            <form id="task-form" onsubmit="saveTask(event)">
+                <input type="hidden" id="task-id">
+                <div class="form-group">
+                    <label for="task-title">Título *</label>
+                    <input type="text" id="task-title" required placeholder="O que precisa fazer?">
+                </div>
+                <div class="form-group">
+                    <label for="task-description">Descrição</label>
+                    <textarea id="task-description" rows="3" placeholder="Detalhes (opcional)"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="task-priority">Prioridade</label>
+                        <select id="task-priority">
+                            <option value="low">Baixa</option>
+                            <option value="normal" selected>Normal</option>
+                            <option value="high">Alta</option>
+                            <option value="urgent">🔥 Urgente</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="task-status">Status</label>
+                        <select id="task-status">
+                            <option value="todo">A Fazer</option>
+                            <option value="doing">Fazendo</option>
+                            <option value="done">Feito</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="task-due-date">Data limite</label>
+                    <input type="date" id="task-due-date">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeTaskModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- REMINDER MODAL -->
+    <div class="modal" id="reminder-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Novo Lembrete</h3>
+                <button class="btn-close" onclick="closeReminderModal()">✕</button>
+            </div>
+            <form id="reminder-form" onsubmit="saveReminder(event)">
+                <div class="form-group">
+                    <label for="reminder-title">Título *</label>
+                    <input type="text" id="reminder-title" required placeholder="Do que precisa lembrar?">
+                </div>
+                <div class="form-group">
+                    <label for="reminder-datetime">Data e Hora *</label>
+                    <input type="datetime-local" id="reminder-datetime" required>
+                </div>
+                <div class="form-group">
+                    <label for="reminder-priority">Prioridade</label>
+                    <select id="reminder-priority">
+                        <option value="low">Baixa</option>
+                        <option value="normal" selected>Normal</option>
+                        <option value="high">Alta</option>
+                        <option value="urgent">🔥 Urgente</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeReminderModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- NOTE MODAL -->
+    <div class="modal" id="note-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="note-modal-title">Nova Nota</h3>
+                <button class="btn-close" onclick="closeNoteModal()">✕</button>
+            </div>
+            <form id="note-form" onsubmit="saveNote(event)">
+                <input type="hidden" id="note-id">
+                <div class="form-group">
+                    <label for="note-title">Título *</label>
+                    <input type="text" id="note-title" required placeholder="Título da reunião/nota">
+                </div>
+                <div class="form-group">
+                    <label for="note-date">Data da Reunião</label>
+                    <input type="date" id="note-date">
+                </div>
+                <div class="form-group">
+                    <label for="note-content">Conteúdo</label>
+                    <textarea id="note-content" rows="6" placeholder="Anotações da reunião..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="note-tags">Tags (separadas por vírgula)</label>
+                    <input type="text" id="note-tags" placeholder="mba, reunião, projeto">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeNoteModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- PROJECT MODAL -->
+    <div class="modal" id="project-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="project-modal-title">Novo Projeto</h3>
+                <button class="btn-close" onclick="closeProjectModal()">✕</button>
+            </div>
+            <form id="project-form" onsubmit="saveProject(event)">
+                <input type="hidden" id="project-id">
+                <div class="form-group">
+                    <label for="project-name">Nome *</label>
+                    <input type="text" id="project-name" required placeholder="Nome do projeto">
+                </div>
+                <div class="form-group">
+                    <label for="project-description">Descrição</label>
+                    <textarea id="project-description" rows="2" placeholder="Sobre o que é este projeto?"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="project-category">Categoria</label>
+                        <select id="project-category">
+                            <option value="trabalho">💼 Trabalho</option>
+                            <option value="mba">🎓 MBA</option>
+                            <option value="pessoal" selected>👤 Pessoal</option>
+                            <option value="familia">👨‍👩‍👧 Família</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="project-priority">Prioridade</label>
+                        <select id="project-priority">
+                            <option value="low">Baixa</option>
+                            <option value="normal" selected>Normal</option>
+                            <option value="high">Alta</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="project-status">Status</label>
+                        <select id="project-status">
+                            <option value="active" selected>Ativo</option>
+                            <option value="paused">Pausado</option>
+                            <option value="completed">Concluído</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="project-progress">Progresso</label>
+                        <input type="number" id="project-progress" min="0" max="100" value="0" placeholder="0-100">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="project-due-date">Data limite</label>
+                    <input type="date" id="project-due-date">
+                </div>
+                <div class="form-group">
+                    <label for="project-tags">Tags (separadas por vírgula)</label>
+                    <input type="text" id="project-tags" placeholder="documentação, épico, feature">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeProjectModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
