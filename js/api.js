@@ -9,7 +9,7 @@ const isLocalhost = window.location.hostname === 'localhost' || window.location.
 
 // API Base: usa VPS quando no GitHub Pages, relativo quando local/VPS
 const API_BASE = (isGitHubPages) 
-    ? 'http://76.13.226.10:8100/api'  // VPS Backend
+    ? 'https://srv1315519.hstgr.cloud/api'  // VPS Backend
     : '/api';  // Local ou servido pela própria VPS
 
 /**
