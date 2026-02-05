@@ -1,0 +1,27 @@
+# Environment and secrets
+.env
+*.env
+
+# Database
+*.db
+database.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Cache and temp
+*.cache
+*.json.bak
+situation_wall_data.json
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
