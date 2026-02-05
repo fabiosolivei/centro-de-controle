@@ -1,6 +1,7 @@
 /**
  * Centro de Controle - API Client
  * Comunicação com o backend FastAPI
+ * Performance optimized with caching and parallel loading
  */
 
 // Detectar se está rodando no GitHub Pages ou localmente
@@ -12,11 +13,70 @@ const API_BASE = (isGitHubPages)
     ? 'https://srv1315519.hstgr.cloud/api'  // VPS Backend HTTPS
     : '/api';  // Local ou servido pela própria VPS
 
+// ============================================
+// CACHE SYSTEM
+// ============================================
+
+const APICache = {
+    data: new Map(),
+    ttl: {
+        '/today': 60000,           // 1 minuto
+        '/tasks': 30000,           // 30 segundos
+        '/projects': 60000,        // 1 minuto
+        '/calendar/today': 120000, // 2 minutos
+        '/reminders': 30000,       // 30 segundos
+        '/notes': 60000,           // 1 minuto
+        '/mba/stats': 300000,      // 5 minutos
+        '/confluence/summary': 300000, // 5 minutos
+    },
+    
+    get(key) {
+        const cached = this.data.get(key);
+        if (!cached) return null;
+        if (Date.now() > cached.expires) {
+            this.data.delete(key);
+            return null;
+        }
+        return cached.value;
+    },
+    
+    set(key, value) {
+        const ttl = this.ttl[key] || 30000;
+        this.data.set(key, {
+            value,
+            expires: Date.now() + ttl
+        });
+    },
+    
+    invalidate(pattern) {
+        for (const key of this.data.keys()) {
+            if (key.includes(pattern)) {
+                this.data.delete(key);
+            }
+        }
+    },
+    
+    clear() {
+        this.data.clear();
+    }
+};
+
 /**
- * Helper para fazer requisições à API
+ * Helper para fazer requisições à API (com cache)
  */
 async function apiRequest(endpoint, options = {}) {
     const url = `${API_BASE}${endpoint}`;
+    const isGET = !options.method || options.method === 'GET';
+    
+    // Check cache for GET requests
+    if (isGET) {
+        const cached = APICache.get(endpoint);
+        if (cached) {
+            console.log(`[Cache HIT] ${endpoint}`);
+            return cached;
+        }
+    }
+    
     const defaultOptions = {
         headers: {
             'Content-Type': 'application/json',
@@ -33,12 +93,40 @@ async function apiRequest(endpoint, options = {}) {
             throw new Error(error.detail || `HTTP ${response.status}`);
         }
         
-        return await response.json();
+        const data = await response.json();
+        
+        // Cache GET responses
+        if (isGET) {
+            APICache.set(endpoint, data);
+        } else {
+            // Invalidate related cache on mutations
+            if (endpoint.includes('/tasks')) APICache.invalidate('/tasks');
+            if (endpoint.includes('/projects')) APICache.invalidate('/projects');
+            if (endpoint.includes('/reminders')) APICache.invalidate('/reminders');
+            if (endpoint.includes('/notes')) APICache.invalidate('/notes');
+            APICache.invalidate('/today');
+        }
+        
+        return data;
     } catch (error) {
         console.error(`API Error [${endpoint}]:`, error);
         throw error;
     }
 }
+
+/**
+ * Load multiple endpoints in parallel
+ */
+async function loadParallel(endpoints) {
+    const promises = endpoints.map(ep => 
+        apiRequest(ep).catch(err => ({ error: err.message, endpoint: ep }))
+    );
+    return Promise.all(promises);
+}
+
+// Export cache control
+window.APICache = APICache;
+window.loadParallel = loadParallel;
 
 // ============================================
 // TASKS API
