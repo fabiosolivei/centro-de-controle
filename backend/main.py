@@ -1087,13 +1087,10 @@ async def delete_project_doc(project_id: int, doc_id: int):
 
 @app.get("/api/calendar/today")
 async def get_calendar_today():
-    """Retorna eventos de hoje do Google Calendar"""
+    """Retorna eventos de hoje do Google Calendar - retorna array direto para compatibilidade com frontend"""
     events = cal_get_today_events()
-    return {
-        "date": date.today().isoformat(),
-        "events": events,
-        "count": len(events)
-    }
+    # Retornar array direto (frontend espera isso)
+    return events
 
 @app.get("/api/calendar/week")
 async def get_calendar_week():
@@ -1163,6 +1160,59 @@ async def get_mba_data():
         raise HTTPException(status_code=500, detail=f"Erro ao ler dados: {str(e)}")
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro: {str(e)}")
+
+
+@app.get("/api/mba/stats")
+async def get_mba_stats():
+    """Retorna estatísticas resumidas do MBA para o dashboard"""
+    data_path = get_adalove_data_path()
+    
+    # Valores padrão
+    stats = {
+        "pendentes": 0,
+        "em_andamento": 0,
+        "concluidas": 0,
+        "proximos_prazos": [],
+        "total_atividades": 0
+    }
+    
+    if not data_path or not os.path.exists(data_path):
+        # Retornar zeros se não houver dados
+        return stats
+    
+    try:
+        with open(data_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # Calcular estatísticas das turmas
+        for turma in data.get('turmas', []):
+            for semana in turma.get('semanas', []):
+                atividades = semana.get('atividades', {})
+                stats["pendentes"] += len(atividades.get('a_fazer', []))
+                stats["em_andamento"] += len(atividades.get('fazendo', []))
+                stats["concluidas"] += len(atividades.get('feito', []))
+                
+                # Coletar próximos prazos
+                for atividade in atividades.get('a_fazer', []):
+                    if atividade.get('prazo'):
+                        stats["proximos_prazos"].append({
+                            "title": atividade.get('titulo', 'Atividade'),
+                            "due_date": atividade.get('prazo'),
+                            "turma": turma.get('nome', '')
+                        })
+        
+        stats["total_atividades"] = stats["pendentes"] + stats["em_andamento"] + stats["concluidas"]
+        
+        # Ordenar próximos prazos e pegar os 5 mais próximos
+        stats["proximos_prazos"] = sorted(
+            stats["proximos_prazos"], 
+            key=lambda x: x.get('due_date', '9999')
+        )[:5]
+        
+        return stats
+    except Exception as e:
+        print(f"Error loading MBA stats: {e}")
+        return stats
 
 @app.post("/api/mba/sync")
 async def sync_mba_data():
@@ -2220,14 +2270,6 @@ async def get_confluence_summary():
         cursor.execute("SELECT * FROM confluence_sprints ORDER BY sprint_number DESC LIMIT 1")
         current_sprint = cursor.fetchone()
     
-    # Contagens por team
-    cursor.execute("""
-        SELECT team, COUNT(*) as count 
-        FROM confluence_initiatives 
-        GROUP BY team
-    """)
-    initiatives_by_team = {row['team']: row['count'] for row in cursor.fetchall()}
-    
     # Total de items
     cursor.execute("SELECT COUNT(*) as count FROM confluence_initiatives")
     total_initiatives = cursor.fetchone()['count']
@@ -2235,28 +2277,25 @@ async def get_confluence_summary():
     cursor.execute("SELECT COUNT(*) as count FROM confluence_epics")
     total_epics = cursor.fetchone()['count']
     
+    cursor.execute("SELECT COUNT(*) as count FROM confluence_sprints")
+    total_sprints = cursor.fetchone()['count']
+    
     cursor.execute("SELECT COUNT(*) as count FROM confluence_risks WHERE status != 'Done'")
     active_risks = cursor.fetchone()['count']
     
     cursor.execute("SELECT COUNT(*) as count FROM confluence_bugs WHERE status NOT IN ('Done', 'Closed')")
     active_bugs = cursor.fetchone()['count']
     
-    # Último sync
-    cursor.execute("SELECT * FROM confluence_sync_status ORDER BY started_at DESC LIMIT 1")
-    last_sync = cursor.fetchone()
-    
     conn.close()
     
+    # Formato simplificado para o frontend
     return {
-        "current_sprint": dict(current_sprint) if current_sprint else None,
-        "initiatives_by_team": initiatives_by_team,
-        "totals": {
-            "initiatives": total_initiatives,
-            "epics": total_epics,
-            "active_risks": active_risks,
-            "active_bugs": active_bugs
-        },
-        "last_sync": dict(last_sync) if last_sync else None
+        "initiatives": total_initiatives,
+        "epics": total_epics,
+        "sprints": total_sprints,
+        "risks": active_risks,
+        "bugs": active_bugs,
+        "current_sprint": current_sprint['sprint_name'] if current_sprint else None
     }
 
 
