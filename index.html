@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0d1117">
     <meta name="description" content="Centro de Controle - Dashboard do Fábio">
-    <title>Centro de Controle</title>
+    <title>🎛️ Centro de Controle</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="manifest" href="manifest.json">
     <!-- Inter Font -->
@@ -19,754 +19,209 @@
             window.location.href = 'login.html';
         }
     </script>
-    <style>
-        /* GPM Dashboard Styles */
-        .hero-greeting {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
-            border: 1px solid rgba(99, 102, 241, 0.2);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-xl);
-            margin-bottom: var(--spacing-xl);
-        }
-        
-        .greeting-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: var(--spacing-lg);
-        }
-        
-        .greeting-text h1 {
-            font-size: 1.75rem;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-        }
-        
-        .greeting-text p {
-            color: var(--text-secondary);
-            font-size: 1rem;
-        }
-        
-        .greeting-date {
-            text-align: right;
-            color: var(--text-muted);
-        }
-        
-        .greeting-date .date-day {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--accent-primary);
-        }
-        
-        .greeting-date .date-month {
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        .summary-chips {
-            display: flex;
-            gap: var(--spacing-md);
-            flex-wrap: wrap;
-        }
-        
-        .summary-chip {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 16px;
-            background: var(--bg-glass);
-            border-radius: var(--radius-full);
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-        }
-        
-        .summary-chip .chip-number {
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        
-        .summary-chip.urgent {
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-        
-        .summary-chip.urgent .chip-number {
-            color: #ef4444;
-        }
-        
-        /* Quick Actions Bar */
-        .quick-actions-bar {
-            display: flex;
-            gap: var(--spacing-md);
-            margin-bottom: var(--spacing-xl);
-            padding: var(--spacing-md);
-            background: var(--bg-glass);
-            border-radius: var(--radius-md);
-            overflow-x: auto;
-        }
-        
-        .quick-action {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 10px 16px;
-            background: var(--bg-card);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: var(--radius-md);
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            white-space: nowrap;
-            font-size: 0.875rem;
-        }
-        
-        .quick-action:hover {
-            background: var(--bg-card-hover);
-            color: var(--text-primary);
-            border-color: var(--accent-primary);
-        }
-        
-        /* Main Grid Layout */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: var(--spacing-xl);
-        }
-        
-        @media (max-width: 1024px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        /* Today Column */
-        .today-column {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-lg);
-        }
-        
-        .agenda-item {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            padding: var(--spacing-md);
-            background: var(--bg-card);
-            border-radius: var(--radius-md);
-            border-left: 3px solid var(--accent-primary);
-        }
-        
-        .agenda-time {
-            font-weight: 600;
-            color: var(--accent-primary);
-            min-width: 50px;
-        }
-        
-        .agenda-title {
-            flex: 1;
-            color: var(--text-primary);
-        }
-        
-        .agenda-project {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            background: rgba(255,255,255,0.05);
-            padding: 2px 8px;
-            border-radius: var(--radius-sm);
-        }
-        
-        /* Portfolio Section */
-        .portfolio-grid {
-            display: grid;
-            gap: var(--spacing-md);
-        }
-        
-        .portfolio-card {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            padding: var(--spacing-md) var(--spacing-lg);
-            background: var(--bg-card);
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            border-left: 3px solid transparent;
-        }
-        
-        .portfolio-card:hover {
-            background: var(--bg-card-hover);
-            border-left-color: var(--accent-primary);
-            transform: translateX(4px);
-        }
-        
-        .portfolio-card.high-priority {
-            border-left-color: #ef4444;
-        }
-        
-        .portfolio-info {
-            flex: 1;
-        }
-        
-        .portfolio-name {
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 4px;
-        }
-        
-        .portfolio-status {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-        
-        .portfolio-progress {
-            width: 100px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .progress-bar-mini {
-            flex: 1;
-            height: 6px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 3px;
-            overflow: hidden;
-        }
-        
-        .progress-fill-mini {
-            height: 100%;
-            background: var(--gradient-primary);
-            border-radius: 3px;
-            transition: width 0.3s ease;
-        }
-        
-        .progress-text {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            min-width: 35px;
-            text-align: right;
-        }
-        
-        /* Updates Feed */
-        .updates-list {
-            display: flex;
-            flex-direction: column;
-            gap: var(--spacing-sm);
-        }
-        
-        .update-item {
-            display: flex;
-            align-items: flex-start;
-            gap: var(--spacing-md);
-            padding: var(--spacing-md);
-            background: var(--bg-card);
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-        }
-        
-        .update-item:hover {
-            background: var(--bg-card-hover);
-        }
-        
-        .update-icon {
-            font-size: 1.25rem;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: rgba(99, 102, 241, 0.1);
-            border-radius: var(--radius-md);
-        }
-        
-        .update-content {
-            flex: 1;
-        }
-        
-        .update-title {
-            color: var(--text-primary);
-            font-weight: 500;
-            margin-bottom: 2px;
-        }
-        
-        .update-meta {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-        
-        /* Kanban Mini */
-        .kanban-mini {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: var(--spacing-sm);
-        }
-        
-        .kanban-mini-col {
-            background: var(--bg-glass);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            text-align: center;
-        }
-        
-        .kanban-mini-count {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        
-        .kanban-mini-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-        
-        .kanban-mini-col.todo .kanban-mini-count { color: #ef4444; }
-        .kanban-mini-col.doing .kanban-mini-count { color: #eab308; }
-        .kanban-mini-col.done .kanban-mini-count { color: #22c55e; }
-        
-        /* Keyboard Shortcut Hint */
-        .keyboard-hint {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--bg-card);
-            border: 1px solid rgba(255,255,255,0.1);
-            padding: 8px 16px;
-            border-radius: var(--radius-md);
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            display: none;
-        }
-        
-        .keyboard-hint kbd {
-            background: rgba(255,255,255,0.1);
-            padding: 2px 6px;
-            border-radius: 4px;
-            margin: 0 2px;
-        }
-        
-        @media (min-width: 768px) {
-            .keyboard-hint {
-                display: block;
-            }
-        }
-        
-        /* Shortcuts Help Modal */
-        .shortcuts-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1001;
-            animation: fadeIn 0.2s ease;
-        }
-        
-        .shortcuts-content {
-            background: var(--bg-card);
-            border-radius: var(--radius-lg);
-            padding: var(--spacing-xl);
-            max-width: 450px;
-            width: 90%;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        
-        .shortcuts-content h2 {
-            margin-bottom: var(--spacing-lg);
-            color: var(--text-primary);
-            font-size: 1.25rem;
-        }
-        
-        .shortcuts-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        .shortcut-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 12px;
-            background: rgba(255,255,255,0.03);
-            border-radius: var(--radius-sm);
-        }
-        
-        .shortcut-item kbd {
-            background: rgba(99, 102, 241, 0.2);
-            color: var(--accent-primary);
-            padding: 4px 10px;
-            border-radius: var(--radius-sm);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            min-width: 80px;
-            text-align: center;
-        }
-        
-        .shortcut-item span {
-            color: var(--text-secondary);
-            font-size: 0.875rem;
-        }
-        
-        .shortcuts-content button {
-            margin-top: var(--spacing-lg);
-            width: 100%;
-            padding: 12px;
-            background: var(--accent-primary);
-            border: none;
-            border-radius: var(--radius-md);
-            color: white;
-            cursor: pointer;
-            font-weight: 600;
-        }
-        
-        .shortcuts-content button:hover {
-            background: var(--accent-secondary);
-        }
-        
-        /* Toast Notification */
-        .toast-notification {
-            position: fixed;
-            bottom: 80px;
-            right: 20px;
-            background: var(--bg-card);
-            color: var(--text-primary);
-            padding: 12px 24px;
-            border-radius: var(--radius-md);
-            border-left: 3px solid var(--accent-primary);
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-            transform: translateX(100%);
-            opacity: 0;
-            transition: all 0.3s ease;
-            z-index: 1002;
-        }
-        
-        .toast-notification.show {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        
-        /* Command result selection */
-        .command-result.selected {
-            background: var(--accent-primary);
-            color: white;
-        }
-        
-        /* Command Palette */
-        .command-palette {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            padding: 20vh 20px;
-        }
-        
-        .command-palette.active {
-            display: flex;
-            justify-content: center;
-        }
-        
-        .command-input-wrapper {
-            width: 100%;
-            max-width: 600px;
-        }
-        
-        .command-input {
-            width: 100%;
-            padding: 16px 20px;
-            font-size: 1.125rem;
-            background: var(--bg-card);
-            border: 2px solid var(--accent-primary);
-            border-radius: var(--radius-lg);
-            color: var(--text-primary);
-            outline: none;
-        }
-        
-        .command-input::placeholder {
-            color: var(--text-muted);
-        }
-        
-        .command-results {
-            margin-top: var(--spacing-md);
-            background: var(--bg-card);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-        
-        .command-result {
-            padding: var(--spacing-md);
-            cursor: pointer;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-        }
-        
-        .command-result:hover,
-        .command-result.selected {
-            background: var(--bg-glass);
-        }
-        
-        .command-result-icon {
-            font-size: 1.25rem;
-        }
-        
-        .command-result-text {
-            flex: 1;
-        }
-        
-        .command-result-hint {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-        
-        /* Section Headers */
-        .section-header-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .section-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .section-action {
-            font-size: 0.75rem;
-            color: var(--accent-primary);
-            text-decoration: none;
-            cursor: pointer;
-        }
-        
-        .section-action:hover {
-            text-decoration: underline;
-        }
-    </style>
 </head>
 <body>
     <!-- HEADER -->
     <header class="header">
         <div class="header-content">
-            <h1 class="logo">Centro de Controle</h1>
-            <div class="header-actions" style="display:flex; gap:12px; align-items:center;">
-                <button class="btn-icon" onclick="openCommandPalette()" title="Buscar (Cmd+K)">
-                    <span>🔍</span>
-                </button>
-                <button class="btn-icon" onclick="syncData()" title="Sincronizar">
-                    <span>🔄</span>
-                </button>
-            </div>
+            <h1 class="logo">🎛️ Centro de Controle</h1>
+            <div class="header-date" id="current-date"></div>
         </div>
     </header>
 
     <!-- MAIN CONTENT -->
     <main class="main-content">
-        <!-- HERO GREETING -->
-        <div class="hero-greeting">
-            <div class="greeting-header">
-                <div class="greeting-text">
-                    <h1 id="greeting-message">Bom dia, Fabio</h1>
-                    <p id="greeting-summary">Carregando seu resumo...</p>
+        <!-- QUICK ACCESS PROJECTS BAR -->
+        <div class="projects-bar" id="projects-bar">
+            <!-- Populated by JS -->
+        </div>
+
+        <!-- TODAY SUMMARY -->
+        <section class="card card-today" id="today-section">
+            <div class="card-header">
+                <h2>📅 Hoje</h2>
+                <button class="btn-icon" onclick="refreshToday()">🔄</button>
+            </div>
+            <div class="card-body">
+                <div class="stats-grid" id="today-stats">
+                    <div class="stat-item stat-todo">
+                        <span class="stat-number" id="stat-todo">0</span>
+                        <span class="stat-label">A fazer</span>
+                    </div>
+                    <div class="stat-item stat-doing">
+                        <span class="stat-number" id="stat-doing">0</span>
+                        <span class="stat-label">Fazendo</span>
+                    </div>
+                    <div class="stat-item stat-done">
+                        <span class="stat-number" id="stat-done">0</span>
+                        <span class="stat-label">Feito hoje</span>
+                    </div>
                 </div>
-                <div class="greeting-date">
-                    <div class="date-day" id="date-day">--</div>
-                    <div class="date-month" id="date-month">---</div>
+                
+                <!-- Eventos do dia -->
+                <div class="today-events" id="today-events">
+                    <h3>🗓️ Agenda</h3>
+                    <div class="events-list" id="events-list">
+                        <p class="empty-state">Sem eventos hoje</p>
+                    </div>
+                </div>
+                
+                <!-- Tarefas urgentes -->
+                <div class="urgent-tasks" id="urgent-section">
+                    <h3>🔥 Urgente</h3>
+                    <div class="urgent-list" id="urgent-list">
+                        <p class="empty-state">Nenhuma tarefa urgente</p>
+                    </div>
                 </div>
             </div>
-            <div class="summary-chips" id="summary-chips">
-                <!-- Populated by JS -->
+        </section>
+
+        <!-- KANBAN BOARD -->
+        <section class="card card-kanban" id="kanban-section">
+            <div class="card-header">
+                <h2>📋 Tarefas</h2>
+                <button class="btn-primary" onclick="openTaskModal()">+ Nova</button>
             </div>
-        </div>
-        
-        <!-- QUICK ACTIONS BAR -->
-        <div class="quick-actions-bar">
-            <button class="quick-action" onclick="openTaskModal()">
-                <span>➕</span> Nova Tarefa
-            </button>
-            <button class="quick-action" onclick="openNoteModal()">
-                <span>📝</span> Nova Nota
-            </button>
-            <button class="quick-action" onclick="openReminderModal()">
-                <span>🔔</span> Lembrete
-            </button>
-            <button class="quick-action" onclick="window.location.href='portfolio.html'">
-                <span>💼</span> Portfolio
-            </button>
-            <button class="quick-action" onclick="window.location.href='mba.html'">
-                <span>🎓</span> MBA
-            </button>
-            <button class="quick-action" onclick="window.location.href='work.html'">
-                <span>📊</span> Work Status
-            </button>
-            <button class="quick-action" onclick="syncNotion()">
-                <span>🔗</span> Sync Notion
-            </button>
-        </div>
-        
-        <!-- MAIN DASHBOARD GRID -->
-        <div class="dashboard-grid">
-            <!-- LEFT COLUMN: Today + Tasks -->
-            <div class="today-column">
-                <!-- Agenda -->
-                <section class="card">
-                    <div class="section-header-row">
-                        <h2 class="section-title">📅 Agenda de Hoje</h2>
-                        <span class="section-action" onclick="refreshCalendar()">Atualizar</span>
-                    </div>
-                    <div id="agenda-list">
-                        <p class="empty-state">Carregando agenda...</p>
-                    </div>
-                </section>
-                
-                <!-- Tasks Summary -->
-                <section class="card">
-                    <div class="section-header-row">
-                        <h2 class="section-title">📋 Tarefas</h2>
-                        <a class="section-action" href="#" onclick="showKanban()">Ver Kanban</a>
-                    </div>
-                    <div class="kanban-mini">
-                        <div class="kanban-mini-col todo">
-                            <div class="kanban-mini-count" id="count-todo">0</div>
-                            <div class="kanban-mini-label">A Fazer</div>
+            <div class="card-body">
+                <div class="kanban-board">
+                    <!-- TODO Column -->
+                    <div class="kanban-column" data-status="todo">
+                        <div class="column-header">
+                            <span class="column-title">🔴 A Fazer</span>
+                            <span class="column-count" id="count-todo">0</span>
                         </div>
-                        <div class="kanban-mini-col doing">
-                            <div class="kanban-mini-count" id="count-doing">0</div>
-                            <div class="kanban-mini-label">Fazendo</div>
-                        </div>
-                        <div class="kanban-mini-col done">
-                            <div class="kanban-mini-count" id="count-done">0</div>
-                            <div class="kanban-mini-label">Feito</div>
-                        </div>
+                        <div class="column-tasks" id="tasks-todo"></div>
                     </div>
-                    <div id="urgent-tasks" style="margin-top: var(--spacing-md);">
-                        <!-- Urgent tasks shown here -->
-                    </div>
-                </section>
-                
-                <!-- MBA Quick View -->
-                <section class="card">
-                    <div class="section-header-row">
-                        <h2 class="section-title">🎓 MBA Inteli</h2>
-                        <a class="section-action" href="mba.html">Ver tudo</a>
-                    </div>
-                    <div class="kanban-mini">
-                        <div class="kanban-mini-col todo">
-                            <div class="kanban-mini-count" id="mba-pendentes">-</div>
-                            <div class="kanban-mini-label">Pendentes</div>
+                    
+                    <!-- DOING Column -->
+                    <div class="kanban-column" data-status="doing">
+                        <div class="column-header">
+                            <span class="column-title">🟡 Fazendo</span>
+                            <span class="column-count" id="count-doing">0</span>
                         </div>
-                        <div class="kanban-mini-col doing">
-                            <div class="kanban-mini-count" id="mba-andamento">-</div>
-                            <div class="kanban-mini-label">Em Andamento</div>
-                        </div>
-                        <div class="kanban-mini-col done">
-                            <div class="kanban-mini-count" id="mba-concluidas">-</div>
-                            <div class="kanban-mini-label">Concluídas</div>
-                        </div>
+                        <div class="column-tasks" id="tasks-doing"></div>
                     </div>
-                    <div id="mba-deadlines" style="margin-top: var(--spacing-md);">
-                        <!-- MBA deadlines shown here -->
+                    
+                    <!-- DONE Column -->
+                    <div class="kanban-column" data-status="done">
+                        <div class="column-header">
+                            <span class="column-title">🟢 Feito</span>
+                            <span class="column-count" id="count-done">0</span>
+                        </div>
+                        <div class="column-tasks" id="tasks-done"></div>
                     </div>
-                </section>
+                </div>
             </div>
-            
-            <!-- RIGHT COLUMN: Portfolio + Updates -->
-            <div class="today-column">
-                <!-- Work Portfolio -->
-                <section class="card">
-                    <div class="section-header-row">
-                        <h2 class="section-title">💼 Projetos Trabalho</h2>
-                        <a class="section-action" href="portfolio.html">Ver portfolio</a>
-                    </div>
-                    <div class="portfolio-grid" id="portfolio-grid">
-                        <p class="empty-state">Carregando projetos...</p>
-                    </div>
-                </section>
-                
-                <!-- Work Status (Confluence) -->
-                <section class="card">
-                    <div class="section-header-row">
-                        <h2 class="section-title">📊 Work Status</h2>
-                        <a class="section-action" href="work.html">Ver tudo</a>
-                    </div>
-                    <div class="kanban-mini" id="work-status-mini">
-                        <div class="kanban-mini-col todo">
-                            <div class="kanban-mini-count" id="work-initiatives">-</div>
-                            <div class="kanban-mini-label">Initiatives</div>
-                        </div>
-                        <div class="kanban-mini-col doing">
-                            <div class="kanban-mini-count" id="work-epics">-</div>
-                            <div class="kanban-mini-label">Epics</div>
-                        </div>
-                        <div class="kanban-mini-col done">
-                            <div class="kanban-mini-count" id="work-sprints">-</div>
-                            <div class="kanban-mini-label">Sprints</div>
-                        </div>
-                    </div>
-                    <div id="work-alerts" style="margin-top: var(--spacing-md);">
-                        <!-- Work alerts (risks/bugs) shown here -->
-                    </div>
-                </section>
-                
-                <!-- Recent Updates -->
-                <section class="card">
-                    <div class="section-header-row">
-                        <h2 class="section-title">🔔 Updates Recentes</h2>
-                        <span class="section-action" onclick="refreshUpdates()">Atualizar</span>
-                    </div>
-                    <div class="updates-list" id="updates-list">
-                        <p class="empty-state">Carregando updates...</p>
-                    </div>
-                </section>
-                
-                <!-- Reminders -->
-                <section class="card">
-                    <div class="section-header-row">
-                        <h2 class="section-title">⏰ Lembretes</h2>
-                        <span class="section-action" onclick="openReminderModal()">+ Novo</span>
-                    </div>
-                    <div id="reminders-list">
-                        <p class="empty-state">Sem lembretes</p>
-                    </div>
-                </section>
+        </section>
+
+        <!-- PROJECTS (hidden, managed via top bar) -->
+        <div id="projects-list" style="display:none;"></div>
+
+        <!-- REMINDERS -->
+        <section class="card card-reminders" id="reminders-section">
+            <div class="card-header">
+                <h2>🔔 Lembretes</h2>
+                <button class="btn-primary" onclick="openReminderModal()">+ Novo</button>
             </div>
-        </div>
+            <div class="card-body">
+                <div class="reminders-list" id="reminders-list">
+                    <p class="empty-state">Sem lembretes</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- NOTES -->
+        <section class="card card-notes" id="notes-section">
+            <div class="card-header">
+                <h2>🗒️ Notas de Reuniões</h2>
+                <button class="btn-primary" onclick="openNoteModal()">+ Nova</button>
+            </div>
+            <div class="card-body">
+                <div class="notes-list" id="notes-list">
+                    <p class="empty-state">Sem notas</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- MBA SECTION -->
+        <section class="card card-mba" id="mba-section">
+            <div class="card-header">
+                <a href="mba.html" style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:8px;">
+                    <h2>🎓 MBA Inteli</h2>
+                    <span style="font-size:0.8rem; color:var(--text-muted);">→ Abrir</span>
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="stats-grid" style="margin-bottom: 0;">
+                    <div class="stat-item stat-todo">
+                        <span class="stat-number" id="mba-pendentes">-</span>
+                        <span class="stat-label">Pendentes</span>
+                    </div>
+                    <div class="stat-item stat-doing">
+                        <span class="stat-number" id="mba-andamento">-</span>
+                        <span class="stat-label">Em Andamento</span>
+                    </div>
+                    <div class="stat-item stat-done">
+                        <span class="stat-number" id="mba-concluidas">-</span>
+                        <span class="stat-label">Concluidas</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SHARED FILES -->
+        <section class="card card-files" id="files-section">
+            <div class="card-header">
+                <a href="files.html" style="text-decoration:none; color:inherit; display:flex; align-items:center; gap:8px;">
+                    <h2>📁 Arquivos Compartilhados</h2>
+                    <span style="font-size:0.8rem; color:var(--text-muted);">→ Abrir</span>
+                </a>
+                <span class="files-count" id="files-count"></span>
+            </div>
+            <div class="card-body">
+                <!-- Drop Zone -->
+                <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+                    <input type="file" id="file-input" multiple style="display:none" onchange="handleFileSelect(event)">
+                    <div class="upload-icon">📤</div>
+                    <div class="upload-text">Arraste arquivos aqui ou clique para selecionar</div>
+                    <div class="upload-hint">Máximo 50MB por arquivo</div>
+                </div>
+                
+                <!-- Progress -->
+                <div class="upload-progress" id="upload-progress" style="display:none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="upload-progress-fill"></div>
+                    </div>
+                    <span id="upload-status">Enviando...</span>
+                </div>
+                
+                <!-- Files List -->
+                <div class="shared-files-list" id="shared-files-list">
+                    <p class="empty-state">Nenhum arquivo compartilhado</p>
+                </div>
+            </div>
+        </section>
     </main>
 
-    <!-- COMMAND PALETTE -->
-    <div class="command-palette" id="command-palette">
-        <div class="command-input-wrapper">
-            <input type="text" class="command-input" id="command-input" 
-                   placeholder="Buscar projetos, tarefas, notas... (Esc para fechar)"
-                   oninput="handleCommandInput(this.value)">
-            <div class="command-results" id="command-results"></div>
-        </div>
-    </div>
-
-    <!-- KEYBOARD HINT -->
-    <div class="keyboard-hint">
-        <kbd>Cmd</kbd>+<kbd>K</kbd> Buscar &nbsp;|&nbsp;
-        <kbd>C</kbd> Tarefa &nbsp;|&nbsp;
-        <kbd>B</kbd> Board &nbsp;|&nbsp;
-        <kbd>?</kbd> Atalhos
-    </div>
+    <!-- BOTTOM NAV (Mobile) -->
+    <nav class="bottom-nav">
+        <button class="nav-item active" onclick="scrollToSection('today-section')">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">Hoje</span>
+        </button>
+        <button class="nav-item" onclick="scrollToSection('kanban-section')">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">Tarefas</span>
+        </button>
+        <button class="nav-item" onclick="scrollToSection('projects-section')">
+            <span class="nav-icon">🚀</span>
+            <span class="nav-label">Projetos</span>
+        </button>
+        <button class="nav-item" onclick="scrollToSection('reminders-section')">
+            <span class="nav-icon">🔔</span>
+            <span class="nav-label">Lembretes</span>
+        </button>
+    </nav>
 
     <!-- TASK MODAL -->
     <div class="modal" id="task-modal">
@@ -792,7 +247,7 @@
                             <option value="low">Baixa</option>
                             <option value="normal" selected>Normal</option>
                             <option value="high">Alta</option>
-                            <option value="urgent">Urgente</option>
+                            <option value="urgent">🔥 Urgente</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -803,12 +258,6 @@
                             <option value="done">Feito</option>
                         </select>
                     </div>
-                </div>
-                <div class="form-group">
-                    <label for="task-project">Projeto</label>
-                    <select id="task-project">
-                        <option value="">Sem projeto</option>
-                    </select>
                 </div>
                 <div class="form-group">
                     <label for="task-due-date">Data limite</label>
@@ -844,6 +293,7 @@
                         <option value="low">Baixa</option>
                         <option value="normal" selected>Normal</option>
                         <option value="high">Alta</option>
+                        <option value="urgent">🔥 Urgente</option>
                     </select>
                 </div>
                 <div class="form-actions">
@@ -875,6 +325,10 @@
                     <label for="note-content">Conteúdo</label>
                     <textarea id="note-content" rows="6" placeholder="Anotações da reunião..."></textarea>
                 </div>
+                <div class="form-group">
+                    <label for="note-tags">Tags (separadas por vírgula)</label>
+                    <input type="text" id="note-tags" placeholder="mba, reunião, projeto">
+                </div>
                 <div class="form-actions">
                     <button type="button" class="btn-secondary" onclick="closeNoteModal()">Cancelar</button>
                     <button type="submit" class="btn-primary">Salvar</button>
@@ -883,1041 +337,74 @@
         </div>
     </div>
 
-    <!-- KANBAN MODAL -->
-    <div class="modal" id="kanban-modal">
-        <div class="modal-content" style="max-width: 1200px; width: 95%;">
+    <!-- PROJECT MODAL -->
+    <div class="modal" id="project-modal">
+        <div class="modal-content">
             <div class="modal-header">
-                <h3>Kanban - Todas as Tarefas</h3>
-                <button class="btn-close" onclick="closeKanbanModal()">✕</button>
+                <h3 id="project-modal-title">Novo Projeto</h3>
+                <button class="btn-close" onclick="closeProjectModal()">✕</button>
             </div>
-            <div class="kanban-board" id="kanban-board-full" style="padding: 20px;">
-                <!-- Full kanban board here -->
-            </div>
+            <form id="project-form" onsubmit="saveProject(event)">
+                <input type="hidden" id="project-id">
+                <div class="form-group">
+                    <label for="project-name">Nome *</label>
+                    <input type="text" id="project-name" required placeholder="Nome do projeto">
+                </div>
+                <div class="form-group">
+                    <label for="project-description">Descrição</label>
+                    <textarea id="project-description" rows="2" placeholder="Sobre o que é este projeto?"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="project-category">Categoria</label>
+                        <select id="project-category">
+                            <option value="trabalho">💼 Trabalho</option>
+                            <option value="mba">🎓 MBA</option>
+                            <option value="pessoal" selected>👤 Pessoal</option>
+                            <option value="familia">👨‍👩‍👧 Família</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="project-priority">Prioridade</label>
+                        <select id="project-priority">
+                            <option value="low">Baixa</option>
+                            <option value="normal" selected>Normal</option>
+                            <option value="high">Alta</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="project-status">Status</label>
+                        <select id="project-status">
+                            <option value="active" selected>Ativo</option>
+                            <option value="paused">Pausado</option>
+                            <option value="completed">Concluído</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="project-progress">Progresso</label>
+                        <input type="number" id="project-progress" min="0" max="100" value="0" placeholder="0-100">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="project-due-date">Data limite</label>
+                    <input type="date" id="project-due-date">
+                </div>
+                <div class="form-group">
+                    <label for="project-tags">Tags (separadas por vírgula)</label>
+                    <input type="text" id="project-tags" placeholder="documentação, épico, feature">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-secondary" onclick="closeProjectModal()">Cancelar</button>
+                    <button type="submit" class="btn-primary">Salvar</button>
+                </div>
+            </form>
         </div>
     </div>
 
     <!-- SCRIPTS -->
     <script src="js/api.js"></script>
-    <script>
-        // ===========================================
-        // GPM DASHBOARD - MAIN SCRIPT
-        // ===========================================
-        
-        const isGitHubPages = window.location.hostname.includes('github.io');
-        const API_BASE = isGitHubPages 
-            ? 'https://srv1315519.hstgr.cloud/api' 
-            : '/api';
-        
-        // State
-        let tasks = [];
-        let projects = [];
-        let reminders = [];
-        let workProjects = [];
-        
-        // ===========================================
-        // INITIALIZATION
-        // ===========================================
-        
-        document.addEventListener('DOMContentLoaded', () => {
-            updateGreeting();
-            loadAllData();
-            setupKeyboardShortcuts();
-        });
-        
-        function updateGreeting() {
-            const hour = new Date().getHours();
-            const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-            document.getElementById('greeting-message').textContent = `${greeting}, Fabio`;
-            
-            // Update date
-            const now = new Date();
-            const day = now.getDate();
-            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-            document.getElementById('date-day').textContent = day;
-            document.getElementById('date-month').textContent = months[now.getMonth()];
-        }
-        
-        async function loadAllData() {
-            try {
-                await Promise.all([
-                    loadTasks(),
-                    loadProjects(),
-                    loadReminders(),
-                    loadWorkProjects(),
-                    loadCalendarEvents(),
-                    loadMBAStats(),
-                    loadWorkStatus()
-                ]);
-                updateSummary();
-                loadUpdates();
-            } catch (error) {
-                console.error('Error loading data:', error);
-            }
-        }
-        
-        // ===========================================
-        // TASKS
-        // ===========================================
-        
-        async function loadTasks() {
-            try {
-                const response = await fetch(`${API_BASE}/tasks`);
-                tasks = await response.json();
-                renderTaskCounts();
-                renderUrgentTasks();
-            } catch (error) {
-                console.error('Error loading tasks:', error);
-            }
-        }
-        
-        function renderTaskCounts() {
-            const todo = tasks.filter(t => t.status === 'todo').length;
-            const doing = tasks.filter(t => t.status === 'doing').length;
-            const done = tasks.filter(t => t.status === 'done').length;
-            
-            document.getElementById('count-todo').textContent = todo;
-            document.getElementById('count-doing').textContent = doing;
-            document.getElementById('count-done').textContent = done;
-        }
-        
-        function renderUrgentTasks() {
-            const urgent = tasks.filter(t => 
-                (t.priority === 'urgent' || t.priority === 'high') && 
-                t.status !== 'done'
-            );
-            
-            const container = document.getElementById('urgent-tasks');
-            
-            if (urgent.length === 0) {
-                container.innerHTML = '';
-                return;
-            }
-            
-            container.innerHTML = `
-                <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">
-                    <div style="font-size: 0.75rem; color: #ef4444; margin-bottom: 8px; font-weight: 600;">
-                        🔥 ${urgent.length} tarefa${urgent.length > 1 ? 's' : ''} urgente${urgent.length > 1 ? 's' : ''}
-                    </div>
-                    ${urgent.slice(0, 3).map(t => `
-                        <div style="padding: 8px; background: rgba(239, 68, 68, 0.1); border-radius: 6px; margin-bottom: 4px; font-size: 0.875rem;">
-                            ${escapeHtml(t.title)}
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-        }
-        
-        // ===========================================
-        // PROJECTS
-        // ===========================================
-        
-        async function loadProjects() {
-            try {
-                const response = await fetch(`${API_BASE}/projects`);
-                projects = await response.json();
-            } catch (error) {
-                console.error('Error loading projects:', error);
-            }
-        }
-        
-        async function loadWorkProjects() {
-            try {
-                const response = await fetch(`${API_BASE}/work-projects`);
-                const data = await response.json();
-                workProjects = data.projects || [];
-                renderPortfolio();
-            } catch (error) {
-                console.error('Error loading work projects:', error);
-                renderPortfolio();
-            }
-        }
-        
-        function renderPortfolio() {
-            const container = document.getElementById('portfolio-grid');
-            
-            // Get work projects from database
-            const workDbProjects = projects.filter(p => p.category === 'trabalho');
-            
-            if (workDbProjects.length === 0) {
-                container.innerHTML = '<p class="empty-state">Nenhum projeto de trabalho</p>';
-                return;
-            }
-            
-            container.innerHTML = workDbProjects.map(project => `
-                <div class="portfolio-card ${project.priority === 'high' ? 'high-priority' : ''}" 
-                     onclick="window.location.href='project.html?id=${project.id}'">
-                    <div class="portfolio-info">
-                        <div class="portfolio-name">${escapeHtml(project.name)}</div>
-                        <div class="portfolio-status">
-                            ${project.status === 'active' ? '🟢 Ativo' : project.status === 'paused' ? '🟡 Pausado' : '✅ Concluído'}
-                        </div>
-                    </div>
-                    <div class="portfolio-progress">
-                        <div class="progress-bar-mini">
-                            <div class="progress-fill-mini" style="width: ${project.progress || 0}%"></div>
-                        </div>
-                        <span class="progress-text">${project.progress || 0}%</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        // ===========================================
-        // CALENDAR
-        // ===========================================
-        
-        async function loadCalendarEvents() {
-            try {
-                const response = await fetch(`${API_BASE}/calendar/today`);
-                const events = await response.json();
-                renderAgenda(events);
-            } catch (error) {
-                console.error('Error loading calendar:', error);
-                document.getElementById('agenda-list').innerHTML = 
-                    '<p class="empty-state">Não foi possível carregar a agenda</p>';
-            }
-        }
-        
-        function renderAgenda(events) {
-            const container = document.getElementById('agenda-list');
-            
-            if (!events || events.length === 0) {
-                container.innerHTML = '<p class="empty-state">Sem eventos hoje</p>';
-                return;
-            }
-            
-            container.innerHTML = events.slice(0, 5).map(event => `
-                <div class="agenda-item">
-                    <span class="agenda-time">${event.time || '--:--'}</span>
-                    <span class="agenda-title">${escapeHtml(event.summary || event.title)}</span>
-                </div>
-            `).join('');
-        }
-        
-        function refreshCalendar() {
-            loadCalendarEvents();
-        }
-        
-        // ===========================================
-        // MBA
-        // ===========================================
-        
-        async function loadMBAStats() {
-            try {
-                const response = await fetch(`${API_BASE}/mba/stats`);
-                const stats = await response.json();
-                
-                document.getElementById('mba-pendentes').textContent = stats.pendentes || 0;
-                document.getElementById('mba-andamento').textContent = stats.em_andamento || 0;
-                document.getElementById('mba-concluidas').textContent = stats.concluidas || 0;
-                
-                // Show upcoming deadlines
-                if (stats.proximos_prazos && stats.proximos_prazos.length > 0) {
-                    const deadlinesHtml = stats.proximos_prazos.slice(0, 2).map(d => `
-                        <div style="padding: 8px; background: rgba(234, 179, 8, 0.1); border-radius: 6px; margin-bottom: 4px; font-size: 0.875rem;">
-                            📅 ${escapeHtml(d.title)} - ${d.due_date}
-                        </div>
-                    `).join('');
-                    document.getElementById('mba-deadlines').innerHTML = deadlinesHtml;
-                }
-            } catch (error) {
-                console.error('Error loading MBA stats:', error);
-            }
-        }
-        
-        // ===========================================
-        // WORK STATUS (CONFLUENCE)
-        // ===========================================
-        
-        async function loadWorkStatus() {
-            try {
-                const response = await fetch(`${API_BASE}/confluence/summary`);
-                const summary = await response.json();
-                
-                // Update counts
-                document.getElementById('work-initiatives').textContent = summary.initiatives || 0;
-                document.getElementById('work-epics').textContent = summary.epics || 0;
-                document.getElementById('work-sprints').textContent = summary.sprints || 0;
-                
-                // Show alerts for risks and bugs
-                const alertsContainer = document.getElementById('work-alerts');
-                let alertsHtml = '';
-                
-                if (summary.risks > 0) {
-                    alertsHtml += `
-                        <div style="padding: 8px; background: rgba(239, 68, 68, 0.1); border-radius: 6px; margin-bottom: 4px; font-size: 0.875rem; display: flex; align-items: center; gap: 8px;">
-                            <span>⚠️</span>
-                            <span style="color: #f87171; font-weight: 600;">${summary.risks}</span>
-                            <span>riscos ativos</span>
-                        </div>
-                    `;
-                }
-                
-                if (summary.bugs > 0) {
-                    alertsHtml += `
-                        <div style="padding: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 6px; margin-bottom: 4px; font-size: 0.875rem; display: flex; align-items: center; gap: 8px;">
-                            <span>🐛</span>
-                            <span style="color: #fbbf24; font-weight: 600;">${summary.bugs}</span>
-                            <span>bugs ativos</span>
-                        </div>
-                    `;
-                }
-                
-                if (summary.current_sprint) {
-                    alertsHtml += `
-                        <div style="padding: 8px; background: rgba(99, 102, 241, 0.1); border-radius: 6px; font-size: 0.875rem;">
-                            🏃 <strong>${escapeHtml(summary.current_sprint)}</strong>
-                        </div>
-                    `;
-                }
-                
-                alertsContainer.innerHTML = alertsHtml || '<p style="color: var(--text-muted); font-size: 0.875rem;">Tudo em dia!</p>';
-                
-            } catch (error) {
-                console.log('Work status not available - Confluence sync needed');
-                document.getElementById('work-initiatives').textContent = '-';
-                document.getElementById('work-epics').textContent = '-';
-                document.getElementById('work-sprints').textContent = '-';
-                document.getElementById('work-alerts').innerHTML = 
-                    '<p style="color: var(--text-muted); font-size: 0.75rem;">Sincronize com Confluence</p>';
-            }
-        }
-        
-        // ===========================================
-        // REMINDERS
-        // ===========================================
-        
-        async function loadReminders() {
-            try {
-                const response = await fetch(`${API_BASE}/reminders`);
-                reminders = await response.json();
-                renderReminders();
-            } catch (error) {
-                console.error('Error loading reminders:', error);
-            }
-        }
-        
-        function renderReminders() {
-            const container = document.getElementById('reminders-list');
-            const activeReminders = reminders.filter(r => !r.is_completed);
-            
-            if (activeReminders.length === 0) {
-                container.innerHTML = '<p class="empty-state">Sem lembretes</p>';
-                return;
-            }
-            
-            container.innerHTML = activeReminders.slice(0, 5).map(reminder => {
-                const dueDate = new Date(reminder.due_datetime);
-                const isOverdue = dueDate < new Date();
-                
-                return `
-                    <div class="update-item" style="${isOverdue ? 'border-left: 3px solid #ef4444;' : ''}">
-                        <div class="update-icon">${isOverdue ? '⚠️' : '🔔'}</div>
-                        <div class="update-content">
-                            <div class="update-title">${escapeHtml(reminder.title)}</div>
-                            <div class="update-meta">${formatDateTime(reminder.due_datetime)}</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        // ===========================================
-        // UPDATES
-        // ===========================================
-        
-        async function loadUpdates() {
-            try {
-                const response = await fetch(`${API_BASE}/updates/recent?limit=10`);
-                const data = await response.json();
-                renderUpdates(data.updates || []);
-            } catch (error) {
-                console.log('Updates API not available, using simulated data');
-                // Fallback to simulated updates
-                renderSimulatedUpdates();
-            }
-        }
-        
-        function renderUpdates(updates) {
-            const container = document.getElementById('updates-list');
-            
-            if (!updates || updates.length === 0) {
-                renderSimulatedUpdates();
-                return;
-            }
-            
-            container.innerHTML = updates.slice(0, 8).map(update => `
-                <div class="update-item">
-                    <div class="update-icon">${update.icon || getUpdateIcon(update.type)}</div>
-                    <div class="update-content">
-                        <div class="update-title">${escapeHtml(update.message || update.title)}</div>
-                        <div class="update-meta">${update.entity_type || ''} • ${formatTimeAgo(new Date(update.timestamp))}</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        function renderSimulatedUpdates() {
-            const container = document.getElementById('updates-list');
-            
-            // Create updates from recent activity
-            const updates = [];
-            
-            // Recent tasks
-            tasks.filter(t => t.status === 'done').slice(0, 2).forEach(t => {
-                updates.push({
-                    type: 'task_done',
-                    title: `Tarefa concluída: ${t.title}`,
-                    meta: formatTimeAgo(new Date(t.updated_at || t.created_at))
-                });
-            });
-            
-            // Work projects
-            projects.filter(p => p.category === 'trabalho').slice(0, 3).forEach(p => {
-                updates.push({
-                    type: 'project',
-                    title: `${p.name}`,
-                    meta: `${p.progress || 0}% concluído`
-                });
-            });
-            
-            if (updates.length === 0) {
-                container.innerHTML = '<p class="empty-state">Sem updates recentes</p>';
-                return;
-            }
-            
-            container.innerHTML = updates.slice(0, 6).map(update => `
-                <div class="update-item">
-                    <div class="update-icon">${getUpdateIcon(update.type)}</div>
-                    <div class="update-content">
-                        <div class="update-title">${escapeHtml(update.title)}</div>
-                        <div class="update-meta">${update.meta}</div>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        function getUpdateIcon(type) {
-            const icons = {
-                'meeting': '📅',
-                'task_done': '✅',
-                'task_created': '📋',
-                'project': '💼',
-                'note': '📝',
-                'deadline': '⏰'
-            };
-            return icons[type] || '🔔';
-        }
-        
-        function refreshUpdates() {
-            loadUpdates();
-        }
-        
-        // ===========================================
-        // SUMMARY
-        // ===========================================
-        
-        function updateSummary() {
-            const todoCount = tasks.filter(t => t.status === 'todo').length;
-            const urgentCount = tasks.filter(t => t.priority === 'urgent' && t.status !== 'done').length;
-            const doingCount = tasks.filter(t => t.status === 'doing').length;
-            
-            // Update greeting summary
-            const summaryParts = [];
-            if (todoCount > 0) summaryParts.push(`${todoCount} tarefa${todoCount > 1 ? 's' : ''} a fazer`);
-            if (doingCount > 0) summaryParts.push(`${doingCount} em andamento`);
-            
-            document.getElementById('greeting-summary').textContent = 
-                summaryParts.length > 0 ? `Você tem ${summaryParts.join(', ')}.` : 'Tudo em dia!';
-            
-            // Update chips
-            const chipsContainer = document.getElementById('summary-chips');
-            let chipsHtml = '';
-            
-            if (todoCount > 0) {
-                chipsHtml += `
-                    <div class="summary-chip">
-                        <span>📋</span>
-                        <span class="chip-number">${todoCount}</span>
-                        <span>tarefas</span>
-                    </div>
-                `;
-            }
-            
-            if (urgentCount > 0) {
-                chipsHtml += `
-                    <div class="summary-chip urgent">
-                        <span>🔥</span>
-                        <span class="chip-number">${urgentCount}</span>
-                        <span>urgente${urgentCount > 1 ? 's' : ''}</span>
-                    </div>
-                `;
-            }
-            
-            const workProjectCount = projects.filter(p => p.category === 'trabalho' && p.status === 'active').length;
-            if (workProjectCount > 0) {
-                chipsHtml += `
-                    <div class="summary-chip">
-                        <span>💼</span>
-                        <span class="chip-number">${workProjectCount}</span>
-                        <span>projetos ativos</span>
-                    </div>
-                `;
-            }
-            
-            chipsContainer.innerHTML = chipsHtml || '<span style="color: var(--text-muted);">Tudo organizado!</span>';
-        }
-        
-        // ===========================================
-        // MODALS
-        // ===========================================
-        
-        function openTaskModal(taskId = null) {
-            document.getElementById('task-modal').classList.add('active');
-            document.getElementById('task-modal-title').textContent = taskId ? 'Editar Tarefa' : 'Nova Tarefa';
-            document.getElementById('task-id').value = taskId || '';
-            
-            if (!taskId) {
-                document.getElementById('task-form').reset();
-            }
-            
-            // Populate project select
-            const projectSelect = document.getElementById('task-project');
-            projectSelect.innerHTML = '<option value="">Sem projeto</option>' +
-                projects.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
-            
-            document.getElementById('task-title').focus();
-        }
-        
-        function closeTaskModal() {
-            document.getElementById('task-modal').classList.remove('active');
-        }
-        
-        function openReminderModal() {
-            document.getElementById('reminder-modal').classList.add('active');
-            document.getElementById('reminder-form').reset();
-            
-            // Set default datetime to now + 1 hour
-            const now = new Date();
-            now.setHours(now.getHours() + 1);
-            now.setMinutes(0);
-            document.getElementById('reminder-datetime').value = now.toISOString().slice(0, 16);
-            
-            document.getElementById('reminder-title').focus();
-        }
-        
-        function closeReminderModal() {
-            document.getElementById('reminder-modal').classList.remove('active');
-        }
-        
-        function openNoteModal() {
-            document.getElementById('note-modal').classList.add('active');
-            document.getElementById('note-form').reset();
-            document.getElementById('note-date').value = new Date().toISOString().split('T')[0];
-            document.getElementById('note-title').focus();
-        }
-        
-        function closeNoteModal() {
-            document.getElementById('note-modal').classList.remove('active');
-        }
-        
-        function showKanban() {
-            document.getElementById('kanban-modal').classList.add('active');
-            renderFullKanban();
-        }
-        
-        function closeKanbanModal() {
-            document.getElementById('kanban-modal').classList.remove('active');
-        }
-        
-        function renderFullKanban() {
-            const container = document.getElementById('kanban-board-full');
-            const todoTasks = tasks.filter(t => t.status === 'todo');
-            const doingTasks = tasks.filter(t => t.status === 'doing');
-            const doneTasks = tasks.filter(t => t.status === 'done');
-            
-            container.innerHTML = `
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-                    <div>
-                        <h4 style="color: #ef4444; margin-bottom: 12px;">🔴 A Fazer (${todoTasks.length})</h4>
-                        ${renderTaskList(todoTasks)}
-                    </div>
-                    <div>
-                        <h4 style="color: #eab308; margin-bottom: 12px;">🟡 Fazendo (${doingTasks.length})</h4>
-                        ${renderTaskList(doingTasks)}
-                    </div>
-                    <div>
-                        <h4 style="color: #22c55e; margin-bottom: 12px;">🟢 Feito (${doneTasks.length})</h4>
-                        ${renderTaskList(doneTasks)}
-                    </div>
-                </div>
-            `;
-        }
-        
-        function renderTaskList(taskList) {
-            if (taskList.length === 0) {
-                return '<p class="empty-state">Nenhuma tarefa</p>';
-            }
-            
-            return taskList.map(t => `
-                <div style="background: var(--bg-card); padding: 12px; border-radius: 8px; margin-bottom: 8px; cursor: pointer;"
-                     onclick="openTaskModal(${t.id})">
-                    <div style="font-weight: 500;">${escapeHtml(t.title)}</div>
-                    ${t.priority === 'urgent' || t.priority === 'high' ? 
-                        '<div style="font-size: 0.75rem; color: #ef4444; margin-top: 4px;">🔥 Alta prioridade</div>' : ''}
-                </div>
-            `).join('');
-        }
-        
-        // ===========================================
-        // SAVE HANDLERS
-        // ===========================================
-        
-        async function saveTask(event) {
-            event.preventDefault();
-            
-            const taskId = document.getElementById('task-id').value;
-            const data = {
-                title: document.getElementById('task-title').value,
-                description: document.getElementById('task-description').value,
-                priority: document.getElementById('task-priority').value,
-                status: document.getElementById('task-status').value,
-                project_id: document.getElementById('task-project').value || null,
-                due_date: document.getElementById('task-due-date').value || null
-            };
-            
-            try {
-                if (taskId) {
-                    await fetch(`${API_BASE}/tasks/${taskId}`, {
-                        method: 'PUT',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    });
-                } else {
-                    await fetch(`${API_BASE}/tasks`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(data)
-                    });
-                }
-                
-                closeTaskModal();
-                loadTasks();
-                updateSummary();
-            } catch (error) {
-                console.error('Error saving task:', error);
-                alert('Erro ao salvar tarefa');
-            }
-        }
-        
-        async function saveReminder(event) {
-            event.preventDefault();
-            
-            const data = {
-                title: document.getElementById('reminder-title').value,
-                due_datetime: document.getElementById('reminder-datetime').value,
-                priority: document.getElementById('reminder-priority').value
-            };
-            
-            try {
-                await fetch(`${API_BASE}/reminders`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                closeReminderModal();
-                loadReminders();
-            } catch (error) {
-                console.error('Error saving reminder:', error);
-                alert('Erro ao salvar lembrete');
-            }
-        }
-        
-        async function saveNote(event) {
-            event.preventDefault();
-            
-            const data = {
-                title: document.getElementById('note-title').value,
-                content: document.getElementById('note-content').value,
-                meeting_date: document.getElementById('note-date').value
-            };
-            
-            try {
-                await fetch(`${API_BASE}/notes`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
-                });
-                
-                closeNoteModal();
-            } catch (error) {
-                console.error('Error saving note:', error);
-                alert('Erro ao salvar nota');
-            }
-        }
-        
-        // ===========================================
-        // COMMAND PALETTE
-        // ===========================================
-        
-        function openCommandPalette() {
-            document.getElementById('command-palette').classList.add('active');
-            document.getElementById('command-input').value = '';
-            document.getElementById('command-input').focus();
-            document.getElementById('command-results').innerHTML = '';
-            commandSelectedIndex = 0; // Reset selection
-        }
-        
-        function closeCommandPalette() {
-            document.getElementById('command-palette').classList.remove('active');
-        }
-        
-        function handleCommandInput(query) {
-            if (!query.trim()) {
-                document.getElementById('command-results').innerHTML = '';
-                return;
-            }
-            
-            const results = [];
-            const q = query.toLowerCase();
-            
-            // Search tasks
-            tasks.filter(t => t.title.toLowerCase().includes(q)).slice(0, 3).forEach(t => {
-                results.push({
-                    icon: '📋',
-                    text: t.title,
-                    hint: `Tarefa - ${t.status}`,
-                    action: () => openTaskModal(t.id)
-                });
-            });
-            
-            // Search projects
-            projects.filter(p => p.name.toLowerCase().includes(q)).slice(0, 3).forEach(p => {
-                results.push({
-                    icon: '🚀',
-                    text: p.name,
-                    hint: 'Projeto',
-                    action: () => window.location.href = `project.html?id=${p.id}`
-                });
-            });
-            
-            // Quick actions
-            if ('nova tarefa'.includes(q) || 'new task'.includes(q)) {
-                results.push({
-                    icon: '➕',
-                    text: 'Nova Tarefa',
-                    hint: 'Criar nova tarefa',
-                    action: () => { closeCommandPalette(); openTaskModal(); }
-                });
-            }
-            
-            if ('nota'.includes(q) || 'reunião'.includes(q)) {
-                results.push({
-                    icon: '📝',
-                    text: 'Nova Nota',
-                    hint: 'Criar nota de reunião',
-                    action: () => { closeCommandPalette(); openNoteModal(); }
-                });
-            }
-            
-            renderCommandResults(results);
-        }
-        
-        function renderCommandResults(results) {
-            const container = document.getElementById('command-results');
-            commandSelectedIndex = 0; // Reset selection on new results
-            
-            if (results.length === 0) {
-                container.innerHTML = '<div class="command-result"><span style="color: var(--text-muted);">Nenhum resultado</span></div>';
-                return;
-            }
-            
-            container.innerHTML = results.map((r, i) => `
-                <div class="command-result ${i === 0 ? 'selected' : ''}" onclick="executeCommandResult(${i})">
-                    <span class="command-result-icon">${r.icon}</span>
-                    <span class="command-result-text">${escapeHtml(r.text)}</span>
-                    <span class="command-result-hint">${r.hint}</span>
-                </div>
-            `).join('');
-            
-            // Store results for execution
-            window.commandResults = results;
-        }
-        
-        function executeCommandResult(index) {
-            if (window.commandResults && window.commandResults[index]) {
-                window.commandResults[index].action();
-                closeCommandPalette();
-            }
-        }
-        
-        // ===========================================
-        // KEYBOARD SHORTCUTS
-        // ===========================================
-        
-        function setupKeyboardShortcuts() {
-            // Track selected task for keyboard navigation
-            let selectedTaskIndex = -1;
-            
-            document.addEventListener('keydown', (e) => {
-                // Ignore when typing in inputs
-                const isTyping = ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
-                const isPaletteOpen = document.getElementById('command-palette').classList.contains('active');
-                
-                // Command palette (Cmd/Ctrl + K) - works always
-                if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-                    e.preventDefault();
-                    if (isPaletteOpen) {
-                        closeCommandPalette();
-                    } else {
-                        openCommandPalette();
-                    }
-                    return;
-                }
-                
-                // New task (Cmd/Ctrl + N)
-                if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
-                    e.preventDefault();
-                    openTaskModal();
-                    return;
-                }
-                
-                // Escape to close modals
-                if (e.key === 'Escape') {
-                    closeCommandPalette();
-                    closeTaskModal();
-                    closeReminderModal();
-                    closeNoteModal();
-                    closeKanbanModal();
-                    return;
-                }
-                
-                // Enter to execute selected command result
-                if (e.key === 'Enter' && isPaletteOpen) {
-                    e.preventDefault();
-                    executeCommandResult(commandSelectedIndex);
-                    return;
-                }
-                
-                // Skip other shortcuts if typing
-                if (isTyping) return;
-                
-                // === Linear-inspired shortcuts (single key when not typing) ===
-                
-                // C = Create task
-                if (e.key === 'c' || e.key === 'C') {
-                    e.preventDefault();
-                    openTaskModal();
-                    return;
-                }
-                
-                // N = New note
-                if (e.key === 'n') {
-                    e.preventDefault();
-                    openNoteModal();
-                    return;
-                }
-                
-                // R = New reminder
-                if (e.key === 'r' || e.key === 'R') {
-                    e.preventDefault();
-                    openReminderModal();
-                    return;
-                }
-                
-                // B = Show board/kanban
-                if (e.key === 'b' || e.key === 'B') {
-                    e.preventDefault();
-                    showKanban();
-                    return;
-                }
-                
-                // P = Portfolio
-                if (e.key === 'p' || e.key === 'P') {
-                    e.preventDefault();
-                    window.location.href = 'portfolio.html';
-                    return;
-                }
-                
-                // M = MBA
-                if (e.key === 'm' || e.key === 'M') {
-                    e.preventDefault();
-                    window.location.href = 'mba.html';
-                    return;
-                }
-                
-                // S = Sync
-                if (e.key === 's' || e.key === 'S') {
-                    e.preventDefault();
-                    syncAllData();
-                    return;
-                }
-                
-                // ? = Show shortcuts help
-                if (e.key === '?') {
-                    e.preventDefault();
-                    showShortcutsHelp();
-                    return;
-                }
-                
-                // 1-3 = Quick filter tasks by status
-                if (e.key === '1') {
-                    e.preventDefault();
-                    filterTasksQuick('todo');
-                    return;
-                }
-                if (e.key === '2') {
-                    e.preventDefault();
-                    filterTasksQuick('doing');
-                    return;
-                }
-                if (e.key === '3') {
-                    e.preventDefault();
-                    filterTasksQuick('done');
-                    return;
-                }
-                
-                // Arrow navigation in command palette
-                if (isPaletteOpen) {
-                    if (e.key === 'ArrowDown') {
-                        e.preventDefault();
-                        navigateCommandResults(1);
-                    }
-                    if (e.key === 'ArrowUp') {
-                        e.preventDefault();
-                        navigateCommandResults(-1);
-                    }
-                }
-            });
-        }
-        
-        // Shortcuts help modal
-        function showShortcutsHelp() {
-            const shortcuts = [
-                { key: 'Cmd/Ctrl + K', desc: 'Command palette' },
-                { key: 'Cmd/Ctrl + N', desc: 'Nova tarefa' },
-                { key: 'C', desc: 'Criar tarefa' },
-                { key: 'N', desc: 'Nova nota' },
-                { key: 'R', desc: 'Novo lembrete' },
-                { key: 'B', desc: 'Ver Kanban board' },
-                { key: 'P', desc: 'Portfolio' },
-                { key: 'M', desc: 'MBA' },
-                { key: 'S', desc: 'Sincronizar dados' },
-                { key: '1/2/3', desc: 'Filtrar tarefas (todo/doing/done)' },
-                { key: 'Esc', desc: 'Fechar modais' },
-                { key: '?', desc: 'Esta ajuda' }
-            ];
-            
-            const html = `
-                <div class="shortcuts-modal" onclick="this.remove()">
-                    <div class="shortcuts-content" onclick="event.stopPropagation()">
-                        <h2>⌨️ Atalhos de Teclado</h2>
-                        <div class="shortcuts-list">
-                            ${shortcuts.map(s => `
-                                <div class="shortcut-item">
-                                    <kbd>${s.key}</kbd>
-                                    <span>${s.desc}</span>
-                                </div>
-                            `).join('')}
-                        </div>
-                        <button onclick="this.parentElement.parentElement.remove()">Fechar</button>
-                    </div>
-                </div>
-            `;
-            
-            document.body.insertAdjacentHTML('beforeend', html);
-        }
-        
-        function filterTasksQuick(status) {
-            // Highlight the status section in mini-kanban
-            const statusMap = { 'todo': 'A Fazer', 'doing': 'Fazendo', 'done': 'Feito' };
-            showNotification(`Filtro: ${statusMap[status]}`);
-            // Could expand to actual filtering logic
-        }
-        
-        function syncAllData() {
-            showNotification('Sincronizando...');
-            loadAllData().then(() => {
-                showNotification('Dados atualizados!');
-            });
-        }
-        
-        function showNotification(message) {
-            const existing = document.querySelector('.toast-notification');
-            if (existing) existing.remove();
-            
-            const toast = document.createElement('div');
-            toast.className = 'toast-notification';
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 2000);
-        }
-        
-        let commandSelectedIndex = 0;
-        
-        function navigateCommandResults(direction) {
-            const results = document.querySelectorAll('.command-result');
-            if (results.length === 0) return;
-            
-            // Remove previous selection
-            results[commandSelectedIndex]?.classList.remove('selected');
-            
-            // Update index
-            commandSelectedIndex += direction;
-            if (commandSelectedIndex < 0) commandSelectedIndex = results.length - 1;
-            if (commandSelectedIndex >= results.length) commandSelectedIndex = 0;
-            
-            // Add selection
-            results[commandSelectedIndex]?.classList.add('selected');
-            results[commandSelectedIndex]?.scrollIntoView({ block: 'nearest' });
-        }
-        
-        // ===========================================
-        // UTILITIES
-        // ===========================================
-        
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
-        function formatTimeAgo(date) {
-            const now = new Date();
-            const diff = Math.floor((now - date) / 1000);
-            
-            if (diff < 60) return 'agora';
-            if (diff < 3600) return `há ${Math.floor(diff / 60)} min`;
-            if (diff < 86400) return `há ${Math.floor(diff / 3600)}h`;
-            if (diff < 604800) return `há ${Math.floor(diff / 86400)} dias`;
-            return date.toLocaleDateString('pt-BR');
-        }
-        
-        function formatDateTime(dateStr) {
-            const date = new Date(dateStr);
-            return date.toLocaleDateString('pt-BR', { 
-                day: '2-digit', 
-                month: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-        }
-        
-        async function syncData() {
-            await loadAllData();
-        }
-        
-        async function syncNotion() {
-            alert('Sincronização com Notion iniciada...');
-            // This would trigger Notion sync via MCP
-        }
-    </script>
+    <script src="js/app.js"></script>
 </body>
 </html>
