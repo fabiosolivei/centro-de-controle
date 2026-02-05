@@ -127,16 +127,48 @@
             border-color: var(--accent-primary);
         }
         
-        /* Main Grid Layout */
+        /* Main Grid Layout - Desktop Optimized */
         .dashboard-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: var(--spacing-xl);
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        @media (min-width: 1400px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr 1fr 1fr;
+            }
+            
+            .today-column:first-child {
+                grid-column: span 2;
+            }
         }
         
         @media (max-width: 1024px) {
             .dashboard-grid {
                 grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Desktop: Make cards wider and more readable */
+        @media (min-width: 1200px) {
+            .hero-greeting {
+                padding: var(--spacing-2xl);
+            }
+            
+            .greeting-text h1 {
+                font-size: 2.25rem;
+            }
+            
+            .quick-actions-bar {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .card {
+                padding: var(--spacing-xl);
             }
         }
         
@@ -578,7 +610,7 @@
     </header>
 
     <!-- MAIN CONTENT -->
-    <main class="main-content">
+    <main class="main-content" style="max-width: 1800px; margin: 0 auto; padding: 20px;">
         <!-- HERO GREETING -->
         <div class="hero-greeting">
             <div class="greeting-header">
@@ -903,10 +935,7 @@
         // GPM DASHBOARD - MAIN SCRIPT
         // ===========================================
         
-        const isGitHubPages = window.location.hostname.includes('github.io');
-        const API_BASE = isGitHubPages 
-            ? 'https://srv1315519.hstgr.cloud/api' 
-            : '/api';
+        // API_BASE is already defined in api.js
         
         // State
         let tasks = [];
