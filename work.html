@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0d1117">
+    <meta name="description" content="Centro de Controle - Work Status">
+    <title>Work Status | Centro de Controle</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Auth Check -->
+    <script>
+        const AUTH_HASH = 'f379eaffb6d3420d190c693e60b4e0c50f018cca3ec9c9bea2ca3ee069ae1f4d';
+        if (sessionStorage.getItem('auth_token') !== AUTH_HASH) {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <style>
+        /* Work Status Specific Styles */
+        .work-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-xl);
+            padding: var(--spacing-lg);
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+            border-radius: var(--radius-lg);
+        }
+        
+        .work-header-info h1 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .work-header-info p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+        
+        .sync-status {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+        
+        .last-sync {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        
+        .btn-sync {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--gradient-primary);
+            border: none;
+            border-radius: var(--radius-md);
+            color: white;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.875rem;
+            transition: all var(--transition-fast);
+        }
+        
+        .btn-sync:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--glow-primary);
+        }
+        
+        .btn-sync.syncing {
+            opacity: 0.7;
+            pointer-events: none;
+        }
+        
+        .btn-sync.syncing .sync-icon {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Sprint Timeline */
+        .sprint-timeline {
+            display: flex;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md);
+            background: var(--bg-glass);
+            border-radius: var(--radius-lg);
+            margin-bottom: var(--spacing-xl);
+            overflow-x: auto;
+            scrollbar-width: thin;
+        }
+        
+        .sprint-chip {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-md);
+            min-width: 120px;
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        
+        .sprint-chip:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
+        }
+        
+        .sprint-chip.current {
+            background: rgba(99, 102, 241, 0.15);
+            border-color: var(--accent-primary);
+        }
+        
+        .sprint-chip .sprint-name {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--text-primary);
+        }
+        
+        .sprint-chip .sprint-dates {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        
+        .sprint-chip.current::after {
+            content: 'ATUAL';
+            display: block;
+            font-size: 0.625rem;
+            color: var(--accent-primary);
+            font-weight: 700;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Stats Grid */
+        .work-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        @media (max-width: 1024px) {
+            .work-stats-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 640px) {
+            .work-stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .work-stat {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all var(--transition-fast);
+        }
+        
+        .work-stat:hover {
+            border-color: var(--accent-primary);
+            transform: translateY(-2px);
+        }
+        
+        .work-stat .stat-icon {
+            font-size: 1.5rem;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .work-stat .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+        }
+        
+        .work-stat .stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+        
+        .work-stat.initiatives .stat-value { color: #6366f1; }
+        .work-stat.epics .stat-value { color: #8b5cf6; }
+        .work-stat.risks .stat-value { color: #ef4444; }
+        .work-stat.bugs .stat-value { color: #f59e0b; }
+        .work-stat.sprints .stat-value { color: #10b981; }
+        
+        /* Tabs */
+        .work-tabs {
+            display: flex;
+            gap: var(--spacing-xs);
+            margin-bottom: var(--spacing-lg);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: var(--spacing-sm);
+        }
+        
+        .tab-btn {
+            padding: var(--spacing-sm) var(--spacing-lg);
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.875rem;
+            border-radius: var(--radius-md) var(--radius-md) 0 0;
+            transition: all var(--transition-fast);
+            position: relative;
+        }
+        
+        .tab-btn:hover {
+            color: var(--text-primary);
+            background: var(--bg-glass);
+        }
+        
+        .tab-btn.active {
+            color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-primary);
+        }
+        
+        .tab-count {
+            background: var(--bg-glass);
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            margin-left: 8px;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        /* Initiative Card */
+        .initiative-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-left: 4px solid var(--accent-primary);
+            transition: all var(--transition-fast);
+            cursor: pointer;
+        }
+        
+        .initiative-card:hover {
+            transform: translateX(4px);
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: var(--shadow-glow);
+        }
+        
+        .initiative-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .initiative-id {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.1);
+            padding: 4px 8px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 8px;
+        }
+        
+        .initiative-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.4;
+        }
+        
+        .initiative-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+            margin-top: var(--spacing-md);
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+        }
+        
+        .initiative-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .status-badge.in-progress {
+            background: rgba(99, 102, 241, 0.15);
+            color: #818cf8;
+        }
+        
+        .status-badge.done {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+        
+        .status-badge.blocked {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+        
+        .status-badge.pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+        }
+        
+        .initiative-epics {
+            margin-top: var(--spacing-lg);
+            padding-top: var(--spacing-md);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .initiative-epics-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .epic-mini-card {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            background: var(--bg-glass);
+            border-radius: var(--radius-sm);
+            margin-bottom: var(--spacing-xs);
+            font-size: 0.875rem;
+        }
+        
+        .epic-mini-card .epic-id {
+            font-family: var(--font-mono);
+            color: var(--accent-secondary);
+            font-size: 0.75rem;
+            min-width: 100px;
+        }
+        
+        .epic-mini-card .epic-title {
+            flex: 1;
+            color: var(--text-secondary);
+        }
+        
+        /* Epic Card */
+        .epic-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-left: 3px solid var(--accent-secondary);
+            transition: all var(--transition-fast);
+        }
+        
+        .epic-card:hover {
+            border-color: rgba(139, 92, 246, 0.3);
+        }
+        
+        .epic-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .epic-id {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent-secondary);
+        }
+        
+        .epic-title {
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .epic-meta {
+            display: flex;
+            gap: var(--spacing-md);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        
+        /* Risk/Bug Card */
+        .risk-card, .bug-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all var(--transition-fast);
+        }
+        
+        .risk-card {
+            border-left: 3px solid #ef4444;
+        }
+        
+        .bug-card {
+            border-left: 3px solid #f59e0b;
+        }
+        
+        .risk-card:hover {
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+        
+        .bug-card:hover {
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+        
+        .risk-info, .bug-info {
+            flex: 1;
+        }
+        
+        .risk-id, .bug-id {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: #f87171;
+            margin-bottom: 4px;
+        }
+        
+        .bug-id {
+            color: #fbbf24;
+        }
+        
+        .risk-title, .bug-title {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+        
+        .gut-score {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.875rem;
+            padding: 4px 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: var(--radius-sm);
+            color: #f87171;
+        }
+        
+        .priority-tag {
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+            font-size: 0.6875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .priority-tag.highest {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+        
+        .priority-tag.high {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+        }
+        
+        .priority-tag.medium {
+            background: rgba(99, 102, 241, 0.15);
+            color: #818cf8;
+        }
+        
+        .priority-tag.low {
+            background: rgba(107, 114, 128, 0.15);
+            color: #9ca3af;
+        }
+        
+        /* Team Filter */
+        .team-filter {
+            display: flex;
+            gap: var(--spacing-xs);
+            margin-bottom: var(--spacing-lg);
+            flex-wrap: wrap;
+        }
+        
+        .team-chip {
+            padding: 6px 14px;
+            background: var(--bg-glass);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-full);
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.8125rem;
+            font-weight: 500;
+            transition: all var(--transition-fast);
+        }
+        
+        .team-chip:hover {
+            border-color: var(--accent-primary);
+            color: var(--text-primary);
+        }
+        
+        .team-chip.active {
+            background: var(--accent-primary);
+            border-color: var(--accent-primary);
+            color: white;
+        }
+        
+        /* Empty State */
+        .empty-state-work {
+            text-align: center;
+            padding: var(--spacing-2xl);
+            color: var(--text-muted);
+        }
+        
+        .empty-state-work .empty-icon {
+            font-size: 3rem;
+            margin-bottom: var(--spacing-md);
+            opacity: 0.5;
+        }
+        
+        .empty-state-work p {
+            font-size: 1rem;
+        }
+        
+        /* Loading */
+        .loading-skeleton {
+            background: linear-gradient(90deg, var(--bg-glass) 25%, var(--bg-glass-hover) 50%, var(--bg-glass) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius-md);
+            height: 100px;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+        
+        /* Breadcrumb */
+        .breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            font-size: 0.875rem;
+        }
+        
+        .breadcrumb a {
+            color: var(--text-muted);
+            text-decoration: none;
+            transition: color var(--transition-fast);
+        }
+        
+        .breadcrumb a:hover {
+            color: var(--accent-primary);
+        }
+        
+        .breadcrumb span {
+            color: var(--text-muted);
+        }
+        
+        .breadcrumb .current {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="logo">Centro de Controle</h1>
+            <div class="header-actions" style="display:flex; gap:12px; align-items:center;">
+                <button class="btn-icon" onclick="window.location.href='index.html'" title="Dashboard">
+                    <span>🏠</span>
+                </button>
+                <button class="btn-icon" onclick="syncConfluence()" title="Sincronizar">
+                    <span>🔄</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content" style="max-width: 1200px; display: block;">
+        
+        <!-- Breadcrumb -->
+        <nav class="breadcrumb">
+            <a href="index.html">Dashboard</a>
+            <span>/</span>
+            <span class="current">Work Status</span>
+        </nav>
+        
+        <!-- Work Header -->
+        <div class="work-header">
+            <div class="work-header-info">
+                <h1>📊 Work Status - Q1 2026</h1>
+                <p>Situation Wall - Company & Store Management</p>
+            </div>
+            <div class="sync-status">
+                <div class="last-sync" id="last-sync">Última sync: --</div>
+                <button class="btn-sync" id="btn-sync" onclick="syncConfluence()">
+                    <span class="sync-icon">🔄</span>
+                    <span>Sincronizar</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Sprint Timeline -->
+        <div class="sprint-timeline" id="sprint-timeline">
+            <div class="loading-skeleton" style="width: 120px; height: 80px; min-width: 120px;"></div>
+            <div class="loading-skeleton" style="width: 120px; height: 80px; min-width: 120px;"></div>
+            <div class="loading-skeleton" style="width: 120px; height: 80px; min-width: 120px;"></div>
+        </div>
+        
+        <!-- Stats Grid -->
+        <div class="work-stats-grid">
+            <div class="work-stat initiatives">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-value" id="stat-initiatives">-</div>
+                <div class="stat-label">Initiatives</div>
+            </div>
+            <div class="work-stat epics">
+                <div class="stat-icon">📦</div>
+                <div class="stat-value" id="stat-epics">-</div>
+                <div class="stat-label">Epics</div>
+            </div>
+            <div class="work-stat sprints">
+                <div class="stat-icon">🏃</div>
+                <div class="stat-value" id="stat-sprints">-</div>
+                <div class="stat-label">Sprints</div>
+            </div>
+            <div class="work-stat risks">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-value" id="stat-risks">-</div>
+                <div class="stat-label">Risks</div>
+            </div>
+            <div class="work-stat bugs">
+                <div class="stat-icon">🐛</div>
+                <div class="stat-value" id="stat-bugs">-</div>
+                <div class="stat-label">Bugs</div>
+            </div>
+        </div>
+        
+        <!-- Team Filter -->
+        <div class="team-filter" id="team-filter">
+            <button class="team-chip active" data-team="all">Todos</button>
+            <button class="team-chip" data-team="CATALOG">Catalog</button>
+            <button class="team-chip" data-team="CMS">CMS</button>
+            <button class="team-chip" data-team="DAM">DAM</button>
+            <button class="team-chip" data-team="CONTENT">Content</button>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="work-tabs">
+            <button class="tab-btn active" data-tab="initiatives">
+                🎯 Initiatives<span class="tab-count" id="count-initiatives">0</span>
+            </button>
+            <button class="tab-btn" data-tab="epics">
+                📦 Epics<span class="tab-count" id="count-epics">0</span>
+            </button>
+            <button class="tab-btn" data-tab="risks">
+                ⚠️ Risks<span class="tab-count" id="count-risks">0</span>
+            </button>
+            <button class="tab-btn" data-tab="bugs">
+                🐛 Bugs<span class="tab-count" id="count-bugs">0</span>
+            </button>
+        </div>
+        
+        <!-- Tab Content: Initiatives -->
+        <div class="tab-content active" id="tab-initiatives">
+            <div id="initiatives-list">
+                <div class="loading-skeleton"></div>
+                <div class="loading-skeleton"></div>
+            </div>
+        </div>
+        
+        <!-- Tab Content: Epics -->
+        <div class="tab-content" id="tab-epics">
+            <div id="epics-list">
+                <div class="loading-skeleton"></div>
+                <div class="loading-skeleton"></div>
+            </div>
+        </div>
+        
+        <!-- Tab Content: Risks -->
+        <div class="tab-content" id="tab-risks">
+            <div id="risks-list">
+                <div class="loading-skeleton"></div>
+            </div>
+        </div>
+        
+        <!-- Tab Content: Bugs -->
+        <div class="tab-content" id="tab-bugs">
+            <div id="bugs-list">
+                <div class="loading-skeleton"></div>
+            </div>
+        </div>
+        
+    </main>
+
+    <script src="js/api.js"></script>
+    <script>
+        // ===========================================
+        // WORK STATUS PAGE - CONFLUENCE INTEGRATION
+        // ===========================================
+        
+        const isGitHubPages = window.location.hostname.includes('github.io');
+        const API_BASE = isGitHubPages 
+            ? 'https://srv1315519.hstgr.cloud/api' 
+            : '/api';
+        
+        // State
+        let initiatives = [];
+        let epics = [];
+        let sprints = [];
+        let risks = [];
+        let bugs = [];
+        let currentTeamFilter = 'all';
+        let currentTab = 'initiatives';
+        
+        // ===========================================
+        // INITIALIZATION
+        // ===========================================
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAllWorkData();
+            setupTabNavigation();
+            setupTeamFilter();
+        });
+        
+        async function loadAllWorkData() {
+            try {
+                await Promise.all([
+                    loadSprints(),
+                    loadInitiatives(),
+                    loadEpics(),
+                    loadRisks(),
+                    loadBugs(),
+                    loadSyncStatus()
+                ]);
+                updateStats();
+            } catch (error) {
+                console.error('Error loading work data:', error);
+            }
+        }
+        
+        // ===========================================
+        // SPRINTS
+        // ===========================================
+        
+        async function loadSprints() {
+            try {
+                const response = await fetch(`${API_BASE}/confluence/sprints`);
+                sprints = await response.json();
+                renderSprints();
+            } catch (error) {
+                console.error('Error loading sprints:', error);
+                document.getElementById('sprint-timeline').innerHTML = 
+                    '<div class="empty-state-work"><p>Sem dados de sprint</p></div>';
+            }
+        }
+        
+        function renderSprints() {
+            const container = document.getElementById('sprint-timeline');
+            
+            if (!sprints || sprints.length === 0) {
+                container.innerHTML = '<div class="empty-state-work"><p>Nenhum sprint encontrado</p></div>';
+                return;
+            }
+            
+            container.innerHTML = sprints.map(sprint => `
+                <div class="sprint-chip ${sprint.is_current ? 'current' : ''}" 
+                     onclick="filterBySprint('${sprint.sprint_name}')">
+                    <span class="sprint-name">${escapeHtml(sprint.sprint_name)}</span>
+                    ${sprint.release_date ? `<span class="sprint-dates">Release: ${formatDate(sprint.release_date)}</span>` : ''}
+                </div>
+            `).join('');
+        }
+        
+        function filterBySprint(sprintName) {
+            // Future: filter epics by sprint
+            console.log('Filter by sprint:', sprintName);
+        }
+        
+        // ===========================================
+        // INITIATIVES
+        // ===========================================
+        
+        async function loadInitiatives() {
+            try {
+                const url = currentTeamFilter === 'all' 
+                    ? `${API_BASE}/confluence/initiatives`
+                    : `${API_BASE}/confluence/initiatives?team=${currentTeamFilter}`;
+                    
+                const response = await fetch(url);
+                initiatives = await response.json();
+                renderInitiatives();
+            } catch (error) {
+                console.error('Error loading initiatives:', error);
+            }
+        }
+        
+        function renderInitiatives() {
+            const container = document.getElementById('initiatives-list');
+            const filtered = filterByTeam(initiatives);
+            
+            document.getElementById('count-initiatives').textContent = filtered.length;
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state-work">
+                        <div class="empty-icon">🎯</div>
+                        <p>Nenhuma initiative encontrada</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filtered.map(initiative => `
+                <div class="initiative-card" onclick="openJira('${initiative.jira_url || ''}')">
+                    <div class="initiative-header">
+                        <div>
+                            <div class="initiative-id">${escapeHtml(initiative.beesip_id)}</div>
+                            <div class="initiative-title">${escapeHtml(initiative.title)}</div>
+                        </div>
+                        <span class="status-badge ${getStatusClass(initiative.status)}">
+                            ${escapeHtml(initiative.status || 'Unknown')}
+                        </span>
+                    </div>
+                    <div class="initiative-meta">
+                        ${initiative.team ? `<span class="initiative-meta-item">👥 ${escapeHtml(initiative.team)}</span>` : ''}
+                        ${initiative.priority ? `<span class="initiative-meta-item">📊 ${escapeHtml(initiative.priority)}</span>` : ''}
+                        ${initiative.kickoff_date ? `<span class="initiative-meta-item">📅 Kickoff: ${formatDate(initiative.kickoff_date)}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // ===========================================
+        // EPICS
+        // ===========================================
+        
+        async function loadEpics() {
+            try {
+                const response = await fetch(`${API_BASE}/confluence/epics`);
+                epics = await response.json();
+                renderEpics();
+            } catch (error) {
+                console.error('Error loading epics:', error);
+            }
+        }
+        
+        function renderEpics() {
+            const container = document.getElementById('epics-list');
+            const filtered = epics; // Could add filtering later
+            
+            document.getElementById('count-epics').textContent = filtered.length;
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state-work">
+                        <div class="empty-icon">📦</div>
+                        <p>Nenhum epic encontrado</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filtered.map(epic => `
+                <div class="epic-card" onclick="openJira('${epic.jira_url || ''}')">
+                    <div class="epic-header">
+                        <span class="epic-id">${escapeHtml(epic.beescad_id)}</span>
+                        ${epic.sprint ? `<span class="status-badge in-progress">${escapeHtml(epic.sprint)}</span>` : ''}
+                    </div>
+                    <div class="epic-title">${escapeHtml(epic.title)}</div>
+                    <div class="epic-meta">
+                        ${epic.status ? `<span>Status: ${escapeHtml(epic.status)}</span>` : ''}
+                        ${epic.size ? `<span>Size: ${escapeHtml(epic.size)}</span>` : ''}
+                        ${epic.initiative_beesip ? `<span>Initiative: ${escapeHtml(epic.initiative_beesip)}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // ===========================================
+        // RISKS
+        // ===========================================
+        
+        async function loadRisks() {
+            try {
+                const response = await fetch(`${API_BASE}/confluence/risks`);
+                risks = await response.json();
+                renderRisks();
+            } catch (error) {
+                console.error('Error loading risks:', error);
+            }
+        }
+        
+        function renderRisks() {
+            const container = document.getElementById('risks-list');
+            
+            document.getElementById('count-risks').textContent = risks.length;
+            
+            if (risks.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state-work">
+                        <div class="empty-icon">✅</div>
+                        <p>Nenhum risco ativo</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = risks.map(risk => `
+                <div class="risk-card" onclick="openJira('${risk.jira_url || ''}')">
+                    <div class="risk-info">
+                        <div class="risk-id">${escapeHtml(risk.beescad_id)}</div>
+                        <div class="risk-title">${escapeHtml(risk.title)}</div>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        ${risk.priority ? `<span class="priority-tag ${getPriorityClass(risk.priority)}">${escapeHtml(risk.priority)}</span>` : ''}
+                        ${risk.gut_score ? `<span class="gut-score">GUT: ${risk.gut_score}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // ===========================================
+        // BUGS
+        // ===========================================
+        
+        async function loadBugs() {
+            try {
+                const url = currentTeamFilter === 'all' 
+                    ? `${API_BASE}/confluence/bugs`
+                    : `${API_BASE}/confluence/bugs?team=${currentTeamFilter}`;
+                    
+                const response = await fetch(url);
+                bugs = await response.json();
+                renderBugs();
+            } catch (error) {
+                console.error('Error loading bugs:', error);
+            }
+        }
+        
+        function renderBugs() {
+            const container = document.getElementById('bugs-list');
+            const filtered = filterByTeam(bugs);
+            
+            document.getElementById('count-bugs').textContent = filtered.length;
+            
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state-work">
+                        <div class="empty-icon">🎉</div>
+                        <p>Nenhum bug ativo</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filtered.map(bug => `
+                <div class="bug-card" onclick="openJira('${bug.jira_url || ''}')">
+                    <div class="bug-info">
+                        <div class="bug-id">${escapeHtml(bug.beescad_id)}</div>
+                        <div class="bug-title">${escapeHtml(bug.title)}</div>
+                    </div>
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        ${bug.team ? `<span style="color: var(--text-muted); font-size: 0.75rem;">${escapeHtml(bug.team)}</span>` : ''}
+                        ${bug.priority ? `<span class="priority-tag ${getPriorityClass(bug.priority)}">${escapeHtml(bug.priority)}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // ===========================================
+        // SYNC STATUS
+        // ===========================================
+        
+        async function loadSyncStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/confluence/sync/status`);
+                const status = await response.json();
+                
+                if (status.completed_at) {
+                    const date = new Date(status.completed_at);
+                    document.getElementById('last-sync').textContent = 
+                        `Última sync: ${formatDateTime(status.completed_at)}`;
+                }
+            } catch (error) {
+                console.log('Sync status not available');
+            }
+        }
+        
+        async function syncConfluence() {
+            const btn = document.getElementById('btn-sync');
+            btn.classList.add('syncing');
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch(`${API_BASE}/confluence/sync`, { method: 'POST' });
+                const result = await response.json();
+                
+                if (result.status === 'completed') {
+                    showNotification('Sincronização concluída! ' + result.items_synced + ' items atualizados.');
+                    loadAllWorkData();
+                } else {
+                    showNotification('Erro na sincronização: ' + (result.error || 'Unknown error'), 'error');
+                }
+            } catch (error) {
+                showNotification('Erro na sincronização', 'error');
+                console.error('Sync error:', error);
+            } finally {
+                btn.classList.remove('syncing');
+                btn.disabled = false;
+            }
+        }
+        
+        // ===========================================
+        // STATS
+        // ===========================================
+        
+        function updateStats() {
+            document.getElementById('stat-initiatives').textContent = initiatives.length;
+            document.getElementById('stat-epics').textContent = epics.length;
+            document.getElementById('stat-sprints').textContent = sprints.length;
+            document.getElementById('stat-risks').textContent = risks.length;
+            document.getElementById('stat-bugs').textContent = bugs.length;
+        }
+        
+        // ===========================================
+        // TAB NAVIGATION
+        // ===========================================
+        
+        function setupTabNavigation() {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const tab = btn.dataset.tab;
+                    
+                    // Update buttons
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    
+                    // Update content
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    document.getElementById(`tab-${tab}`).classList.add('active');
+                    
+                    currentTab = tab;
+                });
+            });
+        }
+        
+        // ===========================================
+        // TEAM FILTER
+        // ===========================================
+        
+        function setupTeamFilter() {
+            document.querySelectorAll('.team-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const team = chip.dataset.team;
+                    
+                    // Update chips
+                    document.querySelectorAll('.team-chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    
+                    currentTeamFilter = team;
+                    
+                    // Reload filtered data
+                    loadInitiatives();
+                    loadBugs();
+                });
+            });
+        }
+        
+        function filterByTeam(items) {
+            if (currentTeamFilter === 'all') return items;
+            return items.filter(item => 
+                item.team && item.team.toUpperCase().includes(currentTeamFilter.toUpperCase())
+            );
+        }
+        
+        // ===========================================
+        // UTILITIES
+        // ===========================================
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+        }
+        
+        function formatDateTime(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('pt-BR', { 
+                day: '2-digit', 
+                month: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        function getStatusClass(status) {
+            if (!status) return '';
+            const s = status.toLowerCase();
+            if (s.includes('done') || s.includes('complete')) return 'done';
+            if (s.includes('progress') || s.includes('doing')) return 'in-progress';
+            if (s.includes('block')) return 'blocked';
+            return 'pending';
+        }
+        
+        function getPriorityClass(priority) {
+            if (!priority) return 'medium';
+            const p = priority.toLowerCase();
+            if (p.includes('highest') || p.includes('critical')) return 'highest';
+            if (p.includes('high')) return 'high';
+            if (p.includes('low')) return 'low';
+            return 'medium';
+        }
+        
+        function openJira(url) {
+            if (url) {
+                window.open(url, '_blank');
+            }
+        }
+        
+        function showNotification(message, type = 'success') {
+            const existing = document.querySelector('.toast-notification');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                padding: 12px 24px;
+                background: ${type === 'error' ? '#ef4444' : 'var(--bg-card)'};
+                color: ${type === 'error' ? 'white' : 'var(--text-primary)'};
+                border-radius: var(--radius-md);
+                border-left: 3px solid ${type === 'error' ? '#b91c1c' : 'var(--accent-primary)'};
+                box-shadow: var(--shadow-lg);
+                z-index: 1000;
+                animation: slideUp 0.3s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.remove(), 4000);
+        }
+    </script>
+</body>
+</html>

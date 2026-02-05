@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0d1117">
+    <title>Portfolio - Centro de Controle</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        const AUTH_HASH = 'f379eaffb6d3420d190c693e60b4e0c50f018cca3ec9c9bea2ca3ee069ae1f4d';
+        if (sessionStorage.getItem('auth_token') !== AUTH_HASH) {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <style>
+        /* Portfolio Page Styles */
+        .portfolio-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-xl);
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+        }
+        
+        .portfolio-header h1 {
+            font-size: 1.75rem;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .portfolio-filters {
+            display: flex;
+            gap: var(--spacing-sm);
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            background: var(--bg-glass);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius-full);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-size: 0.875rem;
+        }
+        
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: var(--accent-primary);
+            color: white;
+            border-color: var(--accent-primary);
+        }
+        
+        /* Portfolio Stats */
+        .portfolio-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .stat-card {
+            background: var(--bg-glass);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            text-align: center;
+            border-left: 3px solid var(--accent-primary);
+        }
+        
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        
+        .stat-card .stat-label {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        
+        .stat-card.high .stat-value { color: #ef4444; }
+        .stat-card.active .stat-value { color: #22c55e; }
+        .stat-card.progress .stat-value { color: #eab308; }
+        
+        /* Projects Grid */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: var(--spacing-lg);
+        }
+        
+        .project-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: all var(--transition-fast);
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .project-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            border-color: var(--accent-primary);
+        }
+        
+        .project-card.high-priority {
+            border-left: 4px solid #ef4444;
+        }
+        
+        .project-card-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .project-card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .project-card-title .priority-badge {
+            font-size: 0.75rem;
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+        }
+        
+        .project-card-description {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .project-card-body {
+            padding: var(--spacing-lg);
+        }
+        
+        .project-progress-section {
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .project-progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .project-progress-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        
+        .project-progress-value {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .project-progress-bar {
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .project-progress-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .project-meta {
+            display: flex;
+            gap: var(--spacing-md);
+            flex-wrap: wrap;
+        }
+        
+        .project-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        
+        .project-meta-item .icon {
+            font-size: 1rem;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-badge.active {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+        
+        .status-badge.paused {
+            background: rgba(234, 179, 8, 0.2);
+            color: #eab308;
+        }
+        
+        .status-badge.completed {
+            background: rgba(99, 102, 241, 0.2);
+            color: #6366f1;
+        }
+        
+        /* Project Card Footer */
+        .project-card-footer {
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .project-meetings {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        
+        .project-action {
+            font-size: 0.75rem;
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+        
+        .project-action:hover {
+            text-decoration: underline;
+        }
+        
+        /* Empty State */
+        .empty-portfolio {
+            text-align: center;
+            padding: var(--spacing-xl) * 2;
+            color: var(--text-muted);
+        }
+        
+        .empty-portfolio h3 {
+            font-size: 1.25rem;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-secondary);
+        }
+        
+        /* Back Button */
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            padding: 8px 16px;
+            background: var(--bg-glass);
+            border-radius: var(--radius-md);
+            transition: all var(--transition-fast);
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .back-btn:hover {
+            background: var(--bg-glass-hover);
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <h1 class="logo">Centro de Controle</h1>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <a href="index.html" class="back-btn">
+            <span>←</span> Voltar
+        </a>
+        
+        <div class="portfolio-header">
+            <h1>
+                <span>💼</span> Portfolio de Projetos
+            </h1>
+            <div class="portfolio-filters">
+                <button class="filter-btn active" onclick="filterProjects('all')">Todos</button>
+                <button class="filter-btn" onclick="filterProjects('active')">Ativos</button>
+                <button class="filter-btn" onclick="filterProjects('high')">Alta Prioridade</button>
+            </div>
+        </div>
+        
+        <div class="portfolio-stats" id="portfolio-stats">
+            <!-- Stats populated by JS -->
+        </div>
+        
+        <div class="projects-grid" id="projects-grid">
+            <p class="empty-state">Carregando projetos...</p>
+        </div>
+    </main>
+
+    <script>
+        const isGitHubPages = window.location.hostname.includes('github.io');
+        const API_BASE = isGitHubPages 
+            ? 'https://srv1315519.hstgr.cloud/api' 
+            : '/api';
+        
+        let allProjects = [];
+        let workProjectsData = {};
+        let currentFilter = 'all';
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadPortfolio();
+        });
+        
+        async function loadPortfolio() {
+            try {
+                // Load database projects
+                const projectsResponse = await fetch(`${API_BASE}/projects`);
+                const projects = await projectsResponse.json();
+                
+                // Filter work projects
+                allProjects = projects.filter(p => p.category === 'trabalho');
+                
+                // Load work project details for each
+                await Promise.all(allProjects.map(async (project) => {
+                    try {
+                        const slug = project.name.toLowerCase().replace(/\s+/g, '-');
+                        const detailResponse = await fetch(`${API_BASE}/work-projects/${slug}`);
+                        if (detailResponse.ok) {
+                            workProjectsData[project.id] = await detailResponse.json();
+                        }
+                    } catch (e) {
+                        // Work project detail not available
+                    }
+                }));
+                
+                renderStats();
+                renderProjects();
+            } catch (error) {
+                console.error('Error loading portfolio:', error);
+                document.getElementById('projects-grid').innerHTML = 
+                    '<p class="empty-state">Erro ao carregar projetos</p>';
+            }
+        }
+        
+        function renderStats() {
+            const total = allProjects.length;
+            const active = allProjects.filter(p => p.status === 'active').length;
+            const highPriority = allProjects.filter(p => p.priority === 'high').length;
+            const avgProgress = total > 0 
+                ? Math.round(allProjects.reduce((sum, p) => sum + (p.progress || 0), 0) / total)
+                : 0;
+            
+            document.getElementById('portfolio-stats').innerHTML = `
+                <div class="stat-card">
+                    <div class="stat-value">${total}</div>
+                    <div class="stat-label">Total de Projetos</div>
+                </div>
+                <div class="stat-card active">
+                    <div class="stat-value">${active}</div>
+                    <div class="stat-label">Projetos Ativos</div>
+                </div>
+                <div class="stat-card high">
+                    <div class="stat-value">${highPriority}</div>
+                    <div class="stat-label">Alta Prioridade</div>
+                </div>
+                <div class="stat-card progress">
+                    <div class="stat-value">${avgProgress}%</div>
+                    <div class="stat-label">Progresso Médio</div>
+                </div>
+            `;
+        }
+        
+        function renderProjects() {
+            let filteredProjects = allProjects;
+            
+            if (currentFilter === 'active') {
+                filteredProjects = allProjects.filter(p => p.status === 'active');
+            } else if (currentFilter === 'high') {
+                filteredProjects = allProjects.filter(p => p.priority === 'high');
+            }
+            
+            const container = document.getElementById('projects-grid');
+            
+            if (filteredProjects.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-portfolio">
+                        <h3>Nenhum projeto encontrado</h3>
+                        <p>Crie um projeto de trabalho para começar.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = filteredProjects.map(project => {
+                const workData = workProjectsData[project.id] || {};
+                const meetingsCount = workData.meeting_notes ? workData.meeting_notes.length : 0;
+                const sectionsCount = workData.sections ? workData.sections.length : 0;
+                
+                return `
+                    <div class="project-card ${project.priority === 'high' ? 'high-priority' : ''}"
+                         onclick="window.location.href='project.html?id=${project.id}'">
+                        <div class="project-card-header">
+                            <div class="project-card-title">
+                                ${escapeHtml(project.name)}
+                                ${project.priority === 'high' ? '<span class="priority-badge">Alta</span>' : ''}
+                            </div>
+                            <div class="project-card-description">
+                                ${escapeHtml(project.description || workData.overview?.definition || 'Sem descrição')}
+                            </div>
+                        </div>
+                        <div class="project-card-body">
+                            <div class="project-progress-section">
+                                <div class="project-progress-header">
+                                    <span class="project-progress-label">Progresso</span>
+                                    <span class="project-progress-value">${project.progress || 0}%</span>
+                                </div>
+                                <div class="project-progress-bar">
+                                    <div class="project-progress-fill" style="width: ${project.progress || 0}%"></div>
+                                </div>
+                            </div>
+                            <div class="project-meta">
+                                <span class="status-badge ${project.status}">
+                                    ${project.status === 'active' ? 'Ativo' : 
+                                      project.status === 'paused' ? 'Pausado' : 'Concluído'}
+                                </span>
+                                ${sectionsCount > 0 ? `
+                                    <div class="project-meta-item">
+                                        <span class="icon">📄</span>
+                                        <span>${sectionsCount} seções</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+                        <div class="project-card-footer">
+                            <span class="project-meetings">
+                                ${meetingsCount > 0 ? `📅 ${meetingsCount} reuniões` : 'Sem reuniões'}
+                            </span>
+                            <span class="project-action">Ver detalhes →</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function filterProjects(filter) {
+            currentFilter = filter;
+            
+            // Update filter buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            renderProjects();
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>

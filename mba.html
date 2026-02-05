@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0d1117">
+    <meta name="description" content="Centro de Controle - MBA Inteli">
+    <title>🎓 MBA - Centro de Controle</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="manifest" href="manifest.json">
+    <!-- Inter Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Auth Check -->
+    <script>
+        const AUTH_HASH = 'f379eaffb6d3420d190c693e60b4e0c50f018cca3ec9c9bea2ca3ee069ae1f4d';
+        if (sessionStorage.getItem('auth_token') !== AUTH_HASH) {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <style>
+        /* MBA Page Specific Styles */
+        .mba-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .mba-user-info {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+        
+        .mba-user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .mba-user-name {
+            font-weight: 600;
+        }
+        
+        .mba-user-email {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        
+        .sync-info {
+            text-align: right;
+        }
+        
+        .sync-time {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+        
+        .turma-tabs {
+            display: flex;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            overflow-x: auto;
+            padding-bottom: var(--spacing-sm);
+        }
+        
+        .turma-tab {
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: var(--bg-glass);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: var(--radius-lg);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all var(--transition-fast);
+            color: var(--text-secondary);
+        }
+        
+        .turma-tab:hover {
+            background: var(--bg-glass-hover);
+            border-color: var(--accent-primary);
+        }
+        
+        .turma-tab.active {
+            background: var(--gradient-primary);
+            border-color: transparent;
+            color: white;
+        }
+        
+        .turma-tab .tab-name {
+            font-weight: 600;
+            display: block;
+        }
+        
+        .turma-tab .tab-info {
+            font-size: 0.75rem;
+            opacity: 0.8;
+        }
+        
+        .turma-content {
+            display: none;
+        }
+        
+        .turma-content.active {
+            display: block;
+        }
+        
+        .turma-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .turma-info-card {
+            background: var(--bg-glass);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .turma-info-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .turma-info-value {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+        
+        .turma-info-value a {
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+        
+        .turma-info-value a:hover {
+            text-decoration: underline;
+        }
+        
+        .semana-card {
+            background: var(--bg-card);
+            border-radius: var(--radius-xl);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            margin-bottom: var(--spacing-lg);
+            overflow: hidden;
+        }
+        
+        .semana-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--spacing-lg);
+            background: rgba(255, 255, 255, 0.02);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        
+        .semana-header:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+        
+        .semana-title {
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .semana-status {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+        
+        .status-badge {
+            padding: var(--spacing-xs) var(--spacing-md);
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .status-badge.em_andamento {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+        }
+        
+        .status-badge.futuro {
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+        }
+        
+        .status-badge.concluido {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+        
+        .semana-toggle {
+            font-size: 1.25rem;
+            transition: transform var(--transition-fast);
+        }
+        
+        .semana-card.expanded .semana-toggle {
+            transform: rotate(180deg);
+        }
+        
+        .semana-body {
+            display: none;
+            padding: var(--spacing-lg);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .semana-card.expanded .semana-body {
+            display: block;
+        }
+        
+        .atividades-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-lg);
+        }
+        
+        @media (max-width: 992px) {
+            .atividades-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .atividades-column {
+            background: var(--bg-glass);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-md);
+        }
+        
+        .column-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .column-title.a-fazer { color: #ef4444; }
+        .column-title.fazendo { color: #f59e0b; }
+        .column-title.feito { color: #10b981; }
+        
+        .atividade-item {
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-sm);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            transition: all var(--transition-fast);
+            cursor: pointer;
+        }
+        
+        .atividade-item:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .atividade-item.em-breve {
+            opacity: 0.6;
+            border-left: 3px solid var(--text-muted);
+        }
+        
+        .atividade-titulo {
+            font-weight: 500;
+            font-size: 0.9rem;
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .atividade-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-sm);
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        
+        .atividade-professor {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .atividade-data {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .atividade-tags {
+            display: flex;
+            gap: var(--spacing-xs);
+            margin-top: var(--spacing-sm);
+        }
+        
+        .atividade-tag {
+            padding: 2px 8px;
+            border-radius: var(--radius-sm);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        
+        .atividade-tag.obrigatoria {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+        
+        .atividade-tag.material {
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+        }
+        
+        .atividade-tag.video {
+            background: rgba(139, 92, 246, 0.15);
+            color: #c4b5fd;
+        }
+        
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.875rem;
+            margin-bottom: var(--spacing-lg);
+            transition: color var(--transition-fast);
+        }
+        
+        .back-link:hover {
+            color: var(--text-primary);
+        }
+        
+        .resumo-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        @media (max-width: 768px) {
+            .resumo-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .resumo-stat {
+            text-align: center;
+            padding: var(--spacing-lg);
+            background: var(--bg-glass);
+            border-radius: var(--radius-lg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .resumo-stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            font-family: var(--font-mono);
+        }
+        
+        .resumo-stat-number.pendentes { color: #ef4444; }
+        .resumo-stat-number.andamento { color: #f59e0b; }
+        .resumo-stat-number.concluidas { color: #10b981; }
+        .resumo-stat-number.turmas { color: #6366f1; }
+        
+        .resumo-stat-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .proximos-prazos {
+            margin-top: var(--spacing-xl);
+        }
+        
+        .prazo-item {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            padding: var(--spacing-md);
+            background: var(--bg-glass);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-sm);
+            border-left: 3px solid var(--status-todo);
+        }
+        
+        .prazo-data {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--accent-primary);
+            min-width: 100px;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background: rgba(99, 102, 241, 0.1);
+            border-radius: var(--radius-sm);
+            text-align: center;
+        }
+        
+        .prazo-info {
+            flex: 1;
+        }
+        
+        .prazo-titulo {
+            font-weight: 500;
+        }
+        
+        .prazo-turma {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+        
+        .empty-atividades {
+            color: var(--text-muted);
+            text-align: center;
+            padding: var(--spacing-lg);
+            font-size: 0.875rem;
+        }
+        
+        /* Modal de Atividade */
+        .atividade-modal-content {
+            max-width: 600px;
+        }
+        
+        .atividade-modal-body {
+            padding: var(--spacing-lg);
+        }
+        
+        .atividade-detail {
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .atividade-detail-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .atividade-detail-value {
+            font-size: 0.95rem;
+        }
+        
+        .material-link {
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-md);
+            background: var(--gradient-primary);
+            color: white;
+            border-radius: var(--radius-md);
+            text-decoration: none;
+            font-weight: 500;
+            margin-top: var(--spacing-sm);
+            transition: all var(--transition-fast);
+        }
+        
+        .material-link:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-glow);
+        }
+        
+        .videoaulas-list {
+            max-height: 300px;
+            overflow-y: auto;
+            background: var(--bg-glass);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+        }
+        
+        .videoaula-item {
+            padding: var(--spacing-sm) var(--spacing-md);
+            border-radius: var(--radius-sm);
+            margin-bottom: var(--spacing-xs);
+            font-size: 0.85rem;
+            background: var(--bg-secondary);
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="logo">🎓 MBA Inteli</h1>
+            <div class="header-date" id="current-date"></div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content" style="display: block; max-width: 1200px;">
+        <!-- Back Link -->
+        <a href="index.html" class="back-link">← Voltar ao Centro de Controle</a>
+        
+        <!-- MBA Header -->
+        <div class="mba-header">
+            <div class="mba-user-info">
+                <div class="mba-user-avatar">👤</div>
+                <div>
+                    <div class="mba-user-name" id="user-name">Carregando...</div>
+                    <div class="mba-user-email" id="user-email"></div>
+                </div>
+            </div>
+            <div class="sync-info">
+                <button class="btn-primary" onclick="syncAdalove()">🔄 Sincronizar</button>
+                <div class="sync-time" id="last-sync">Ultima sync: --</div>
+            </div>
+        </div>
+        
+        <!-- Resumo Stats -->
+        <div class="resumo-stats">
+            <div class="resumo-stat">
+                <div class="resumo-stat-number pendentes" id="stat-pendentes">0</div>
+                <div class="resumo-stat-label">Pendentes</div>
+            </div>
+            <div class="resumo-stat">
+                <div class="resumo-stat-number andamento" id="stat-andamento">0</div>
+                <div class="resumo-stat-label">Em Andamento</div>
+            </div>
+            <div class="resumo-stat">
+                <div class="resumo-stat-number concluidas" id="stat-concluidas">0</div>
+                <div class="resumo-stat-label">Concluidas</div>
+            </div>
+            <div class="resumo-stat">
+                <div class="resumo-stat-number turmas" id="stat-turmas">0</div>
+                <div class="resumo-stat-label">Turmas</div>
+            </div>
+        </div>
+        
+        <!-- Turma Tabs -->
+        <div class="turma-tabs" id="turma-tabs">
+            <!-- Populated by JS -->
+        </div>
+        
+        <!-- Turmas Content -->
+        <div id="turmas-content">
+            <!-- Populated by JS -->
+        </div>
+        
+        <!-- Proximos Prazos -->
+        <section class="card proximos-prazos">
+            <div class="card-header">
+                <h2>⏰ Proximos Prazos</h2>
+            </div>
+            <div class="card-body" id="prazos-list">
+                <p class="empty-state">Carregando...</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- ATIVIDADE MODAL -->
+    <div class="modal" id="atividade-modal">
+        <div class="modal-content atividade-modal-content">
+            <div class="modal-header">
+                <h3 id="atividade-modal-title">Detalhes da Atividade</h3>
+                <button class="btn-close" onclick="closeAtividadeModal()">✕</button>
+            </div>
+            <div class="atividade-modal-body" id="atividade-modal-body">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="js/api.js"></script>
+    <script>
+        // ============================================
+        // MBA PAGE - Main Script
+        // ============================================
+        
+        let adaloveData = null;
+        let currentTurmaIndex = 0;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            updateCurrentDate();
+            loadAdaloveData();
+        });
+        
+        function updateCurrentDate() {
+            const dateEl = document.getElementById('current-date');
+            const options = { weekday: 'long', day: 'numeric', month: 'long' };
+            const today = new Date().toLocaleDateString('pt-BR', options);
+            dateEl.textContent = today.charAt(0).toUpperCase() + today.slice(1);
+        }
+        
+        async function loadAdaloveData() {
+            try {
+                const response = await fetch(`${API_BASE}/mba/data`);
+                if (response.ok) {
+                    adaloveData = await response.json();
+                } else {
+                    // Fallback: tentar carregar dados locais
+                    console.log('API indisponivel, usando dados estaticos');
+                    adaloveData = getStaticData();
+                }
+                renderPage();
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+                adaloveData = getStaticData();
+                renderPage();
+            }
+        }
+        
+        function getStaticData() {
+            // Dados estaticos como fallback
+            return {
+                last_sync: "2026-02-05T14:30:00Z",
+                user: {
+                    name: "Fabio Oliveira",
+                    email: "fabio.oliveira@mba.inteli.edu.br"
+                },
+                turmas: [
+                    {
+                        id: "2026-1A-T30-P",
+                        nome: "MBA IA - TURMA 1 - 2026.1A",
+                        tipo: "MBA",
+                        orientador: "Victor Machado da Silva",
+                        inicio: "2026-02-02",
+                        nota_acumulada: 0.0,
+                        grupo: "G08",
+                        drive_link: "https://drive.google.com/drive/folders/1GiXHZhR85GdBu-pX_hvxuqgSEvizoPkS?usp=sharing",
+                        semanas: [
+                            {
+                                numero: 1,
+                                status: "em_andamento",
+                                atividades: {
+                                    a_fazer: [
+                                        { titulo: "Material Encontro Orientacao 02/02", professor: "Murilo Zanini", data: "02/02/2026 - 19:00h", tipo: "Material" },
+                                        { titulo: "Gravacao Encontro Orientacao 02/02", professor: "Murilo Zanini", data: "03/02/2026 - 19:00h", tipo: "Gravacao" }
+                                    ],
+                                    fazendo: [
+                                        { titulo: "Business Case - Modulo 1", professor: "Victor Machado", tipo: "Autoestudo", link_material: "https://drive.google.com/file/d/1-iRPDWsDe3hODeie4GVtbksUYaih6rIg/view" }
+                                    ],
+                                    feito: [
+                                        { titulo: "Calendario Academico", data: "30/01/2026" },
+                                        { titulo: "Material Onboarding Alunos", data: "30/01/2026" },
+                                        { titulo: "Gravacao Aula Inaugural", data: "31/01/2026" }
+                                    ]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        id: "2026-1A-T33-P",
+                        nome: "Eletiva Data Engineering - 2026.1A",
+                        tipo: "Eletiva",
+                        orientador: "Afonso Cesar Lelis Brandao",
+                        inicio: "2026-02-02",
+                        drive_link: "https://drive.google.com/drive/folders/1jqzjSXhn71qNEAB1fsWYX6fbBcbfgOAw?usp=sharing",
+                        semanas: [
+                            {
+                                numero: 1,
+                                nome: "Data Engineering",
+                                status: "em_andamento",
+                                atividades: {
+                                    a_fazer: [
+                                        { titulo: "Videoaulas - Eletiva Data Engineering", professor: "Afonso Brandao", tipo: "Autoestudo", obrigatoria: true },
+                                        { titulo: "Material Professor - Eletiva Data Engineering", professor: "Afonso Brandao", tipo: "Material", obrigatoria: true }
+                                    ],
+                                    fazendo: [],
+                                    feito: []
+                                }
+                            }
+                        ]
+                    }
+                ],
+                resumo: {
+                    total_pendentes: 8,
+                    total_em_andamento: 1,
+                    total_concluidas: 5,
+                    proximos_prazos: [
+                        { atividade: "Material Encontro Orientacao 02/02", data: "02/02/2026 - 19:00h", turma: "MBA IA" },
+                        { atividade: "Gravacao Encontro Orientacao 02/02", data: "03/02/2026 - 19:00h", turma: "MBA IA" }
+                    ]
+                }
+            };
+        }
+        
+        function renderPage() {
+            if (!adaloveData) return;
+            
+            // User info
+            document.getElementById('user-name').textContent = adaloveData.user.name;
+            document.getElementById('user-email').textContent = adaloveData.user.email;
+            
+            // Last sync
+            const lastSync = new Date(adaloveData.last_sync);
+            document.getElementById('last-sync').textContent = `Ultima sync: ${lastSync.toLocaleString('pt-BR')}`;
+            
+            // Stats
+            const resumo = adaloveData.resumo || calculateResumo();
+            document.getElementById('stat-pendentes').textContent = resumo.total_pendentes;
+            document.getElementById('stat-andamento').textContent = resumo.total_em_andamento;
+            document.getElementById('stat-concluidas').textContent = resumo.total_concluidas;
+            document.getElementById('stat-turmas').textContent = adaloveData.turmas.length;
+            
+            // Render tabs
+            renderTurmaTabs();
+            
+            // Render turmas content
+            renderTurmasContent();
+            
+            // Render prazos
+            renderPrazos(resumo.proximos_prazos || []);
+        }
+        
+        function calculateResumo() {
+            let pendentes = 0, andamento = 0, concluidas = 0;
+            const prazos = [];
+            
+            adaloveData.turmas.forEach(turma => {
+                turma.semanas.forEach(semana => {
+                    pendentes += (semana.atividades.a_fazer || []).length;
+                    andamento += (semana.atividades.fazendo || []).length;
+                    concluidas += (semana.atividades.feito || []).length;
+                    
+                    (semana.atividades.a_fazer || []).forEach(atv => {
+                        if (atv.data) {
+                            prazos.push({
+                                atividade: atv.titulo,
+                                data: atv.data,
+                                turma: turma.nome.split(' - ')[0]
+                            });
+                        }
+                    });
+                });
+            });
+            
+            return {
+                total_pendentes: pendentes,
+                total_em_andamento: andamento,
+                total_concluidas: concluidas,
+                proximos_prazos: prazos.slice(0, 5)
+            };
+        }
+        
+        function renderTurmaTabs() {
+            const container = document.getElementById('turma-tabs');
+            container.innerHTML = adaloveData.turmas.map((turma, index) => {
+                const shortName = turma.tipo === 'MBA' ? 'MBA IA' : 'Data Engineering';
+                const pendentes = turma.semanas.reduce((acc, s) => acc + (s.atividades.a_fazer || []).length, 0);
+                
+                return `
+                    <div class="turma-tab ${index === currentTurmaIndex ? 'active' : ''}" onclick="switchTurma(${index})">
+                        <span class="tab-name">${shortName}</span>
+                        <span class="tab-info">${pendentes} pendentes</span>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function switchTurma(index) {
+            currentTurmaIndex = index;
+            renderTurmaTabs();
+            
+            // Toggle content visibility
+            document.querySelectorAll('.turma-content').forEach((el, i) => {
+                el.classList.toggle('active', i === index);
+            });
+        }
+        
+        function renderTurmasContent() {
+            const container = document.getElementById('turmas-content');
+            container.innerHTML = adaloveData.turmas.map((turma, turmaIndex) => {
+                return `
+                    <div class="turma-content ${turmaIndex === currentTurmaIndex ? 'active' : ''}" data-turma="${turmaIndex}">
+                        <!-- Turma Info -->
+                        <div class="turma-info-grid">
+                            <div class="turma-info-card">
+                                <div class="turma-info-label">Orientador</div>
+                                <div class="turma-info-value">${escapeHtml(turma.orientador)}</div>
+                            </div>
+                            <div class="turma-info-card">
+                                <div class="turma-info-label">Inicio</div>
+                                <div class="turma-info-value">${turma.inicio || '--'}</div>
+                            </div>
+                            ${turma.grupo ? `
+                            <div class="turma-info-card">
+                                <div class="turma-info-label">Grupo</div>
+                                <div class="turma-info-value">${turma.grupo}</div>
+                            </div>
+                            ` : ''}
+                            <div class="turma-info-card">
+                                <div class="turma-info-label">Google Drive</div>
+                                <div class="turma-info-value">
+                                    <a href="${turma.drive_link}" target="_blank">📁 Abrir Drive</a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Semanas -->
+                        ${turma.semanas.map((semana, semanaIndex) => renderSemana(turma, semana, turmaIndex, semanaIndex)).join('')}
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderSemana(turma, semana, turmaIndex, semanaIndex) {
+            const aFazer = semana.atividades.a_fazer || [];
+            const fazendo = semana.atividades.fazendo || [];
+            const feito = semana.atividades.feito || [];
+            const total = aFazer.length + fazendo.length + feito.length;
+            const pendentes = aFazer.length + fazendo.length;
+            const isExpanded = semana.status === 'em_andamento';
+            
+            const statusLabels = {
+                'em_andamento': 'Em Andamento',
+                'futuro': 'Futuro',
+                'concluido': 'Concluido'
+            };
+            
+            return `
+                <div class="semana-card ${isExpanded ? 'expanded' : ''}" data-semana="${semanaIndex}">
+                    <div class="semana-header" onclick="toggleSemana(this)">
+                        <div class="semana-title">
+                            📅 Semana ${semana.numero}${semana.nome ? ' - ' + semana.nome : ''}
+                        </div>
+                        <div class="semana-status">
+                            <span class="status-badge ${semana.status}">${statusLabels[semana.status] || semana.status}</span>
+                            <span style="color: var(--text-muted); font-size: 0.8rem;">
+                                ${pendentes > 0 ? pendentes + ' pendentes' : 'Todas concluidas'}
+                            </span>
+                            <span class="semana-toggle">▼</span>
+                        </div>
+                    </div>
+                    <div class="semana-body">
+                        <div class="atividades-grid">
+                            <!-- A Fazer -->
+                            <div class="atividades-column">
+                                <div class="column-title a-fazer">🔴 A Fazer (${aFazer.length})</div>
+                                ${aFazer.length > 0 ? aFazer.map((atv, i) => renderAtividade(atv, turmaIndex, semanaIndex, 'a_fazer', i)).join('') : '<div class="empty-atividades">Nenhuma</div>'}
+                            </div>
+                            
+                            <!-- Fazendo -->
+                            <div class="atividades-column">
+                                <div class="column-title fazendo">🟡 Fazendo (${fazendo.length})</div>
+                                ${fazendo.length > 0 ? fazendo.map((atv, i) => renderAtividade(atv, turmaIndex, semanaIndex, 'fazendo', i)).join('') : '<div class="empty-atividades">Nenhuma</div>'}
+                            </div>
+                            
+                            <!-- Feito -->
+                            <div class="atividades-column">
+                                <div class="column-title feito">🟢 Feito (${feito.length})</div>
+                                ${feito.length > 0 ? feito.map((atv, i) => renderAtividade(atv, turmaIndex, semanaIndex, 'feito', i)).join('') : '<div class="empty-atividades">Nenhuma</div>'}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderAtividade(atv, turmaIndex, semanaIndex, status, atvIndex) {
+            const isEmBreve = atv.em_breve || atv.titulo.includes('EM BREVE');
+            
+            return `
+                <div class="atividade-item ${isEmBreve ? 'em-breve' : ''}" onclick="openAtividade(${turmaIndex}, ${semanaIndex}, '${status}', ${atvIndex})">
+                    <div class="atividade-titulo">${escapeHtml(atv.titulo)}</div>
+                    <div class="atividade-meta">
+                        ${atv.professor ? `<span class="atividade-professor">👤 ${escapeHtml(atv.professor)}</span>` : ''}
+                        ${atv.data ? `<span class="atividade-data">📅 ${atv.data}</span>` : ''}
+                    </div>
+                    <div class="atividade-tags">
+                        ${atv.obrigatoria ? '<span class="atividade-tag obrigatoria">Obrigatoria</span>' : ''}
+                        ${atv.tipo === 'Material' ? '<span class="atividade-tag material">Material</span>' : ''}
+                        ${atv.tipo === 'Gravacao' ? '<span class="atividade-tag video">Video</span>' : ''}
+                        ${atv.tipo === 'Autoestudo' ? '<span class="atividade-tag material">Autoestudo</span>' : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderPrazos(prazos) {
+            const container = document.getElementById('prazos-list');
+            
+            if (!prazos || prazos.length === 0) {
+                container.innerHTML = '<p class="empty-state">Sem prazos proximos 🎉</p>';
+                return;
+            }
+            
+            container.innerHTML = prazos.map(prazo => `
+                <div class="prazo-item">
+                    <span class="prazo-data">${prazo.data}</span>
+                    <div class="prazo-info">
+                        <div class="prazo-titulo">${escapeHtml(prazo.atividade)}</div>
+                        <div class="prazo-turma">${escapeHtml(prazo.turma)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function toggleSemana(header) {
+            const card = header.closest('.semana-card');
+            card.classList.toggle('expanded');
+        }
+        
+        function openAtividade(turmaIndex, semanaIndex, status, atvIndex) {
+            const turma = adaloveData.turmas[turmaIndex];
+            const semana = turma.semanas[semanaIndex];
+            const atv = semana.atividades[status][atvIndex];
+            
+            const modal = document.getElementById('atividade-modal');
+            const body = document.getElementById('atividade-modal-body');
+            
+            let content = `
+                <div class="atividade-detail">
+                    <div class="atividade-detail-label">Titulo</div>
+                    <div class="atividade-detail-value">${escapeHtml(atv.titulo)}</div>
+                </div>
+            `;
+            
+            if (atv.professor) {
+                content += `
+                    <div class="atividade-detail">
+                        <div class="atividade-detail-label">Professor</div>
+                        <div class="atividade-detail-value">${escapeHtml(atv.professor)}</div>
+                    </div>
+                `;
+            }
+            
+            if (atv.data) {
+                content += `
+                    <div class="atividade-detail">
+                        <div class="atividade-detail-label">Data/Prazo</div>
+                        <div class="atividade-detail-value">${atv.data}</div>
+                    </div>
+                `;
+            }
+            
+            if (atv.tipo) {
+                content += `
+                    <div class="atividade-detail">
+                        <div class="atividade-detail-label">Tipo</div>
+                        <div class="atividade-detail-value">${atv.tipo}</div>
+                    </div>
+                `;
+            }
+            
+            if (atv.descricao) {
+                content += `
+                    <div class="atividade-detail">
+                        <div class="atividade-detail-label">Descricao</div>
+                        <div class="atividade-detail-value">${escapeHtml(atv.descricao)}</div>
+                    </div>
+                `;
+            }
+            
+            if (atv.link_material) {
+                content += `
+                    <div class="atividade-detail">
+                        <div class="atividade-detail-label">Material</div>
+                        <a href="${atv.link_material}" target="_blank" class="material-link">
+                            📥 Baixar Material
+                        </a>
+                    </div>
+                `;
+            }
+            
+            if (atv.videoaulas && atv.videoaulas.length > 0) {
+                content += `
+                    <div class="atividade-detail">
+                        <div class="atividade-detail-label">Videoaulas (${atv.videoaulas.length})</div>
+                        <div class="videoaulas-list">
+                            ${atv.videoaulas.map((v, i) => `<div class="videoaula-item">${i + 1}. ${escapeHtml(v)}</div>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            body.innerHTML = content;
+            modal.classList.add('active');
+        }
+        
+        function closeAtividadeModal() {
+            document.getElementById('atividade-modal').classList.remove('active');
+        }
+        
+        async function syncAdalove() {
+            alert('🔄 Sincronizacao iniciada!\n\nA Nova vai escalar para o Cursor (Atlas) para atualizar os dados do Adalove.\n\nIsso pode levar alguns minutos.');
+            
+            try {
+                const response = await fetch(`${API_BASE}/mba/sync`, {
+                    method: 'POST'
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    alert('✅ ' + result.message);
+                    loadAdaloveData();
+                } else {
+                    alert('⚠️ Sincronizacao agendada. Verifique novamente em alguns minutos.');
+                }
+            } catch (error) {
+                console.error('Erro na sincronizacao:', error);
+                alert('⚠️ Nao foi possivel conectar a API. A Nova sera notificada para sincronizar manualmente.');
+            }
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Close modal on backdrop click
+        document.getElementById('atividade-modal').addEventListener('click', (e) => {
+            if (e.target.classList.contains('modal')) {
+                closeAtividadeModal();
+            }
+        });
+        
+        // ESC to close modal
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeAtividadeModal();
+            }
+        });
+    </script>
+</body>
+</html>
