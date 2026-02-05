@@ -338,6 +338,10 @@
         }
         
         /* Document preview */
+        .doc-preview-wrapper {
+            position: relative;
+        }
+        
         .doc-preview-content {
             background: var(--bg-glass);
             padding: var(--spacing-lg);
@@ -346,6 +350,120 @@
             overflow-y: auto;
             font-family: var(--font-family);
             line-height: 1.8;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(99, 102, 241, 0.4) transparent;
+        }
+        
+        .doc-preview-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .doc-preview-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .doc-preview-content::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 4px;
+        }
+        
+        .doc-preview-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.6);
+        }
+        
+        /* Scroll indicator gradient */
+        .doc-preview-wrapper::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(transparent, var(--bg-card));
+            pointer-events: none;
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .doc-preview-wrapper.has-scroll::after {
+            opacity: 1;
+        }
+        
+        /* Fullscreen mode */
+        .fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .fullscreen-overlay.active {
+            display: block;
+        }
+        
+        .fullscreen-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+        }
+        
+        .fullscreen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .fullscreen-header h2 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+        
+        .fullscreen-close {
+            background: var(--bg-glass);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        
+        .fullscreen-close:hover {
+            background: var(--bg-glass-hover);
+            color: var(--text-primary);
+        }
+        
+        .preview-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-icon {
+            background: var(--bg-glass);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-size: 0.875rem;
+        }
+        
+        .btn-icon:hover {
+            background: var(--bg-glass-hover);
+            color: var(--text-primary);
         }
         
         .doc-preview-content h1 { font-size: 1.5rem; margin: 1em 0 0.5em; color: var(--text-primary); }
@@ -591,11 +709,61 @@
         
         <!-- WORK PROJECT OVERVIEW (Hidden by default, shown for work projects) -->
         <div id="work-project-view" style="display:none;">
-            <!-- Overview Card -->
+            <!-- Executive Summary Card -->
+            <section class="card" id="executive-summary-section" style="margin-bottom: var(--spacing-xl); background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05)); border: 1px solid rgba(99, 102, 241, 0.2);">
+                <div class="section-header" style="border-bottom: none; margin-bottom: 0;">
+                    <h2 style="font-size: 1.25rem;">📊 Resumo Executivo</h2>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span class="badge badge-active" id="work-status-badge" style="font-size: 0.75rem;"></span>
+                        <span id="executive-last-update" style="font-size: 0.7rem; color: var(--text-muted);"></span>
+                    </div>
+                </div>
+                <div id="executive-summary-content" style="padding: var(--spacing-md) 0;">
+                    <p id="executive-summary-text" style="color: var(--text-secondary); font-size: 1rem; line-height: 1.7; margin-bottom: var(--spacing-md);">
+                        Carregando resumo...
+                    </p>
+                    <div style="display: flex; gap: var(--spacing-lg); flex-wrap: wrap; margin-top: var(--spacing-md);">
+                        <div id="executive-timeline" class="executive-chip" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full);">
+                            <span>📅</span>
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);"></span>
+                        </div>
+                        <div id="executive-people" class="executive-chip" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full);">
+                            <span>👥</span>
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);"></span>
+                        </div>
+                        <div id="executive-meetings" class="executive-chip" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full);">
+                            <span>📝</span>
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);"></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Quick Stats Row -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-xl);">
+                <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
+                    <div class="number" id="work-docs-count" style="font-size: 1.5rem; color: var(--accent-primary);">-</div>
+                    <div class="label" style="font-size: 0.75rem;">Documentos</div>
+                </div>
+                <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
+                    <div class="number" id="work-meetings-count-stat" style="font-size: 1.5rem; color: #22c55e;">-</div>
+                    <div class="label" style="font-size: 0.75rem;">Reuniões</div>
+                </div>
+                <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
+                    <div class="number" id="work-cases-count" style="font-size: 1.5rem; color: #f59e0b;">-</div>
+                    <div class="label" style="font-size: 0.75rem;">Cases</div>
+                </div>
+                <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
+                    <div class="number" id="work-last-activity" style="font-size: 0.9rem; color: var(--text-secondary);">-</div>
+                    <div class="label" style="font-size: 0.75rem;">Última Atividade</div>
+                </div>
+            </div>
+            
+            <!-- Overview Card (Expanded Details) -->
             <section class="card" id="work-overview-section" style="margin-bottom: var(--spacing-xl);">
-                <div class="section-header">
-                    <h2>📊 Visão Geral</h2>
-                    <span class="badge badge-active" id="work-status-badge"></span>
+                <div class="section-header" style="cursor: pointer;" onclick="toggleSection('work-overview-content')">
+                    <h2>📋 Detalhes do Projeto</h2>
+                    <span style="font-size: 0.875rem; color: var(--text-muted);">▼</span>
                 </div>
                 <div id="work-overview-content">
                     <div class="overview-grid">
@@ -687,11 +855,28 @@
             <section class="card" id="doc-preview-section" style="display:none;">
                 <div class="section-header">
                     <h2 id="preview-title">📄 Documento</h2>
-                    <button class="btn-primary" onclick="closePreview()">✕ Fechar</button>
+                    <div class="preview-actions">
+                        <button class="btn-icon" onclick="openFullscreen()" title="Expandir (F)">⛶ Expandir</button>
+                        <button class="btn-primary" onclick="closePreview()">✕ Fechar</button>
+                    </div>
                 </div>
-                <div id="doc-preview" class="doc-preview-content">
+                <div class="doc-preview-wrapper" id="doc-preview-wrapper">
+                    <div id="doc-preview" class="doc-preview-content">
+                    </div>
                 </div>
             </section>
+            
+            <!-- FULLSCREEN OVERLAY -->
+            <div class="fullscreen-overlay" id="fullscreen-overlay">
+                <div class="fullscreen-content">
+                    <div class="fullscreen-header">
+                        <h2 id="fullscreen-title">📄 Documento</h2>
+                        <button class="fullscreen-close" onclick="closeFullscreen()">✕ Fechar (Esc)</button>
+                    </div>
+                    <div id="fullscreen-content" class="doc-preview-content" style="max-height: none;">
+                    </div>
+                </div>
+            </div>
             
             <!-- DOCS & LINKS -->
             <section class="card">
@@ -1018,15 +1203,23 @@
             };
             
             container.innerHTML = files.map(file => {
-                const modified = new Date(file.modified * 1000);
-                const timeAgo = formatTimeAgo(modified);
+                // Para notas, extrair data do nome do arquivo em vez de usar modified
+                const filenameDate = extractDateFromFilename(file.name);
+                let dateDisplay;
+                
+                if (filenameDate) {
+                    dateDisplay = formatMeetingDate(filenameDate);
+                } else {
+                    const modified = new Date(file.modified * 1000);
+                    dateDisplay = formatTimeAgo(modified);
+                }
                 
                 return `
                     <div class="file-item type-${file.type}" onclick="openFile('${data.slug}/${file.path}')">
                         <span class="file-icon">${icons[file.type] || '📄'}</span>
                         <div class="file-info">
-                            <div class="file-name">${file.name.replace('.md', '')}</div>
-                            <div class="file-meta">${typeLabels[file.type]} • Atualizado ${timeAgo}</div>
+                            <div class="file-name">${file.name.replace('.md', '').replace(/^\d{4}-\d{2}-\d{2}-/, '')}</div>
+                            <div class="file-meta">${typeLabels[file.type]} • ${filenameDate ? dateDisplay : 'Atualizado ' + dateDisplay}</div>
                         </div>
                     </div>
                 `;
@@ -1044,6 +1237,20 @@
             return date.toLocaleDateString('pt-BR');
         }
         
+        function formatMeetingDate(dateStr) {
+            // Formata data de YYYY-MM-DD para "DD Mon"
+            if (!dateStr) return '';
+            const [year, month, day] = dateStr.split('-');
+            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            return `${parseInt(day)} ${months[parseInt(month) - 1]}`;
+        }
+        
+        function extractDateFromFilename(filename) {
+            // Extrai data de arquivos no formato 2026-02-05-titulo.md
+            const match = filename.match(/^(\d{4}-\d{2}-\d{2})-/);
+            return match ? match[1] : null;
+        }
+        
         async function openFile(filePath) {
             try {
                 const response = await fetch(`${API_BASE}/projects/files/${filePath}`);
@@ -1058,12 +1265,29 @@
             }
         }
         
+        let currentPreviewTitle = '';
+        let currentPreviewContent = '';
+        
         function showPreview(title, content) {
+            currentPreviewTitle = title;
+            currentPreviewContent = content;
+            
             document.getElementById('preview-title').textContent = '📄 ' + title;
             
             // Renderizar markdown
             const html = marked.parse(content);
             document.getElementById('doc-preview').innerHTML = html;
+            
+            // Check if content needs scroll indicator
+            setTimeout(() => {
+                const wrapper = document.getElementById('doc-preview-wrapper');
+                const preview = document.getElementById('doc-preview');
+                if (preview.scrollHeight > preview.clientHeight) {
+                    wrapper.classList.add('has-scroll');
+                } else {
+                    wrapper.classList.remove('has-scroll');
+                }
+            }, 100);
             
             // Mostrar seção
             document.getElementById('doc-preview-section').style.display = 'block';
@@ -1073,6 +1297,37 @@
         function closePreview() {
             document.getElementById('doc-preview-section').style.display = 'none';
         }
+        
+        function openFullscreen() {
+            document.getElementById('fullscreen-title').textContent = '📄 ' + currentPreviewTitle;
+            document.getElementById('fullscreen-content').innerHTML = marked.parse(currentPreviewContent);
+            document.getElementById('fullscreen-overlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeFullscreen() {
+            document.getElementById('fullscreen-overlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        // Keyboard shortcuts for preview
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (document.getElementById('fullscreen-overlay').classList.contains('active')) {
+                    closeFullscreen();
+                } else if (document.getElementById('doc-preview-section').style.display !== 'none') {
+                    closePreview();
+                }
+            }
+            if (e.key === 'f' || e.key === 'F') {
+                if (document.getElementById('doc-preview-section').style.display !== 'none' && 
+                    !document.getElementById('fullscreen-overlay').classList.contains('active') &&
+                    document.activeElement.tagName !== 'INPUT' && 
+                    document.activeElement.tagName !== 'TEXTAREA') {
+                    openFullscreen();
+                }
+            }
+        });
         
         // ===== WORK PROJECTS =====
         
@@ -1143,6 +1398,9 @@
                 statusBadge.style.display = 'none';
             }
             
+            // Executive Summary
+            renderExecutiveSummary(data, overview);
+            
             // Sections
             renderWorkSections(data.sections || []);
             
@@ -1152,6 +1410,84 @@
             // Cases
             if (data.cases && data.cases.length > 0) {
                 renderWorkCases(data.cases);
+            }
+        }
+        
+        function renderExecutiveSummary(data, overview) {
+            // Build executive summary text
+            let summaryParts = [];
+            
+            if (overview.definition) {
+                summaryParts.push(overview.definition);
+            }
+            
+            if (overview.current_status && overview.current_status !== 'Status não disponível') {
+                summaryParts.push(`Situação atual: ${overview.current_status}`);
+            }
+            
+            const summaryText = summaryParts.length > 0 
+                ? summaryParts.join(' ')
+                : 'Resumo do projeto não disponível. Consulte as seções de documentação para mais detalhes.';
+            
+            document.getElementById('executive-summary-text').textContent = summaryText;
+            
+            // Quick Stats
+            const sectionsCount = data.sections ? data.sections.length : 0;
+            const meetingsCount = data.meeting_notes ? data.meeting_notes.length : 0;
+            const casesCount = data.cases ? data.cases.length : 0;
+            
+            document.getElementById('work-docs-count').textContent = sectionsCount;
+            document.getElementById('work-meetings-count-stat').textContent = meetingsCount;
+            document.getElementById('work-cases-count').textContent = casesCount;
+            
+            // Last Activity (from most recent meeting)
+            if (data.meeting_notes && data.meeting_notes.length > 0) {
+                const lastMeeting = data.meeting_notes[0];
+                const lastDate = lastMeeting.date || extractDateFromFilename(lastMeeting.file);
+                if (lastDate) {
+                    document.getElementById('work-last-activity').textContent = formatMeetingDate(lastDate);
+                    document.getElementById('executive-last-update').textContent = `Última atualização: ${formatMeetingDate(lastDate)}`;
+                }
+            }
+            
+            // Executive Chips
+            const timelineChip = document.getElementById('executive-timeline');
+            const peopleChip = document.getElementById('executive-people');
+            const meetingsChip = document.getElementById('executive-meetings');
+            
+            // Timeline info from sections
+            const timelineSection = data.sections?.find(s => s.key === 'timeline' || s.key === 'history');
+            if (timelineSection && timelineSection.summary) {
+                timelineChip.querySelector('span:last-child').textContent = timelineSection.summary.substring(0, 40) + '...';
+                timelineChip.style.display = 'flex';
+            } else {
+                timelineChip.style.display = 'none';
+            }
+            
+            // People info from sections
+            const peopleSection = data.sections?.find(s => s.key === 'people');
+            if (peopleSection && peopleSection.summary) {
+                peopleChip.querySelector('span:last-child').textContent = peopleSection.summary.substring(0, 40) + '...';
+                peopleChip.style.display = 'flex';
+            } else {
+                peopleChip.style.display = 'none';
+            }
+            
+            // Meetings chip
+            if (meetingsCount > 0) {
+                meetingsChip.querySelector('span:last-child').textContent = `${meetingsCount} reuniões registradas`;
+                meetingsChip.style.display = 'flex';
+            } else {
+                meetingsChip.style.display = 'none';
+            }
+        }
+        
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+            } else {
+                section.style.display = 'none';
             }
         }
         
@@ -1206,7 +1542,7 @@
                 <div class="meeting-item" onclick="openWorkFile('${meeting.file}')">
                     <div class="meeting-header">
                         <span class="meeting-title">${escapeHtml(meeting.title)}</span>
-                        ${meeting.date ? `<span class="meeting-date">${meeting.date}</span>` : ''}
+                        ${meeting.date ? `<span class="meeting-date">${formatMeetingDate(meeting.date)}</span>` : ''}
                     </div>
                     <div class="meeting-preview">${escapeHtml(meeting.preview) || 'Clique para ver detalhes'}</div>
                 </div>
