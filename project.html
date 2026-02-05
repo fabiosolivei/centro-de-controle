@@ -363,6 +363,47 @@
         .doc-preview-content blockquote { border-left: 3px solid var(--accent-primary); padding-left: 1em; margin: 1em 0; color: var(--text-muted); font-style: italic; }
         .doc-preview-content hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 1.5em 0; }
         .doc-preview-content input[type="checkbox"] { margin-right: 8px; }
+        
+        /* Responsive improvements for project page */
+        @media (min-width: 768px) {
+            .project-sections {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .project-sections > section:first-child {
+                grid-column: span 2;
+            }
+            
+            .project-stats {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            
+            .task-item-project {
+                padding: var(--spacing-lg);
+            }
+            
+            .file-item {
+                padding: var(--spacing-lg);
+            }
+            
+            .doc-item {
+                padding: var(--spacing-lg);
+            }
+            
+            .note-item {
+                padding: var(--spacing-lg);
+            }
+        }
+        
+        @media (min-width: 1200px) {
+            .project-sections {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .project-sections > section:first-child {
+                grid-column: span 3;
+            }
+        }
     </style>
     <!-- Marked.js para renderizar Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -376,7 +417,7 @@
 
     <main class="main-content">
         <div class="project-header">
-            <a href="/" class="back-btn">← Voltar</a>
+            <a href="index.html" class="back-btn">← Voltar</a>
             <div class="project-title-section">
                 <h1 id="project-name">Carregando...</h1>
                 <div class="project-meta">
@@ -471,20 +512,25 @@
             <!-- DOCS & LINKS -->
             <section class="card">
                 <div class="section-header">
-                    <h2>🔗 Links Externos</h2>
+                    <h2>📄 Documentos</h2>
                     <button class="btn-primary" onclick="toggleAddDoc()">+ Adicionar</button>
                 </div>
                 
                 <div class="add-form" id="add-doc-form">
-                    <input type="text" id="new-doc-title" placeholder="Nome do link">
-                    <input type="url" id="new-doc-url" placeholder="URL">
+                    <input type="text" id="new-doc-title" placeholder="Nome do documento">
+                    <input type="url" id="new-doc-url" placeholder="URL (opcional)">
+                    <textarea id="new-doc-description" rows="2" placeholder="Descrição/Notas do documento..." style="width:100%;padding:10px;background:var(--bg-card);border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius-sm);color:var(--text-primary);margin-bottom:10px;resize:vertical;"></textarea>
                     <div class="form-row">
                         <select id="new-doc-type" style="flex:1;">
+                            <option value="doc">📄 Documento</option>
                             <option value="link">🔗 Link</option>
                             <option value="notion">📝 Notion</option>
                             <option value="figma">🎨 Figma</option>
                             <option value="github">💻 GitHub</option>
                             <option value="jira">📋 Jira</option>
+                            <option value="pdf">📕 PDF</option>
+                            <option value="sheet">📊 Planilha</option>
+                            <option value="slides">📽️ Apresentação</option>
                         </select>
                         <button class="btn-primary" onclick="addDoc()">Adicionar</button>
                     </div>
@@ -516,7 +562,11 @@
     </main>
 
     <script>
-        const API_BASE = '/api';
+        // Detectar se está rodando no GitHub Pages
+        const isGitHubPages = window.location.hostname.includes('github.io');
+        const API_BASE = isGitHubPages 
+            ? 'https://srv1315519.hstgr.cloud/api' 
+            : '/api';
         let projectId = null;
         let projectData = null;
         
@@ -525,7 +575,7 @@
         projectId = urlParams.get('id');
         
         if (!projectId) {
-            window.location.href = '/';
+            window.location.href = 'index.html';
         }
         
         async function loadProject() {
@@ -616,11 +666,14 @@
         function renderDocs(docs) {
             const container = document.getElementById('docs-list');
             if (docs.length === 0) {
-                container.innerHTML = '<div class="empty-section">Nenhum documento ainda</div>';
+                container.innerHTML = '<div class="empty-section">Nenhum documento ainda. Adicione links, PDFs, Notion, etc.</div>';
                 return;
             }
             
-            const icons = { link: '🔗', doc: '📄', notion: '📝', figma: '🎨', github: '💻' };
+            const icons = { 
+                link: '🔗', doc: '📄', notion: '📝', figma: '🎨', github: '💻', 
+                jira: '📋', pdf: '📕', sheet: '📊', slides: '📽️' 
+            };
             
             container.innerHTML = docs.map(doc => `
                 <div class="doc-item">
@@ -629,9 +682,9 @@
                         <div class="doc-title">
                             ${doc.url ? `<a href="${doc.url}" target="_blank">${escapeHtml(doc.title)}</a>` : escapeHtml(doc.title)}
                         </div>
-                        ${doc.description ? `<div style="font-size:0.75rem;color:var(--text-muted);">${escapeHtml(doc.description)}</div>` : ''}
+                        ${doc.description ? `<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px;line-height:1.4;">${escapeHtml(doc.description)}</div>` : ''}
                     </div>
-                    <button onclick="deleteDoc(${doc.id})" style="background:none;border:none;cursor:pointer;opacity:0.5;">🗑</button>
+                    <button onclick="deleteDoc(${doc.id})" style="background:none;border:none;cursor:pointer;opacity:0.5;font-size:1rem;">🗑</button>
                 </div>
             `).join('');
         }
@@ -704,13 +757,19 @@
             
             const url = document.getElementById('new-doc-url').value.trim();
             const docType = document.getElementById('new-doc-type').value;
+            const description = document.getElementById('new-doc-description').value.trim();
             
-            await fetch(`${API_BASE}/projects/${projectId}/docs?title=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}&doc_type=${docType}`, {
+            let apiUrl = `${API_BASE}/projects/${projectId}/docs?title=${encodeURIComponent(title)}&doc_type=${docType}`;
+            if (url) apiUrl += `&url=${encodeURIComponent(url)}`;
+            if (description) apiUrl += `&description=${encodeURIComponent(description)}`;
+            
+            await fetch(apiUrl, {
                 method: 'POST'
             });
             
             document.getElementById('new-doc-title').value = '';
             document.getElementById('new-doc-url').value = '';
+            document.getElementById('new-doc-description').value = '';
             toggleAddDoc();
             loadProject();
         }

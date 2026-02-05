@@ -14,12 +14,13 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initApp() {
     updateCurrentDate();
     await loadAllData();
+    
+    // Auto-refresh a cada 5 minutos
     setInterval(loadAllData, 5 * 60 * 1000);
 }
 
 function updateCurrentDate() {
     const dateEl = document.getElementById('current-date');
-    if (!dateEl) return;
     const options = { weekday: 'long', day: 'numeric', month: 'long' };
     const today = new Date().toLocaleDateString('pt-BR', options);
     dateEl.textContent = today.charAt(0).toUpperCase() + today.slice(1);
@@ -46,15 +47,19 @@ async function loadAllData() {
 async function refreshToday() {
     try {
         const data = await TodayAPI.getSummary();
-        document.getElementById('stat-todo').textContent = data.stats?.todo || 0;
-        document.getElementById('stat-doing').textContent = data.stats?.doing || 0;
-        document.getElementById('stat-done').textContent = data.stats?.done_today || 0;
         
+        // Update stats
+        document.getElementById('stat-todo').textContent = data.stats.todo;
+        document.getElementById('stat-doing').textContent = data.stats.doing;
+        document.getElementById('stat-done').textContent = data.stats.done_today;
+        
+        // Update events (combines Google Calendar + local events)
         const eventsEl = document.getElementById('events-list');
         const allEvents = data.events || [];
         
         if (allEvents.length > 0) {
             eventsEl.innerHTML = allEvents.map(event => {
+                // Handle both Google Calendar events (time) and local events (event_time)
                 const eventTime = event.time || event.event_time || '—';
                 const location = event.location ? `<span class="event-location">📍 ${escapeHtml(event.location)}</span>` : '';
                 const isGoogleCal = event.time !== undefined;
@@ -73,8 +78,9 @@ async function refreshToday() {
             eventsEl.innerHTML = '<p class="empty-state">Sem eventos hoje</p>';
         }
         
+        // Update urgent tasks
         const urgentEl = document.getElementById('urgent-list');
-        if (data.urgent_tasks?.length > 0) {
+        if (data.urgent_tasks.length > 0) {
             urgentEl.innerHTML = data.urgent_tasks.slice(0, 3).map(task => `
                 <div class="urgent-item" onclick="editTask(${task.id})">
                     ${escapeHtml(task.title)}
@@ -112,7 +118,6 @@ function renderTasks() {
         const container = document.getElementById(`tasks-${status}`);
         const count = document.getElementById(`count-${status}`);
         
-        if (!container) return;
         count.textContent = tasks.length;
         
         if (tasks.length > 0) {
@@ -151,6 +156,7 @@ async function moveTask(id, newStatus) {
 
 async function deleteTask(id) {
     if (!confirm('Deletar esta tarefa?')) return;
+    
     try {
         await TasksAPI.delete(id);
         await loadTasks();
@@ -160,12 +166,13 @@ async function deleteTask(id) {
     }
 }
 
+// Task Modal
 function openTaskModal(taskId = null) {
     const modal = document.getElementById('task-modal');
     const form = document.getElementById('task-form');
     const title = document.getElementById('task-modal-title');
     
-    form?.reset();
+    form.reset();
     document.getElementById('task-id').value = '';
     
     if (taskId) {
@@ -183,11 +190,11 @@ function openTaskModal(taskId = null) {
         title.textContent = 'Nova Tarefa';
     }
     
-    modal?.classList.add('active');
+    modal.classList.add('active');
 }
 
 function closeTaskModal() {
-    document.getElementById('task-modal')?.classList.remove('active');
+    document.getElementById('task-modal').classList.remove('active');
 }
 
 function editTask(id) {
@@ -238,7 +245,6 @@ async function loadReminders() {
 
 function renderReminders() {
     const container = document.getElementById('reminders-list');
-    if (!container) return;
     
     if (allReminders.length > 0) {
         container.innerHTML = allReminders.slice(0, 7).map(reminder => `
@@ -274,21 +280,23 @@ async function deleteReminder(id) {
     }
 }
 
+// Reminder Modal
 function openReminderModal() {
     const modal = document.getElementById('reminder-modal');
     const form = document.getElementById('reminder-form');
-    form?.reset();
+    form.reset();
     
+    // Set default datetime to now + 1 hour
     const now = new Date();
     now.setHours(now.getHours() + 1);
     now.setMinutes(0);
     document.getElementById('reminder-datetime').value = now.toISOString().slice(0, 16);
     
-    modal?.classList.add('active');
+    modal.classList.add('active');
 }
 
 function closeReminderModal() {
-    document.getElementById('reminder-modal')?.classList.remove('active');
+    document.getElementById('reminder-modal').classList.remove('active');
 }
 
 async function saveReminder(event) {
@@ -327,7 +335,6 @@ async function loadNotes() {
 
 function renderNotes() {
     const container = document.getElementById('notes-list');
-    if (!container) return;
     
     if (allNotes.length > 0) {
         container.innerHTML = allNotes.slice(0, 5).map(note => `
@@ -337,6 +344,11 @@ function renderNotes() {
                     <span class="note-date">${note.meeting_date ? formatDate(note.meeting_date) : ''}</span>
                 </div>
                 ${note.content ? `<p class="note-preview">${escapeHtml(note.content.substring(0, 100))}...</p>` : ''}
+                ${note.tags ? `
+                    <div class="note-tags">
+                        ${note.tags.split(',').map(tag => `<span class="note-tag">${tag.trim()}</span>`).join('')}
+                    </div>
+                ` : ''}
             </div>
         `).join('');
     } else {
@@ -344,12 +356,13 @@ function renderNotes() {
     }
 }
 
+// Note Modal
 function openNoteModal(noteId = null) {
     const modal = document.getElementById('note-modal');
     const form = document.getElementById('note-form');
     const title = document.getElementById('note-modal-title');
     
-    form?.reset();
+    form.reset();
     document.getElementById('note-id').value = '';
     
     if (noteId) {
@@ -367,11 +380,11 @@ function openNoteModal(noteId = null) {
         document.getElementById('note-date').value = new Date().toISOString().slice(0, 10);
     }
     
-    modal?.classList.add('active');
+    modal.classList.add('active');
 }
 
 function closeNoteModal() {
-    document.getElementById('note-modal')?.classList.remove('active');
+    document.getElementById('note-modal').classList.remove('active');
 }
 
 function editNote(id) {
@@ -420,8 +433,8 @@ async function loadProjects() {
 
 function renderProjects() {
     const bar = document.getElementById('projects-bar');
-    if (!bar) return;
     
+    // Filtrar apenas projetos ativos
     const activeProjects = allProjects.filter(p => p.status !== 'archived');
     
     const categoryIcons = {
@@ -431,9 +444,11 @@ function renderProjects() {
         'familia': '👨‍👩‍👧'
     };
     
+    // Renderizar chips na barra superior
     let html = activeProjects.map(project => {
         const icon = categoryIcons[project.category] || '📁';
         const priorityClass = project.priority === 'high' ? 'priority-high' : '';
+        // Encurtar nome se muito longo
         const shortName = project.name.length > 15 ? project.name.substring(0, 15) + '…' : project.name;
         
         return `
@@ -444,6 +459,7 @@ function renderProjects() {
         `;
     }).join('');
     
+    // Adicionar botão de novo projeto
     html += `
         <div class="project-chip project-chip-add" onclick="openProjectModal()">
             <span class="chip-icon">+</span>
@@ -454,16 +470,33 @@ function renderProjects() {
     bar.innerHTML = html;
 }
 
-function openProject(id) {
-    window.location.href = `project.html?id=${id}`;
+async function updateProjectProgress(id, progress) {
+    try {
+        await ProjectsAPI.updateProgress(id, progress);
+        await loadProjects();
+    } catch (error) {
+        alert('Erro ao atualizar progresso: ' + error.message);
+    }
 }
 
+async function deleteProject(id) {
+    if (!confirm('Deletar este projeto?')) return;
+    
+    try {
+        await ProjectsAPI.delete(id);
+        await loadProjects();
+    } catch (error) {
+        alert('Erro ao deletar: ' + error.message);
+    }
+}
+
+// Project Modal
 function openProjectModal(projectId = null) {
     const modal = document.getElementById('project-modal');
     const form = document.getElementById('project-form');
     const title = document.getElementById('project-modal-title');
     
-    form?.reset();
+    form.reset();
     document.getElementById('project-id').value = '';
     document.getElementById('project-progress').value = 0;
     
@@ -485,11 +518,30 @@ function openProjectModal(projectId = null) {
         title.textContent = 'Novo Projeto';
     }
     
-    modal?.classList.add('active');
+    modal.classList.add('active');
 }
 
 function closeProjectModal() {
-    document.getElementById('project-modal')?.classList.remove('active');
+    document.getElementById('project-modal').classList.remove('active');
+}
+
+// Carousel de projetos
+function scrollProjects(direction) {
+    const carousel = document.getElementById('projects-carousel');
+    const scrollAmount = 300; // pixels
+    carousel.scrollBy({
+        left: direction * scrollAmount,
+        behavior: 'smooth'
+    });
+}
+
+function openProject(id) {
+    // Navegar para página de detalhes do projeto
+    window.location.href = `project.html?id=${id}`;
+}
+
+function editProject(id) {
+    openProjectModal(id);
 }
 
 async function saveProject(event) {
@@ -518,6 +570,23 @@ async function saveProject(event) {
         await loadProjects();
     } catch (error) {
         alert('Erro ao salvar: ' + error.message);
+    }
+}
+
+// ============================================
+// NAVIGATION
+// ============================================
+
+function scrollToSection(sectionId) {
+    const section = document.getElementById(sectionId);
+    if (section) {
+        section.scrollIntoView({ behavior: 'smooth' });
+        
+        // Update active nav item
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.classList.remove('active');
+        });
+        event.currentTarget.classList.add('active');
     }
 }
 
@@ -554,13 +623,14 @@ function formatDateTime(dateTimeStr) {
 // ============================================
 
 document.addEventListener('keydown', (e) => {
+    // ESC to close modals
     if (e.key === 'Escape') {
         closeTaskModal();
         closeReminderModal();
         closeNoteModal();
-        closeProjectModal();
     }
     
+    // Ctrl+N for new task
     if (e.ctrlKey && e.key === 'n') {
         e.preventDefault();
         openTaskModal();
@@ -575,3 +645,223 @@ document.querySelectorAll('.modal').forEach(modal => {
         }
     });
 });
+
+// ============================================
+// FILE UPLOAD
+// ============================================
+
+let allFiles = [];
+
+async function loadSharedFiles() {
+    try {
+        const response = await fetch(`${API_BASE}/files`);
+        const data = await response.json();
+        allFiles = data.files || [];
+        renderSharedFiles();
+    } catch (error) {
+        console.error('Erro ao carregar arquivos:', error);
+    }
+}
+
+function renderSharedFiles() {
+    const container = document.getElementById('shared-files-list');
+    const countEl = document.getElementById('files-count');
+    
+    if (!container) return;
+    
+    if (allFiles.length === 0) {
+        container.innerHTML = '<p class="empty-state">Nenhum arquivo compartilhado</p>';
+        if (countEl) countEl.textContent = '';
+        return;
+    }
+    
+    if (countEl) countEl.textContent = `${allFiles.length} arquivo${allFiles.length > 1 ? 's' : ''}`;
+    
+    const icons = {
+        'image': '🖼️',
+        'pdf': '📕',
+        'doc': '📄',
+        'sheet': '📊',
+        'file': '📁'
+    };
+    
+    container.innerHTML = allFiles.map(file => {
+        const icon = icons[file.type] || '📁';
+        const size = formatFileSize(file.size);
+        const modified = formatTimeAgoSimple(file.modified);
+        
+        return `
+            <div class="shared-file-item">
+                <div class="file-icon">${icon}</div>
+                <div class="file-details">
+                    <div class="file-name">${escapeHtml(file.name)}</div>
+                    <div class="file-meta">${size} • ${modified}</div>
+                </div>
+                <div class="file-actions">
+                    <button class="file-action-btn" onclick="downloadFile('${encodeURIComponent(file.name)}')" title="Download">⬇️</button>
+                    <button class="file-action-btn delete" onclick="deleteFile('${encodeURIComponent(file.name)}')" title="Excluir">🗑️</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function formatFileSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}
+
+function formatTimeAgoSimple(timestamp) {
+    const now = Date.now() / 1000;
+    const diff = now - timestamp;
+    
+    if (diff < 60) return 'agora';
+    if (diff < 3600) return `${Math.floor(diff / 60)} min`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+    return `${Math.floor(diff / 86400)} dias`;
+}
+
+// File upload handlers
+function handleFileSelect(event) {
+    const files = event.target.files;
+    if (files.length > 0) {
+        uploadFiles(files);
+    }
+}
+
+async function uploadFiles(files) {
+    const progressEl = document.getElementById('upload-progress');
+    const fillEl = document.getElementById('upload-progress-fill');
+    const statusEl = document.getElementById('upload-status');
+    
+    progressEl.style.display = 'flex';
+    
+    for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const progress = Math.round(((i + 0.5) / files.length) * 100);
+        
+        fillEl.style.width = progress + '%';
+        statusEl.textContent = `Enviando ${file.name}...`;
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        try {
+            const response = await fetch(`${API_BASE}/files/upload`, {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.detail || 'Erro no upload');
+            }
+        } catch (error) {
+            console.error('Erro:', error);
+            statusEl.textContent = `Erro: ${error.message}`;
+            await new Promise(r => setTimeout(r, 2000));
+        }
+    }
+    
+    fillEl.style.width = '100%';
+    statusEl.textContent = 'Concluído!';
+    
+    setTimeout(() => {
+        progressEl.style.display = 'none';
+        fillEl.style.width = '0%';
+        loadSharedFiles();
+    }, 1000);
+    
+    // Limpar input
+    document.getElementById('file-input').value = '';
+}
+
+function downloadFile(filename) {
+    window.open(`${API_BASE}/files/download/${filename}`, '_blank');
+}
+
+async function deleteFile(filename) {
+    if (!confirm('Remover arquivo?')) return;
+    
+    try {
+        await fetch(`${API_BASE}/files/${filename}`, { method: 'DELETE' });
+        loadSharedFiles();
+    } catch (error) {
+        console.error('Erro ao remover:', error);
+    }
+}
+
+// Drag and drop
+const uploadZone = document.getElementById('upload-zone');
+
+if (uploadZone) {
+    uploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+    
+    uploadZone.addEventListener('dragleave', () => {
+        uploadZone.classList.remove('dragover');
+    });
+    
+    uploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            uploadFiles(files);
+        }
+    });
+}
+
+// Carregar arquivos no início
+loadSharedFiles();
+
+// ============================================
+// MBA SECTION
+// ============================================
+
+async function loadMBAStats() {
+    try {
+        const response = await fetch(`${API_BASE}/mba/data`);
+        if (!response.ok) {
+            // API indisponivel, mostrar placeholders
+            return;
+        }
+        
+        const data = await response.json();
+        const resumo = data.resumo || calculateMBAResumo(data);
+        
+        const pendentesEl = document.getElementById('mba-pendentes');
+        const andamentoEl = document.getElementById('mba-andamento');
+        const concluidasEl = document.getElementById('mba-concluidas');
+        
+        if (pendentesEl) pendentesEl.textContent = resumo.total_pendentes || 0;
+        if (andamentoEl) andamentoEl.textContent = resumo.total_em_andamento || 0;
+        if (concluidasEl) concluidasEl.textContent = resumo.total_concluidas || 0;
+        
+    } catch (error) {
+        console.log('MBA data not available:', error.message);
+    }
+}
+
+function calculateMBAResumo(data) {
+    let pendentes = 0, andamento = 0, concluidas = 0;
+    
+    (data.turmas || []).forEach(turma => {
+        (turma.semanas || []).forEach(semana => {
+            pendentes += (semana.atividades?.a_fazer || []).length;
+            andamento += (semana.atividades?.fazendo || []).length;
+            concluidas += (semana.atividades?.feito || []).length;
+        });
+    });
+    
+    return { total_pendentes: pendentes, total_em_andamento: andamento, total_concluidas: concluidas };
+}
+
+// Carregar MBA stats se a seção existir
+if (document.getElementById('mba-section')) {
+    loadMBAStats();
+}

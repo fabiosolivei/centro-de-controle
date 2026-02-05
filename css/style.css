@@ -212,6 +212,32 @@ body {
     color: var(--accent-primary);
 }
 
+/* Project chips - Desktop improvements */
+@media (min-width: 768px) {
+    .projects-bar {
+        padding: 16px 24px;
+        gap: 12px;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+    }
+    
+    .project-chip {
+        padding: 10px 18px;
+        font-size: 14px;
+        min-width: auto;
+    }
+    
+    .project-chip .chip-icon {
+        font-size: 16px;
+    }
+    
+    .project-chip .chip-name {
+        max-width: 200px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
 /* ============================================
    MAIN CONTENT
    ============================================ */

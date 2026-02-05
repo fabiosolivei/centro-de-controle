@@ -370,7 +370,7 @@
 
     <main class="files-page">
         <div class="files-header">
-            <a href="/" class="back-btn">← Voltar</a>
+            <a href="index.html" class="back-btn">← Voltar</a>
             <div class="files-title">
                 <h1>📁 Arquivos Compartilhados</h1>
                 <div class="files-stats" id="files-stats">Carregando...</div>
@@ -424,7 +424,11 @@
     </div>
 
     <script>
-        const API_BASE = '/api';
+        // Detectar se está rodando no GitHub Pages
+        const isGitHubPages = window.location.hostname.includes('github.io');
+        const API_BASE = isGitHubPages 
+            ? 'https://srv1315519.hstgr.cloud/api' 
+            : '/api';
         let allFiles = [];
         let currentView = 'grid';
         

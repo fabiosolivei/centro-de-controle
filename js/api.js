@@ -9,7 +9,7 @@ const isLocalhost = window.location.hostname === 'localhost' || window.location.
 
 // API Base: usa VPS quando no GitHub Pages, relativo quando local/VPS
 const API_BASE = (isGitHubPages) 
-    ? 'https://srv1315519.hstgr.cloud/api'  // VPS Backend
+    ? 'https://srv1315519.hstgr.cloud/api'  // VPS Backend HTTPS
     : '/api';  // Local ou servido pela própria VPS
 
 /**
@@ -45,11 +45,19 @@ async function apiRequest(endpoint, options = {}) {
 // ============================================
 
 const TasksAPI = {
+    /**
+     * Lista todas as tarefas
+     * @param {string} status - Filtrar por status (todo, doing, done)
+     */
     async getAll(status = null) {
         const query = status ? `?status=${status}` : '';
         return apiRequest(`/tasks${query}`);
     },
     
+    /**
+     * Cria uma nova tarefa
+     * @param {object} task - Dados da tarefa
+     */
     async create(task) {
         return apiRequest('/tasks', {
             method: 'POST',
@@ -57,6 +65,11 @@ const TasksAPI = {
         });
     },
     
+    /**
+     * Atualiza uma tarefa
+     * @param {number} id - ID da tarefa
+     * @param {object} updates - Campos a atualizar
+     */
     async update(id, updates) {
         return apiRequest(`/tasks/${id}`, {
             method: 'PUT',
@@ -64,6 +77,10 @@ const TasksAPI = {
         });
     },
     
+    /**
+     * Deleta uma tarefa
+     * @param {number} id - ID da tarefa
+     */
     async delete(id) {
         return apiRequest(`/tasks/${id}`, {
             method: 'DELETE',
@@ -76,11 +93,19 @@ const TasksAPI = {
 // ============================================
 
 const RemindersAPI = {
+    /**
+     * Lista lembretes
+     * @param {boolean} includeCompleted - Incluir completos
+     */
     async getAll(includeCompleted = false) {
         const query = includeCompleted ? '?include_completed=true' : '';
         return apiRequest(`/reminders${query}`);
     },
     
+    /**
+     * Cria um novo lembrete
+     * @param {object} reminder - Dados do lembrete
+     */
     async create(reminder) {
         return apiRequest('/reminders', {
             method: 'POST',
@@ -88,12 +113,20 @@ const RemindersAPI = {
         });
     },
     
+    /**
+     * Marca lembrete como completo
+     * @param {number} id - ID do lembrete
+     */
     async complete(id) {
         return apiRequest(`/reminders/${id}/complete`, {
             method: 'PUT',
         });
     },
     
+    /**
+     * Deleta um lembrete
+     * @param {number} id - ID do lembrete
+     */
     async delete(id) {
         return apiRequest(`/reminders/${id}`, {
             method: 'DELETE',
@@ -106,10 +139,18 @@ const RemindersAPI = {
 // ============================================
 
 const NotesAPI = {
+    /**
+     * Lista notas recentes
+     * @param {number} limit - Limite de resultados
+     */
     async getAll(limit = 10) {
         return apiRequest(`/notes?limit=${limit}`);
     },
     
+    /**
+     * Cria uma nova nota
+     * @param {object} note - Dados da nota
+     */
     async create(note) {
         return apiRequest('/notes', {
             method: 'POST',
@@ -117,6 +158,11 @@ const NotesAPI = {
         });
     },
     
+    /**
+     * Atualiza uma nota
+     * @param {number} id - ID da nota
+     * @param {object} note - Dados atualizados
+     */
     async update(id, note) {
         return apiRequest(`/notes/${id}`, {
             method: 'PUT',
@@ -124,6 +170,10 @@ const NotesAPI = {
         });
     },
     
+    /**
+     * Deleta uma nota
+     * @param {number} id - ID da nota
+     */
     async delete(id) {
         return apiRequest(`/notes/${id}`, {
             method: 'DELETE',
@@ -136,6 +186,9 @@ const NotesAPI = {
 // ============================================
 
 const TodayAPI = {
+    /**
+     * Obtém resumo do dia
+     */
     async getSummary() {
         return apiRequest('/today');
     },
@@ -146,11 +199,19 @@ const TodayAPI = {
 // ============================================
 
 const EventsAPI = {
+    /**
+     * Lista eventos
+     * @param {string} date - Filtrar por data (YYYY-MM-DD)
+     */
     async getAll(date = null) {
         const query = date ? `?date=${date}` : '';
         return apiRequest(`/events${query}`);
     },
     
+    /**
+     * Cria um novo evento
+     * @param {object} event - Dados do evento
+     */
     async create(event) {
         return apiRequest('/events', {
             method: 'POST',
@@ -158,6 +219,10 @@ const EventsAPI = {
         });
     },
     
+    /**
+     * Deleta um evento
+     * @param {number} id - ID do evento
+     */
     async delete(id) {
         return apiRequest(`/events/${id}`, {
             method: 'DELETE',
@@ -170,6 +235,11 @@ const EventsAPI = {
 // ============================================
 
 const ProjectsAPI = {
+    /**
+     * Lista projetos
+     * @param {string} status - Filtrar por status
+     * @param {string} category - Filtrar por categoria
+     */
     async getAll(status = null, category = null) {
         let query = [];
         if (status) query.push(`status=${status}`);
@@ -178,6 +248,10 @@ const ProjectsAPI = {
         return apiRequest(`/projects${queryStr}`);
     },
     
+    /**
+     * Cria um novo projeto
+     * @param {object} project - Dados do projeto
+     */
     async create(project) {
         return apiRequest('/projects', {
             method: 'POST',
@@ -185,6 +259,11 @@ const ProjectsAPI = {
         });
     },
     
+    /**
+     * Atualiza um projeto
+     * @param {number} id - ID do projeto
+     * @param {object} updates - Campos a atualizar
+     */
     async update(id, updates) {
         return apiRequest(`/projects/${id}`, {
             method: 'PUT',
@@ -192,12 +271,21 @@ const ProjectsAPI = {
         });
     },
     
+    /**
+     * Atualiza progresso do projeto
+     * @param {number} id - ID do projeto
+     * @param {number} progress - Progresso (0-100)
+     */
     async updateProgress(id, progress) {
         return apiRequest(`/projects/${id}/progress?progress=${progress}`, {
             method: 'PUT',
         });
     },
     
+    /**
+     * Deleta um projeto
+     * @param {number} id - ID do projeto
+     */
     async delete(id) {
         return apiRequest(`/projects/${id}`, {
             method: 'DELETE',
@@ -210,20 +298,74 @@ const ProjectsAPI = {
 // ============================================
 
 const CalendarAPI = {
+    /**
+     * Obtém eventos de hoje do Google Calendar
+     */
     async getToday() {
         return apiRequest('/calendar/today');
     },
     
+    /**
+     * Obtém eventos da semana agrupados por dia
+     */
     async getWeek() {
         return apiRequest('/calendar/week');
     },
     
+    /**
+     * Obtém eventos de uma data específica
+     * @param {string} date - Data no formato YYYY-MM-DD
+     */
     async getByDate(date) {
         return apiRequest(`/calendar/date/${date}`);
     },
     
+    /**
+     * Obtém próximos eventos
+     * @param {number} days - Número de dias à frente (máx 30)
+     */
     async getUpcoming(days = 7) {
         return apiRequest(`/calendar/upcoming?days=${days}`);
+    },
+};
+
+// ============================================
+// MBA / ADALOVE API
+// ============================================
+
+const MBAAPI = {
+    /**
+     * Obtem dados do Adalove
+     */
+    async getData() {
+        return apiRequest('/mba/data');
+    },
+    
+    /**
+     * Solicita sincronizacao dos dados
+     */
+    async sync() {
+        return apiRequest('/mba/sync', {
+            method: 'POST',
+        });
+    },
+    
+    /**
+     * Lista materiais disponiveis
+     */
+    async getMaterials() {
+        return apiRequest('/mba/materials');
+    },
+    
+    /**
+     * Atualiza dados do Adalove
+     * @param {object} data - Dados completos do Adalove
+     */
+    async updateData(data) {
+        return apiRequest('/mba/data', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
     },
 };
 
@@ -235,3 +377,4 @@ window.TodayAPI = TodayAPI;
 window.EventsAPI = EventsAPI;
 window.ProjectsAPI = ProjectsAPI;
 window.CalendarAPI = CalendarAPI;
+window.MBAAPI = MBAAPI;
