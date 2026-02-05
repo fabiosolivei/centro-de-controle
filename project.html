@@ -364,6 +364,132 @@
         .doc-preview-content hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 1.5em 0; }
         .doc-preview-content input[type="checkbox"] { margin-right: 8px; }
         
+        /* Work Project View Styles */
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-lg);
+        }
+        
+        .overview-card {
+            background: var(--bg-glass);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            border-left: 3px solid var(--accent-primary);
+        }
+        
+        .overview-card.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .overview-card h3 {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-sm);
+            font-weight: 600;
+        }
+        
+        .overview-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .sections-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+        }
+        
+        .section-item {
+            background: var(--bg-card);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border-left: 3px solid transparent;
+        }
+        
+        .section-item:hover {
+            background: var(--bg-card-hover);
+            border-left-color: var(--accent-primary);
+            transform: translateX(4px);
+        }
+        
+        .section-item .section-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .section-item .section-summary {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .meeting-item {
+            background: var(--bg-card);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-sm);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border-left: 3px solid #3b82f6;
+        }
+        
+        .meeting-item:hover {
+            background: var(--bg-card-hover);
+            transform: translateX(4px);
+        }
+        
+        .meeting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .meeting-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .meeting-date {
+            font-size: 0.75rem;
+            color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.1);
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+        }
+        
+        .meeting-preview {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .case-item {
+            background: var(--bg-card);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-sm);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border-left: 3px solid #f59e0b;
+        }
+        
+        .case-item:hover {
+            background: var(--bg-card-hover);
+        }
+        
         /* Responsive improvements for project page */
         @media (min-width: 768px) {
             .project-sections {
@@ -463,7 +589,65 @@
             </div>
         </div>
         
-        <div class="project-sections">
+        <!-- WORK PROJECT OVERVIEW (Hidden by default, shown for work projects) -->
+        <div id="work-project-view" style="display:none;">
+            <!-- Overview Card -->
+            <section class="card" id="work-overview-section" style="margin-bottom: var(--spacing-xl);">
+                <div class="section-header">
+                    <h2>📊 Visão Geral</h2>
+                    <span class="badge badge-active" id="work-status-badge"></span>
+                </div>
+                <div id="work-overview-content">
+                    <div class="overview-grid">
+                        <div class="overview-card">
+                            <h3>📋 Definição</h3>
+                            <p id="work-definition">Carregando...</p>
+                        </div>
+                        <div class="overview-card">
+                            <h3>🎯 Contexto</h3>
+                            <p id="work-context">Carregando...</p>
+                        </div>
+                        <div class="overview-card full-width">
+                            <h3>📍 Status Atual</h3>
+                            <p id="work-current-status">Carregando...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Documentation Sections -->
+            <section class="card" id="work-sections-card" style="margin-bottom: var(--spacing-xl);">
+                <div class="section-header">
+                    <h2>📚 Documentação</h2>
+                    <span class="badge" id="work-sections-count" style="font-size:0.7rem;"></span>
+                </div>
+                <div id="work-sections-list" class="sections-grid">
+                    <div class="empty-section">Carregando...</div>
+                </div>
+            </section>
+            
+            <!-- Meeting Notes -->
+            <section class="card" id="work-meetings-section" style="margin-bottom: var(--spacing-xl);">
+                <div class="section-header">
+                    <h2>📅 Reuniões Recentes</h2>
+                    <span class="badge badge-active" id="work-meetings-count" style="font-size:0.7rem;"></span>
+                </div>
+                <div id="work-meetings-list">
+                    <div class="empty-section">Carregando...</div>
+                </div>
+            </section>
+            
+            <!-- Cases (if any) -->
+            <section class="card" id="work-cases-section" style="margin-bottom: var(--spacing-xl); display:none;">
+                <div class="section-header">
+                    <h2>📁 Cases</h2>
+                </div>
+                <div id="work-cases-list">
+                </div>
+            </section>
+        </div>
+        
+        <div class="project-sections" id="regular-project-view">
             <!-- TASKS -->
             <section class="card">
                 <div class="section-header">
@@ -593,35 +777,10 @@
         function renderProject() {
             const { project, tasks, notes, docs, stats } = projectData;
             
-            // Header
-            document.title = `${project.name} - Centro de Controle`;
-            document.getElementById('project-name').textContent = project.name;
-            document.getElementById('project-description').textContent = project.description || '';
-            
-            // Category icons
-            const categoryIcons = { trabalho: '💼', mba: '🎓', pessoal: '👤', familia: '👨‍👩‍👧' };
-            document.getElementById('project-category').textContent = 
-                (categoryIcons[project.category] || '📁') + ' ' + (project.category || 'Geral');
-            
-            // Status badge
-            const statusEl = document.getElementById('project-status');
-            statusEl.textContent = project.status === 'active' ? 'Ativo' : 
-                                   project.status === 'paused' ? 'Pausado' : 'Concluído';
-            statusEl.className = 'badge ' + (project.status === 'active' ? 'badge-active' : 'badge-paused');
-            
-            // Priority badge
-            const priorityEl = document.getElementById('project-priority');
-            if (project.priority === 'high') {
-                priorityEl.textContent = '🔥 Alta Prioridade';
-                priorityEl.className = 'badge badge-high';
-                priorityEl.style.display = 'inline';
-            } else {
-                priorityEl.style.display = 'none';
-            }
-            
-            // Progress
-            document.getElementById('progress-fill').style.width = project.progress + '%';
-            document.getElementById('progress-text').textContent = project.progress + '%';
+            // Header já foi renderizado por renderProjectHeader()
+            // Garantir que a view regular está visível
+            document.getElementById('work-project-view').style.display = 'none';
+            document.getElementById('regular-project-view').style.display = 'grid';
             
             // Stats
             document.getElementById('stat-tasks-todo').textContent = stats.tasks_todo;
@@ -915,8 +1074,233 @@
             document.getElementById('doc-preview-section').style.display = 'none';
         }
         
+        // ===== WORK PROJECTS =====
+        
+        // Mapeamento de projetos de trabalho
+        const WORK_PROJECT_SLUGS = {
+            '3TPM': '3tpm',
+            '3tpm': '3tpm',
+            'Catalog Admin': 'catalog-admin',
+            'CATALOG-ADMIN': 'catalog-admin',
+            'Company Store': 'company-store',
+            'COMPANY-STORE': 'company-store',
+            'CMS DAM': 'cms-dam',
+            'CMS-DAM': 'cms-dam',
+            'POCs IA': 'pocs-ia',
+            'POCS-IA': 'pocs-ia',
+            'Autonomy': 'autonomy',
+            'AUTONOMY-AUTOMATION': 'autonomy'
+        };
+        
+        let workProjectData = null;
+        let currentWorkSlug = null;
+        
+        function isWorkProject(projectName, category) {
+            return category === 'trabalho' || WORK_PROJECT_SLUGS[projectName];
+        }
+        
+        function getWorkProjectSlug(projectName) {
+            return WORK_PROJECT_SLUGS[projectName] || projectName.toLowerCase().replace(/\s+/g, '-');
+        }
+        
+        async function loadWorkProject(projectName) {
+            const slug = getWorkProjectSlug(projectName);
+            currentWorkSlug = slug;
+            
+            try {
+                const response = await fetch(`${API_BASE}/work-projects/${slug}`);
+                if (!response.ok) {
+                    console.log('Projeto de trabalho não encontrado, usando view padrão');
+                    return false;
+                }
+                
+                workProjectData = await response.json();
+                renderWorkProjectView(workProjectData);
+                return true;
+            } catch (error) {
+                console.error('Erro ao carregar projeto de trabalho:', error);
+                return false;
+            }
+        }
+        
+        function renderWorkProjectView(data) {
+            // Mostrar view de work project, esconder view regular
+            document.getElementById('work-project-view').style.display = 'block';
+            document.getElementById('regular-project-view').style.display = 'none';
+            
+            // Overview
+            const overview = data.overview || {};
+            document.getElementById('work-definition').textContent = overview.definition || 'Sem definição disponível';
+            document.getElementById('work-context').textContent = overview.context || 'Sem contexto disponível';
+            document.getElementById('work-current-status').textContent = overview.current_status || 'Status não disponível';
+            
+            // Status badge
+            const statusBadge = document.getElementById('work-status-badge');
+            if (overview.status_raw) {
+                statusBadge.textContent = overview.status_raw;
+                statusBadge.style.display = 'inline';
+            } else {
+                statusBadge.style.display = 'none';
+            }
+            
+            // Sections
+            renderWorkSections(data.sections || []);
+            
+            // Meeting Notes
+            renderWorkMeetings(data.meeting_notes || []);
+            
+            // Cases
+            if (data.cases && data.cases.length > 0) {
+                renderWorkCases(data.cases);
+            }
+        }
+        
+        function renderWorkSections(sections) {
+            const container = document.getElementById('work-sections-list');
+            const countBadge = document.getElementById('work-sections-count');
+            
+            if (sections.length === 0) {
+                container.innerHTML = '<div class="empty-section">Nenhuma seção de documentação</div>';
+                countBadge.textContent = '';
+                return;
+            }
+            
+            countBadge.textContent = `${sections.length} seções`;
+            
+            const sectionIcons = {
+                'context': '🎯',
+                'definition': '📋',
+                'history': '📜',
+                'architecture': '🏗️',
+                'people': '👥',
+                'timeline': '📅',
+                'status': '📍',
+                'roadmap': '🗺️',
+                'readme': '📖'
+            };
+            
+            container.innerHTML = sections.map(section => {
+                const icon = sectionIcons[section.key] || '📄';
+                return `
+                    <div class="section-item" onclick="openWorkFile('${section.file}')">
+                        <div class="section-name">${icon} ${section.name}</div>
+                        <div class="section-summary">${section.summary || 'Clique para ver detalhes'}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderWorkMeetings(meetings) {
+            const container = document.getElementById('work-meetings-list');
+            const countBadge = document.getElementById('work-meetings-count');
+            
+            if (meetings.length === 0) {
+                container.innerHTML = '<div class="empty-section">Nenhuma nota de reunião</div>';
+                countBadge.textContent = '';
+                return;
+            }
+            
+            countBadge.textContent = `${meetings.length} reuniões`;
+            
+            container.innerHTML = meetings.slice(0, 10).map(meeting => `
+                <div class="meeting-item" onclick="openWorkFile('${meeting.file}')">
+                    <div class="meeting-header">
+                        <span class="meeting-title">${escapeHtml(meeting.title)}</span>
+                        ${meeting.date ? `<span class="meeting-date">${meeting.date}</span>` : ''}
+                    </div>
+                    <div class="meeting-preview">${escapeHtml(meeting.preview) || 'Clique para ver detalhes'}</div>
+                </div>
+            `).join('');
+        }
+        
+        function renderWorkCases(cases) {
+            const section = document.getElementById('work-cases-section');
+            const container = document.getElementById('work-cases-list');
+            
+            section.style.display = 'block';
+            
+            container.innerHTML = cases.map(caseItem => `
+                <div class="case-item" onclick="openWorkFile('${caseItem.file}')">
+                    <div class="meeting-title">${escapeHtml(caseItem.title)}</div>
+                    <div class="meeting-preview">${escapeHtml(caseItem.summary) || ''}</div>
+                </div>
+            `).join('');
+        }
+        
+        async function openWorkFile(filePath) {
+            if (!currentWorkSlug) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/work-projects/${currentWorkSlug}/file/${filePath}`);
+                if (!response.ok) throw new Error('Arquivo não encontrado');
+                
+                const data = await response.json();
+                showPreview(data.title, data.content);
+            } catch (error) {
+                console.error('Erro ao abrir arquivo:', error);
+                alert('Erro ao carregar arquivo');
+            }
+        }
+        
+        // ===== MODIFIED LOAD PROJECT =====
+        
+        async function loadProjectWithWorkCheck() {
+            try {
+                const response = await fetch(`${API_BASE}/projects/${projectId}/full`);
+                if (!response.ok) throw new Error('Projeto não encontrado');
+                projectData = await response.json();
+                
+                const { project } = projectData;
+                
+                // Renderizar header primeiro
+                renderProjectHeader(project);
+                
+                // Verificar se é projeto de trabalho
+                if (isWorkProject(project.name, project.category)) {
+                    const loadedWork = await loadWorkProject(project.name);
+                    if (loadedWork) {
+                        // Sucesso - view de trabalho já está renderizada
+                        return;
+                    }
+                }
+                
+                // Se não é trabalho ou falhou, usar view padrão
+                renderProject();
+            } catch (error) {
+                console.error(error);
+                document.getElementById('project-name').textContent = 'Projeto não encontrado';
+            }
+        }
+        
+        function renderProjectHeader(project) {
+            document.title = `${project.name} - Centro de Controle`;
+            document.getElementById('project-name').textContent = project.name;
+            document.getElementById('project-description').textContent = project.description || '';
+            
+            const categoryIcons = { trabalho: '💼', mba: '🎓', pessoal: '👤', familia: '👨‍👩‍👧' };
+            document.getElementById('project-category').textContent = 
+                (categoryIcons[project.category] || '📁') + ' ' + (project.category || 'Geral');
+            
+            const statusEl = document.getElementById('project-status');
+            statusEl.textContent = project.status === 'active' ? 'Ativo' : 
+                                   project.status === 'paused' ? 'Pausado' : 'Concluído';
+            statusEl.className = 'badge ' + (project.status === 'active' ? 'badge-active' : 'badge-paused');
+            
+            const priorityEl = document.getElementById('project-priority');
+            if (project.priority === 'high') {
+                priorityEl.textContent = '🔥 Alta Prioridade';
+                priorityEl.className = 'badge badge-high';
+                priorityEl.style.display = 'inline';
+            } else {
+                priorityEl.style.display = 'none';
+            }
+            
+            document.getElementById('progress-fill').style.width = project.progress + '%';
+            document.getElementById('progress-text').textContent = project.progress + '%';
+        }
+        
         // Load on start
-        loadProject();
+        loadProjectWithWorkCheck();
         loadProjectFiles();
     </script>
 </body>
