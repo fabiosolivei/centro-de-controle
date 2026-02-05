@@ -537,7 +537,7 @@ function scrollProjects(direction) {
 
 function openProject(id) {
     // Navegar para página de detalhes do projeto
-    window.location.href = `/project?id=${id}`;
+    window.location.href = `project.html?id=${id}`;
 }
 
 function editProject(id) {
@@ -818,3 +818,50 @@ if (uploadZone) {
 
 // Carregar arquivos no início
 loadSharedFiles();
+
+// ============================================
+// MBA SECTION
+// ============================================
+
+async function loadMBAStats() {
+    try {
+        const response = await fetch(`${API_BASE}/mba/data`);
+        if (!response.ok) {
+            // API indisponivel, mostrar placeholders
+            return;
+        }
+        
+        const data = await response.json();
+        const resumo = data.resumo || calculateMBAResumo(data);
+        
+        const pendentesEl = document.getElementById('mba-pendentes');
+        const andamentoEl = document.getElementById('mba-andamento');
+        const concluidasEl = document.getElementById('mba-concluidas');
+        
+        if (pendentesEl) pendentesEl.textContent = resumo.total_pendentes || 0;
+        if (andamentoEl) andamentoEl.textContent = resumo.total_em_andamento || 0;
+        if (concluidasEl) concluidasEl.textContent = resumo.total_concluidas || 0;
+        
+    } catch (error) {
+        console.log('MBA data not available:', error.message);
+    }
+}
+
+function calculateMBAResumo(data) {
+    let pendentes = 0, andamento = 0, concluidas = 0;
+    
+    (data.turmas || []).forEach(turma => {
+        (turma.semanas || []).forEach(semana => {
+            pendentes += (semana.atividades?.a_fazer || []).length;
+            andamento += (semana.atividades?.fazendo || []).length;
+            concluidas += (semana.atividades?.feito || []).length;
+        });
+    });
+    
+    return { total_pendentes: pendentes, total_em_andamento: andamento, total_concluidas: concluidas };
+}
+
+// Carregar MBA stats se a seção existir
+if (document.getElementById('mba-section')) {
+    loadMBAStats();
+}

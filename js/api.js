@@ -9,7 +9,7 @@ const isLocalhost = window.location.hostname === 'localhost' || window.location.
 
 // API Base: usa VPS quando no GitHub Pages, relativo quando local/VPS
 const API_BASE = (isGitHubPages) 
-    ? 'http://76.13.226.10:8100/api'  // VPS Backend
+    ? 'https://srv1315519.hstgr.cloud/api'  // VPS Backend HTTPS
     : '/api';  // Local ou servido pela própria VPS
 
 /**
@@ -329,6 +329,46 @@ const CalendarAPI = {
     },
 };
 
+// ============================================
+// MBA / ADALOVE API
+// ============================================
+
+const MBAAPI = {
+    /**
+     * Obtem dados do Adalove
+     */
+    async getData() {
+        return apiRequest('/mba/data');
+    },
+    
+    /**
+     * Solicita sincronizacao dos dados
+     */
+    async sync() {
+        return apiRequest('/mba/sync', {
+            method: 'POST',
+        });
+    },
+    
+    /**
+     * Lista materiais disponiveis
+     */
+    async getMaterials() {
+        return apiRequest('/mba/materials');
+    },
+    
+    /**
+     * Atualiza dados do Adalove
+     * @param {object} data - Dados completos do Adalove
+     */
+    async updateData(data) {
+        return apiRequest('/mba/data', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    },
+};
+
 // Export para uso global
 window.TasksAPI = TasksAPI;
 window.RemindersAPI = RemindersAPI;
@@ -337,3 +377,4 @@ window.TodayAPI = TodayAPI;
 window.EventsAPI = EventsAPI;
 window.ProjectsAPI = ProjectsAPI;
 window.CalendarAPI = CalendarAPI;
+window.MBAAPI = MBAAPI;

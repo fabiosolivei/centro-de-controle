@@ -338,6 +338,10 @@
         }
         
         /* Document preview */
+        .doc-preview-wrapper {
+            position: relative;
+        }
+        
         .doc-preview-content {
             background: var(--bg-glass);
             padding: var(--spacing-lg);
@@ -346,6 +350,120 @@
             overflow-y: auto;
             font-family: var(--font-family);
             line-height: 1.8;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(99, 102, 241, 0.4) transparent;
+        }
+        
+        .doc-preview-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .doc-preview-content::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .doc-preview-content::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 4px;
+        }
+        
+        .doc-preview-content::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.6);
+        }
+        
+        /* Scroll indicator gradient */
+        .doc-preview-wrapper::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(transparent, var(--bg-card));
+            pointer-events: none;
+            border-radius: 0 0 var(--radius-md) var(--radius-md);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .doc-preview-wrapper.has-scroll::after {
+            opacity: 1;
+        }
+        
+        /* Fullscreen mode */
+        .fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 1000;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .fullscreen-overlay.active {
+            display: block;
+        }
+        
+        .fullscreen-content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+        }
+        
+        .fullscreen-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .fullscreen-header h2 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+        }
+        
+        .fullscreen-close {
+            background: var(--bg-glass);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-secondary);
+            padding: 8px 16px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+        }
+        
+        .fullscreen-close:hover {
+            background: var(--bg-glass-hover);
+            color: var(--text-primary);
+        }
+        
+        .preview-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .btn-icon {
+            background: var(--bg-glass);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-secondary);
+            padding: 8px 12px;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            font-size: 0.875rem;
+        }
+        
+        .btn-icon:hover {
+            background: var(--bg-glass-hover);
+            color: var(--text-primary);
         }
         
         .doc-preview-content h1 { font-size: 1.5rem; margin: 1em 0 0.5em; color: var(--text-primary); }
@@ -363,6 +481,173 @@
         .doc-preview-content blockquote { border-left: 3px solid var(--accent-primary); padding-left: 1em; margin: 1em 0; color: var(--text-muted); font-style: italic; }
         .doc-preview-content hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 1.5em 0; }
         .doc-preview-content input[type="checkbox"] { margin-right: 8px; }
+        
+        /* Work Project View Styles */
+        .overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-lg);
+        }
+        
+        .overview-card {
+            background: var(--bg-glass);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-md);
+            border-left: 3px solid var(--accent-primary);
+        }
+        
+        .overview-card.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .overview-card h3 {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-sm);
+            font-weight: 600;
+        }
+        
+        .overview-card p {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        
+        .sections-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: var(--spacing-md);
+        }
+        
+        .section-item {
+            background: var(--bg-card);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border-left: 3px solid transparent;
+        }
+        
+        .section-item:hover {
+            background: var(--bg-card-hover);
+            border-left-color: var(--accent-primary);
+            transform: translateX(4px);
+        }
+        
+        .section-item .section-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+        
+        .section-item .section-summary {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .meeting-item {
+            background: var(--bg-card);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-sm);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border-left: 3px solid #3b82f6;
+        }
+        
+        .meeting-item:hover {
+            background: var(--bg-card-hover);
+            transform: translateX(4px);
+        }
+        
+        .meeting-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .meeting-title {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .meeting-date {
+            font-size: 0.75rem;
+            color: var(--accent-primary);
+            background: rgba(99, 102, 241, 0.1);
+            padding: 2px 8px;
+            border-radius: var(--radius-full);
+        }
+        
+        .meeting-preview {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .case-item {
+            background: var(--bg-card);
+            padding: var(--spacing-md);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-sm);
+            cursor: pointer;
+            transition: all var(--transition-fast);
+            border-left: 3px solid #f59e0b;
+        }
+        
+        .case-item:hover {
+            background: var(--bg-card-hover);
+        }
+        
+        /* Responsive improvements for project page */
+        @media (min-width: 768px) {
+            .project-sections {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .project-sections > section:first-child {
+                grid-column: span 2;
+            }
+            
+            .project-stats {
+                grid-template-columns: repeat(5, 1fr);
+            }
+            
+            .task-item-project {
+                padding: var(--spacing-lg);
+            }
+            
+            .file-item {
+                padding: var(--spacing-lg);
+            }
+            
+            .doc-item {
+                padding: var(--spacing-lg);
+            }
+            
+            .note-item {
+                padding: var(--spacing-lg);
+            }
+        }
+        
+        @media (min-width: 1200px) {
+            .project-sections {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            .project-sections > section:first-child {
+                grid-column: span 3;
+            }
+        }
     </style>
     <!-- Marked.js para renderizar Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -376,7 +661,7 @@
 
     <main class="main-content">
         <div class="project-header">
-            <a href="/" class="back-btn">← Voltar</a>
+            <a href="index.html" class="back-btn">← Voltar</a>
             <div class="project-title-section">
                 <h1 id="project-name">Carregando...</h1>
                 <div class="project-meta">
@@ -422,7 +707,115 @@
             </div>
         </div>
         
-        <div class="project-sections">
+        <!-- WORK PROJECT OVERVIEW (Hidden by default, shown for work projects) -->
+        <div id="work-project-view" style="display:none;">
+            <!-- Executive Summary Card -->
+            <section class="card" id="executive-summary-section" style="margin-bottom: var(--spacing-xl); background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05)); border: 1px solid rgba(99, 102, 241, 0.2);">
+                <div class="section-header" style="border-bottom: none; margin-bottom: 0;">
+                    <h2 style="font-size: 1.25rem;">📊 Resumo Executivo</h2>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span class="badge badge-active" id="work-status-badge" style="font-size: 0.75rem;"></span>
+                        <span id="executive-last-update" style="font-size: 0.7rem; color: var(--text-muted);"></span>
+                    </div>
+                </div>
+                <div id="executive-summary-content" style="padding: var(--spacing-md) 0;">
+                    <p id="executive-summary-text" style="color: var(--text-secondary); font-size: 1rem; line-height: 1.7; margin-bottom: var(--spacing-md);">
+                        Carregando resumo...
+                    </p>
+                    <div style="display: flex; gap: var(--spacing-lg); flex-wrap: wrap; margin-top: var(--spacing-md);">
+                        <div id="executive-timeline" class="executive-chip" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full);">
+                            <span>📅</span>
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);"></span>
+                        </div>
+                        <div id="executive-people" class="executive-chip" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full);">
+                            <span>👥</span>
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);"></span>
+                        </div>
+                        <div id="executive-meetings" class="executive-chip" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full);">
+                            <span>📝</span>
+                            <span style="font-size: 0.875rem; color: var(--text-secondary);"></span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Quick Stats Row -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-xl);">
+                <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
+                    <div class="number" id="work-docs-count" style="font-size: 1.5rem; color: var(--accent-primary);">-</div>
+                    <div class="label" style="font-size: 0.75rem;">Documentos</div>
+                </div>
+                <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
+                    <div class="number" id="work-meetings-count-stat" style="font-size: 1.5rem; color: #22c55e;">-</div>
+                    <div class="label" style="font-size: 0.75rem;">Reuniões</div>
+                </div>
+                <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
+                    <div class="number" id="work-cases-count" style="font-size: 1.5rem; color: #f59e0b;">-</div>
+                    <div class="label" style="font-size: 0.75rem;">Cases</div>
+                </div>
+                <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
+                    <div class="number" id="work-last-activity" style="font-size: 0.9rem; color: var(--text-secondary);">-</div>
+                    <div class="label" style="font-size: 0.75rem;">Última Atividade</div>
+                </div>
+            </div>
+            
+            <!-- Overview Card (Expanded Details) -->
+            <section class="card" id="work-overview-section" style="margin-bottom: var(--spacing-xl);">
+                <div class="section-header" style="cursor: pointer;" onclick="toggleSection('work-overview-content')">
+                    <h2>📋 Detalhes do Projeto</h2>
+                    <span style="font-size: 0.875rem; color: var(--text-muted);">▼</span>
+                </div>
+                <div id="work-overview-content">
+                    <div class="overview-grid">
+                        <div class="overview-card">
+                            <h3>📋 Definição</h3>
+                            <p id="work-definition">Carregando...</p>
+                        </div>
+                        <div class="overview-card">
+                            <h3>🎯 Contexto</h3>
+                            <p id="work-context">Carregando...</p>
+                        </div>
+                        <div class="overview-card full-width">
+                            <h3>📍 Status Atual</h3>
+                            <p id="work-current-status">Carregando...</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Documentation Sections -->
+            <section class="card" id="work-sections-card" style="margin-bottom: var(--spacing-xl);">
+                <div class="section-header">
+                    <h2>📚 Documentação</h2>
+                    <span class="badge" id="work-sections-count" style="font-size:0.7rem;"></span>
+                </div>
+                <div id="work-sections-list" class="sections-grid">
+                    <div class="empty-section">Carregando...</div>
+                </div>
+            </section>
+            
+            <!-- Meeting Notes -->
+            <section class="card" id="work-meetings-section" style="margin-bottom: var(--spacing-xl);">
+                <div class="section-header">
+                    <h2>📅 Reuniões Recentes</h2>
+                    <span class="badge badge-active" id="work-meetings-count" style="font-size:0.7rem;"></span>
+                </div>
+                <div id="work-meetings-list">
+                    <div class="empty-section">Carregando...</div>
+                </div>
+            </section>
+            
+            <!-- Cases (if any) -->
+            <section class="card" id="work-cases-section" style="margin-bottom: var(--spacing-xl); display:none;">
+                <div class="section-header">
+                    <h2>📁 Cases</h2>
+                </div>
+                <div id="work-cases-list">
+                </div>
+            </section>
+        </div>
+        
+        <div class="project-sections" id="regular-project-view">
             <!-- TASKS -->
             <section class="card">
                 <div class="section-header">
@@ -462,29 +855,51 @@
             <section class="card" id="doc-preview-section" style="display:none;">
                 <div class="section-header">
                     <h2 id="preview-title">📄 Documento</h2>
-                    <button class="btn-primary" onclick="closePreview()">✕ Fechar</button>
+                    <div class="preview-actions">
+                        <button class="btn-icon" onclick="openFullscreen()" title="Expandir (F)">⛶ Expandir</button>
+                        <button class="btn-primary" onclick="closePreview()">✕ Fechar</button>
+                    </div>
                 </div>
-                <div id="doc-preview" class="doc-preview-content">
+                <div class="doc-preview-wrapper" id="doc-preview-wrapper">
+                    <div id="doc-preview" class="doc-preview-content">
+                    </div>
                 </div>
             </section>
+            
+            <!-- FULLSCREEN OVERLAY -->
+            <div class="fullscreen-overlay" id="fullscreen-overlay">
+                <div class="fullscreen-content">
+                    <div class="fullscreen-header">
+                        <h2 id="fullscreen-title">📄 Documento</h2>
+                        <button class="fullscreen-close" onclick="closeFullscreen()">✕ Fechar (Esc)</button>
+                    </div>
+                    <div id="fullscreen-content" class="doc-preview-content" style="max-height: none;">
+                    </div>
+                </div>
+            </div>
             
             <!-- DOCS & LINKS -->
             <section class="card">
                 <div class="section-header">
-                    <h2>🔗 Links Externos</h2>
+                    <h2>📄 Documentos</h2>
                     <button class="btn-primary" onclick="toggleAddDoc()">+ Adicionar</button>
                 </div>
                 
                 <div class="add-form" id="add-doc-form">
-                    <input type="text" id="new-doc-title" placeholder="Nome do link">
-                    <input type="url" id="new-doc-url" placeholder="URL">
+                    <input type="text" id="new-doc-title" placeholder="Nome do documento">
+                    <input type="url" id="new-doc-url" placeholder="URL (opcional)">
+                    <textarea id="new-doc-description" rows="2" placeholder="Descrição/Notas do documento..." style="width:100%;padding:10px;background:var(--bg-card);border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius-sm);color:var(--text-primary);margin-bottom:10px;resize:vertical;"></textarea>
                     <div class="form-row">
                         <select id="new-doc-type" style="flex:1;">
+                            <option value="doc">📄 Documento</option>
                             <option value="link">🔗 Link</option>
                             <option value="notion">📝 Notion</option>
                             <option value="figma">🎨 Figma</option>
                             <option value="github">💻 GitHub</option>
                             <option value="jira">📋 Jira</option>
+                            <option value="pdf">📕 PDF</option>
+                            <option value="sheet">📊 Planilha</option>
+                            <option value="slides">📽️ Apresentação</option>
                         </select>
                         <button class="btn-primary" onclick="addDoc()">Adicionar</button>
                     </div>
@@ -516,7 +931,11 @@
     </main>
 
     <script>
-        const API_BASE = '/api';
+        // Detectar se está rodando no GitHub Pages
+        const isGitHubPages = window.location.hostname.includes('github.io');
+        const API_BASE = isGitHubPages 
+            ? 'https://srv1315519.hstgr.cloud/api' 
+            : '/api';
         let projectId = null;
         let projectData = null;
         
@@ -525,7 +944,7 @@
         projectId = urlParams.get('id');
         
         if (!projectId) {
-            window.location.href = '/';
+            window.location.href = 'index.html';
         }
         
         async function loadProject() {
@@ -543,35 +962,10 @@
         function renderProject() {
             const { project, tasks, notes, docs, stats } = projectData;
             
-            // Header
-            document.title = `${project.name} - Centro de Controle`;
-            document.getElementById('project-name').textContent = project.name;
-            document.getElementById('project-description').textContent = project.description || '';
-            
-            // Category icons
-            const categoryIcons = { trabalho: '💼', mba: '🎓', pessoal: '👤', familia: '👨‍👩‍👧' };
-            document.getElementById('project-category').textContent = 
-                (categoryIcons[project.category] || '📁') + ' ' + (project.category || 'Geral');
-            
-            // Status badge
-            const statusEl = document.getElementById('project-status');
-            statusEl.textContent = project.status === 'active' ? 'Ativo' : 
-                                   project.status === 'paused' ? 'Pausado' : 'Concluído';
-            statusEl.className = 'badge ' + (project.status === 'active' ? 'badge-active' : 'badge-paused');
-            
-            // Priority badge
-            const priorityEl = document.getElementById('project-priority');
-            if (project.priority === 'high') {
-                priorityEl.textContent = '🔥 Alta Prioridade';
-                priorityEl.className = 'badge badge-high';
-                priorityEl.style.display = 'inline';
-            } else {
-                priorityEl.style.display = 'none';
-            }
-            
-            // Progress
-            document.getElementById('progress-fill').style.width = project.progress + '%';
-            document.getElementById('progress-text').textContent = project.progress + '%';
+            // Header já foi renderizado por renderProjectHeader()
+            // Garantir que a view regular está visível
+            document.getElementById('work-project-view').style.display = 'none';
+            document.getElementById('regular-project-view').style.display = 'grid';
             
             // Stats
             document.getElementById('stat-tasks-todo').textContent = stats.tasks_todo;
@@ -616,11 +1010,14 @@
         function renderDocs(docs) {
             const container = document.getElementById('docs-list');
             if (docs.length === 0) {
-                container.innerHTML = '<div class="empty-section">Nenhum documento ainda</div>';
+                container.innerHTML = '<div class="empty-section">Nenhum documento ainda. Adicione links, PDFs, Notion, etc.</div>';
                 return;
             }
             
-            const icons = { link: '🔗', doc: '📄', notion: '📝', figma: '🎨', github: '💻' };
+            const icons = { 
+                link: '🔗', doc: '📄', notion: '📝', figma: '🎨', github: '💻', 
+                jira: '📋', pdf: '📕', sheet: '📊', slides: '📽️' 
+            };
             
             container.innerHTML = docs.map(doc => `
                 <div class="doc-item">
@@ -629,9 +1026,9 @@
                         <div class="doc-title">
                             ${doc.url ? `<a href="${doc.url}" target="_blank">${escapeHtml(doc.title)}</a>` : escapeHtml(doc.title)}
                         </div>
-                        ${doc.description ? `<div style="font-size:0.75rem;color:var(--text-muted);">${escapeHtml(doc.description)}</div>` : ''}
+                        ${doc.description ? `<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px;line-height:1.4;">${escapeHtml(doc.description)}</div>` : ''}
                     </div>
-                    <button onclick="deleteDoc(${doc.id})" style="background:none;border:none;cursor:pointer;opacity:0.5;">🗑</button>
+                    <button onclick="deleteDoc(${doc.id})" style="background:none;border:none;cursor:pointer;opacity:0.5;font-size:1rem;">🗑</button>
                 </div>
             `).join('');
         }
@@ -704,13 +1101,19 @@
             
             const url = document.getElementById('new-doc-url').value.trim();
             const docType = document.getElementById('new-doc-type').value;
+            const description = document.getElementById('new-doc-description').value.trim();
             
-            await fetch(`${API_BASE}/projects/${projectId}/docs?title=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}&doc_type=${docType}`, {
+            let apiUrl = `${API_BASE}/projects/${projectId}/docs?title=${encodeURIComponent(title)}&doc_type=${docType}`;
+            if (url) apiUrl += `&url=${encodeURIComponent(url)}`;
+            if (description) apiUrl += `&description=${encodeURIComponent(description)}`;
+            
+            await fetch(apiUrl, {
                 method: 'POST'
             });
             
             document.getElementById('new-doc-title').value = '';
             document.getElementById('new-doc-url').value = '';
+            document.getElementById('new-doc-description').value = '';
             toggleAddDoc();
             loadProject();
         }
@@ -800,15 +1203,23 @@
             };
             
             container.innerHTML = files.map(file => {
-                const modified = new Date(file.modified * 1000);
-                const timeAgo = formatTimeAgo(modified);
+                // Para notas, extrair data do nome do arquivo em vez de usar modified
+                const filenameDate = extractDateFromFilename(file.name);
+                let dateDisplay;
+                
+                if (filenameDate) {
+                    dateDisplay = formatMeetingDate(filenameDate);
+                } else {
+                    const modified = new Date(file.modified * 1000);
+                    dateDisplay = formatTimeAgo(modified);
+                }
                 
                 return `
                     <div class="file-item type-${file.type}" onclick="openFile('${data.slug}/${file.path}')">
                         <span class="file-icon">${icons[file.type] || '📄'}</span>
                         <div class="file-info">
-                            <div class="file-name">${file.name.replace('.md', '')}</div>
-                            <div class="file-meta">${typeLabels[file.type]} • Atualizado ${timeAgo}</div>
+                            <div class="file-name">${file.name.replace('.md', '').replace(/^\d{4}-\d{2}-\d{2}-/, '')}</div>
+                            <div class="file-meta">${typeLabels[file.type]} • ${filenameDate ? dateDisplay : 'Atualizado ' + dateDisplay}</div>
                         </div>
                     </div>
                 `;
@@ -826,6 +1237,20 @@
             return date.toLocaleDateString('pt-BR');
         }
         
+        function formatMeetingDate(dateStr) {
+            // Formata data de YYYY-MM-DD para "DD Mon"
+            if (!dateStr) return '';
+            const [year, month, day] = dateStr.split('-');
+            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+            return `${parseInt(day)} ${months[parseInt(month) - 1]}`;
+        }
+        
+        function extractDateFromFilename(filename) {
+            // Extrai data de arquivos no formato 2026-02-05-titulo.md
+            const match = filename.match(/^(\d{4}-\d{2}-\d{2})-/);
+            return match ? match[1] : null;
+        }
+        
         async function openFile(filePath) {
             try {
                 const response = await fetch(`${API_BASE}/projects/files/${filePath}`);
@@ -840,12 +1265,29 @@
             }
         }
         
+        let currentPreviewTitle = '';
+        let currentPreviewContent = '';
+        
         function showPreview(title, content) {
+            currentPreviewTitle = title;
+            currentPreviewContent = content;
+            
             document.getElementById('preview-title').textContent = '📄 ' + title;
             
             // Renderizar markdown
             const html = marked.parse(content);
             document.getElementById('doc-preview').innerHTML = html;
+            
+            // Check if content needs scroll indicator
+            setTimeout(() => {
+                const wrapper = document.getElementById('doc-preview-wrapper');
+                const preview = document.getElementById('doc-preview');
+                if (preview.scrollHeight > preview.clientHeight) {
+                    wrapper.classList.add('has-scroll');
+                } else {
+                    wrapper.classList.remove('has-scroll');
+                }
+            }, 100);
             
             // Mostrar seção
             document.getElementById('doc-preview-section').style.display = 'block';
@@ -856,8 +1298,345 @@
             document.getElementById('doc-preview-section').style.display = 'none';
         }
         
+        function openFullscreen() {
+            document.getElementById('fullscreen-title').textContent = '📄 ' + currentPreviewTitle;
+            document.getElementById('fullscreen-content').innerHTML = marked.parse(currentPreviewContent);
+            document.getElementById('fullscreen-overlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeFullscreen() {
+            document.getElementById('fullscreen-overlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        // Keyboard shortcuts for preview
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (document.getElementById('fullscreen-overlay').classList.contains('active')) {
+                    closeFullscreen();
+                } else if (document.getElementById('doc-preview-section').style.display !== 'none') {
+                    closePreview();
+                }
+            }
+            if (e.key === 'f' || e.key === 'F') {
+                if (document.getElementById('doc-preview-section').style.display !== 'none' && 
+                    !document.getElementById('fullscreen-overlay').classList.contains('active') &&
+                    document.activeElement.tagName !== 'INPUT' && 
+                    document.activeElement.tagName !== 'TEXTAREA') {
+                    openFullscreen();
+                }
+            }
+        });
+        
+        // ===== WORK PROJECTS =====
+        
+        // Mapeamento de projetos de trabalho
+        const WORK_PROJECT_SLUGS = {
+            '3TPM': '3tpm',
+            '3tpm': '3tpm',
+            'Catalog Admin': 'catalog-admin',
+            'CATALOG-ADMIN': 'catalog-admin',
+            'Company Store': 'company-store',
+            'COMPANY-STORE': 'company-store',
+            'CMS DAM': 'cms-dam',
+            'CMS-DAM': 'cms-dam',
+            'POCs IA': 'pocs-ia',
+            'POCS-IA': 'pocs-ia',
+            'Autonomy': 'autonomy',
+            'AUTONOMY-AUTOMATION': 'autonomy'
+        };
+        
+        let workProjectData = null;
+        let currentWorkSlug = null;
+        
+        function isWorkProject(projectName, category) {
+            return category === 'trabalho' || WORK_PROJECT_SLUGS[projectName];
+        }
+        
+        function getWorkProjectSlug(projectName) {
+            return WORK_PROJECT_SLUGS[projectName] || projectName.toLowerCase().replace(/\s+/g, '-');
+        }
+        
+        async function loadWorkProject(projectName) {
+            const slug = getWorkProjectSlug(projectName);
+            currentWorkSlug = slug;
+            
+            try {
+                const response = await fetch(`${API_BASE}/work-projects/${slug}`);
+                if (!response.ok) {
+                    console.log('Projeto de trabalho não encontrado, usando view padrão');
+                    return false;
+                }
+                
+                workProjectData = await response.json();
+                renderWorkProjectView(workProjectData);
+                return true;
+            } catch (error) {
+                console.error('Erro ao carregar projeto de trabalho:', error);
+                return false;
+            }
+        }
+        
+        function renderWorkProjectView(data) {
+            // Mostrar view de work project, esconder view regular
+            document.getElementById('work-project-view').style.display = 'block';
+            document.getElementById('regular-project-view').style.display = 'none';
+            
+            // Overview
+            const overview = data.overview || {};
+            document.getElementById('work-definition').textContent = overview.definition || 'Sem definição disponível';
+            document.getElementById('work-context').textContent = overview.context || 'Sem contexto disponível';
+            document.getElementById('work-current-status').textContent = overview.current_status || 'Status não disponível';
+            
+            // Status badge
+            const statusBadge = document.getElementById('work-status-badge');
+            if (overview.status_raw) {
+                statusBadge.textContent = overview.status_raw;
+                statusBadge.style.display = 'inline';
+            } else {
+                statusBadge.style.display = 'none';
+            }
+            
+            // Executive Summary
+            renderExecutiveSummary(data, overview);
+            
+            // Sections
+            renderWorkSections(data.sections || []);
+            
+            // Meeting Notes
+            renderWorkMeetings(data.meeting_notes || []);
+            
+            // Cases
+            if (data.cases && data.cases.length > 0) {
+                renderWorkCases(data.cases);
+            }
+        }
+        
+        function renderExecutiveSummary(data, overview) {
+            // Build executive summary text
+            let summaryParts = [];
+            
+            if (overview.definition) {
+                summaryParts.push(overview.definition);
+            }
+            
+            if (overview.current_status && overview.current_status !== 'Status não disponível') {
+                summaryParts.push(`Situação atual: ${overview.current_status}`);
+            }
+            
+            const summaryText = summaryParts.length > 0 
+                ? summaryParts.join(' ')
+                : 'Resumo do projeto não disponível. Consulte as seções de documentação para mais detalhes.';
+            
+            document.getElementById('executive-summary-text').textContent = summaryText;
+            
+            // Quick Stats
+            const sectionsCount = data.sections ? data.sections.length : 0;
+            const meetingsCount = data.meeting_notes ? data.meeting_notes.length : 0;
+            const casesCount = data.cases ? data.cases.length : 0;
+            
+            document.getElementById('work-docs-count').textContent = sectionsCount;
+            document.getElementById('work-meetings-count-stat').textContent = meetingsCount;
+            document.getElementById('work-cases-count').textContent = casesCount;
+            
+            // Last Activity (from most recent meeting)
+            if (data.meeting_notes && data.meeting_notes.length > 0) {
+                const lastMeeting = data.meeting_notes[0];
+                const lastDate = lastMeeting.date || extractDateFromFilename(lastMeeting.file);
+                if (lastDate) {
+                    document.getElementById('work-last-activity').textContent = formatMeetingDate(lastDate);
+                    document.getElementById('executive-last-update').textContent = `Última atualização: ${formatMeetingDate(lastDate)}`;
+                }
+            }
+            
+            // Executive Chips
+            const timelineChip = document.getElementById('executive-timeline');
+            const peopleChip = document.getElementById('executive-people');
+            const meetingsChip = document.getElementById('executive-meetings');
+            
+            // Timeline info from sections
+            const timelineSection = data.sections?.find(s => s.key === 'timeline' || s.key === 'history');
+            if (timelineSection && timelineSection.summary) {
+                timelineChip.querySelector('span:last-child').textContent = timelineSection.summary.substring(0, 40) + '...';
+                timelineChip.style.display = 'flex';
+            } else {
+                timelineChip.style.display = 'none';
+            }
+            
+            // People info from sections
+            const peopleSection = data.sections?.find(s => s.key === 'people');
+            if (peopleSection && peopleSection.summary) {
+                peopleChip.querySelector('span:last-child').textContent = peopleSection.summary.substring(0, 40) + '...';
+                peopleChip.style.display = 'flex';
+            } else {
+                peopleChip.style.display = 'none';
+            }
+            
+            // Meetings chip
+            if (meetingsCount > 0) {
+                meetingsChip.querySelector('span:last-child').textContent = `${meetingsCount} reuniões registradas`;
+                meetingsChip.style.display = 'flex';
+            } else {
+                meetingsChip.style.display = 'none';
+            }
+        }
+        
+        function toggleSection(sectionId) {
+            const section = document.getElementById(sectionId);
+            if (section.style.display === 'none') {
+                section.style.display = 'block';
+            } else {
+                section.style.display = 'none';
+            }
+        }
+        
+        function renderWorkSections(sections) {
+            const container = document.getElementById('work-sections-list');
+            const countBadge = document.getElementById('work-sections-count');
+            
+            if (sections.length === 0) {
+                container.innerHTML = '<div class="empty-section">Nenhuma seção de documentação</div>';
+                countBadge.textContent = '';
+                return;
+            }
+            
+            countBadge.textContent = `${sections.length} seções`;
+            
+            const sectionIcons = {
+                'context': '🎯',
+                'definition': '📋',
+                'history': '📜',
+                'architecture': '🏗️',
+                'people': '👥',
+                'timeline': '📅',
+                'status': '📍',
+                'roadmap': '🗺️',
+                'readme': '📖'
+            };
+            
+            container.innerHTML = sections.map(section => {
+                const icon = sectionIcons[section.key] || '📄';
+                return `
+                    <div class="section-item" onclick="openWorkFile('${section.file}')">
+                        <div class="section-name">${icon} ${section.name}</div>
+                        <div class="section-summary">${section.summary || 'Clique para ver detalhes'}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderWorkMeetings(meetings) {
+            const container = document.getElementById('work-meetings-list');
+            const countBadge = document.getElementById('work-meetings-count');
+            
+            if (meetings.length === 0) {
+                container.innerHTML = '<div class="empty-section">Nenhuma nota de reunião</div>';
+                countBadge.textContent = '';
+                return;
+            }
+            
+            countBadge.textContent = `${meetings.length} reuniões`;
+            
+            container.innerHTML = meetings.slice(0, 10).map(meeting => `
+                <div class="meeting-item" onclick="openWorkFile('${meeting.file}')">
+                    <div class="meeting-header">
+                        <span class="meeting-title">${escapeHtml(meeting.title)}</span>
+                        ${meeting.date ? `<span class="meeting-date">${formatMeetingDate(meeting.date)}</span>` : ''}
+                    </div>
+                    <div class="meeting-preview">${escapeHtml(meeting.preview) || 'Clique para ver detalhes'}</div>
+                </div>
+            `).join('');
+        }
+        
+        function renderWorkCases(cases) {
+            const section = document.getElementById('work-cases-section');
+            const container = document.getElementById('work-cases-list');
+            
+            section.style.display = 'block';
+            
+            container.innerHTML = cases.map(caseItem => `
+                <div class="case-item" onclick="openWorkFile('${caseItem.file}')">
+                    <div class="meeting-title">${escapeHtml(caseItem.title)}</div>
+                    <div class="meeting-preview">${escapeHtml(caseItem.summary) || ''}</div>
+                </div>
+            `).join('');
+        }
+        
+        async function openWorkFile(filePath) {
+            if (!currentWorkSlug) return;
+            
+            try {
+                const response = await fetch(`${API_BASE}/work-projects/${currentWorkSlug}/file/${filePath}`);
+                if (!response.ok) throw new Error('Arquivo não encontrado');
+                
+                const data = await response.json();
+                showPreview(data.title, data.content);
+            } catch (error) {
+                console.error('Erro ao abrir arquivo:', error);
+                alert('Erro ao carregar arquivo');
+            }
+        }
+        
+        // ===== MODIFIED LOAD PROJECT =====
+        
+        async function loadProjectWithWorkCheck() {
+            try {
+                const response = await fetch(`${API_BASE}/projects/${projectId}/full`);
+                if (!response.ok) throw new Error('Projeto não encontrado');
+                projectData = await response.json();
+                
+                const { project } = projectData;
+                
+                // Renderizar header primeiro
+                renderProjectHeader(project);
+                
+                // Verificar se é projeto de trabalho
+                if (isWorkProject(project.name, project.category)) {
+                    const loadedWork = await loadWorkProject(project.name);
+                    if (loadedWork) {
+                        // Sucesso - view de trabalho já está renderizada
+                        return;
+                    }
+                }
+                
+                // Se não é trabalho ou falhou, usar view padrão
+                renderProject();
+            } catch (error) {
+                console.error(error);
+                document.getElementById('project-name').textContent = 'Projeto não encontrado';
+            }
+        }
+        
+        function renderProjectHeader(project) {
+            document.title = `${project.name} - Centro de Controle`;
+            document.getElementById('project-name').textContent = project.name;
+            document.getElementById('project-description').textContent = project.description || '';
+            
+            const categoryIcons = { trabalho: '💼', mba: '🎓', pessoal: '👤', familia: '👨‍👩‍👧' };
+            document.getElementById('project-category').textContent = 
+                (categoryIcons[project.category] || '📁') + ' ' + (project.category || 'Geral');
+            
+            const statusEl = document.getElementById('project-status');
+            statusEl.textContent = project.status === 'active' ? 'Ativo' : 
+                                   project.status === 'paused' ? 'Pausado' : 'Concluído';
+            statusEl.className = 'badge ' + (project.status === 'active' ? 'badge-active' : 'badge-paused');
+            
+            const priorityEl = document.getElementById('project-priority');
+            if (project.priority === 'high') {
+                priorityEl.textContent = '🔥 Alta Prioridade';
+                priorityEl.className = 'badge badge-high';
+                priorityEl.style.display = 'inline';
+            } else {
+                priorityEl.style.display = 'none';
+            }
+            
+            document.getElementById('progress-fill').style.width = project.progress + '%';
+            document.getElementById('progress-text').textContent = project.progress + '%';
+        }
+        
         // Load on start
-        loadProject();
+        loadProjectWithWorkCheck();
         loadProjectFiles();
     </script>
 </body>
