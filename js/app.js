@@ -34,6 +34,7 @@ async function loadAllData() {
             loadProjects(),
             loadReminders(),
             loadNotes(),
+            loadLifeOS(),
         ]);
     } catch (error) {
         console.error('Error loading data:', error);
