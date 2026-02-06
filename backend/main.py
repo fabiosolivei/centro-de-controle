@@ -312,6 +312,22 @@ def init_db():
         )
     """)
     
+    # Tabela de Journal (Life OS responses - Fabio's replies to scheduled messages)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS life_os_journal (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            message_name TEXT,
+            prompt TEXT,
+            response TEXT NOT NULL,
+            energy_level INTEGER,
+            wins TEXT,
+            mood TEXT,
+            date TEXT NOT NULL,
+            time TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
     conn.commit()
     conn.close()
     print("✅ Database initialized")
@@ -492,6 +508,14 @@ class ScheduledMessage(ScheduledMessageCreate):
     is_active: bool
     last_sent_at: Optional[str] = None
     created_at: str
+
+class JournalEntryCreate(BaseModel):
+    message_name: Optional[str] = None  # which scheduled message prompted this
+    prompt: Optional[str] = None  # the original prompt text
+    response: str  # Fabio's reply
+    energy_level: Optional[int] = None  # 1-5 scale
+    wins: Optional[str] = None  # comma-separated wins
+    mood: Optional[str] = None  # free-text mood tag
 
 class NoteCreate(BaseModel):
     title: str
@@ -829,6 +853,143 @@ async def toggle_scheduled_message(msg_id: int):
     conn.commit()
     conn.close()
     return {"message": f"Scheduled message {'activated' if new_state else 'deactivated'}", "is_active": bool(new_state)}
+
+# ============================================
+# LIFE OS JOURNAL (Response Tracking)
+# ============================================
+
+@app.post("/api/life-os/journal", response_model=dict)
+async def create_journal_entry(entry: JournalEntryCreate):
+    """Records a Life OS journal entry (Fabio's response to a scheduled message)"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    now = datetime.now()
+    
+    cursor.execute("""
+        INSERT INTO life_os_journal (message_name, prompt, response, energy_level, wins, mood, date, time)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (entry.message_name, entry.prompt, entry.response, entry.energy_level,
+          entry.wins, entry.mood, now.strftime("%Y-%m-%d"), now.strftime("%H:%M")))
+    
+    entry_id = cursor.lastrowid
+    conn.commit()
+    
+    cursor.execute("SELECT * FROM life_os_journal WHERE id = ?", (entry_id,))
+    new_entry = dict(cursor.fetchone())
+    conn.close()
+    
+    return new_entry
+
+@app.get("/api/life-os/journal", response_model=List[dict])
+async def get_journal_entries(
+    days: int = 7,
+    message_name: Optional[str] = None
+):
+    """Returns journal entries for analysis"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    from_date = (datetime.now() - __import__('datetime').timedelta(days=days)).strftime("%Y-%m-%d")
+    
+    query = "SELECT * FROM life_os_journal WHERE date >= ?"
+    params = [from_date]
+    
+    if message_name:
+        query += " AND message_name = ?"
+        params.append(message_name)
+    
+    query += " ORDER BY date DESC, time DESC"
+    cursor.execute(query, params)
+    entries = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return entries
+
+@app.get("/api/life-os/analytics", response_model=dict)
+async def get_life_os_analytics(days: int = 30):
+    """Returns Life OS analytics - patterns, streaks, energy trends"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    from_date = (datetime.now() - __import__('datetime').timedelta(days=days)).strftime("%Y-%m-%d")
+    
+    # Total entries
+    cursor.execute("SELECT COUNT(*) as count FROM life_os_journal WHERE date >= ?", (from_date,))
+    total = cursor.fetchone()['count']
+    
+    # Energy trend (daily averages)
+    cursor.execute("""
+        SELECT date, AVG(energy_level) as avg_energy, COUNT(*) as entries
+        FROM life_os_journal 
+        WHERE date >= ? AND energy_level IS NOT NULL
+        GROUP BY date ORDER BY date
+    """, (from_date,))
+    energy_trend = [dict(row) for row in cursor.fetchall()]
+    
+    # Response rate per message type
+    cursor.execute("""
+        SELECT message_name, COUNT(*) as count, AVG(energy_level) as avg_energy
+        FROM life_os_journal 
+        WHERE date >= ? AND message_name IS NOT NULL
+        GROUP BY message_name ORDER BY count DESC
+    """, (from_date,))
+    by_message = [dict(row) for row in cursor.fetchall()]
+    
+    # Wins frequency (most common wins)
+    cursor.execute("""
+        SELECT wins FROM life_os_journal 
+        WHERE date >= ? AND wins IS NOT NULL AND wins != ''
+    """, (from_date,))
+    all_wins = []
+    for row in cursor.fetchall():
+        all_wins.extend([w.strip() for w in row['wins'].split(',') if w.strip()])
+    
+    # Count win frequencies
+    win_counts = {}
+    for w in all_wins:
+        win_counts[w] = win_counts.get(w, 0) + 1
+    top_wins = sorted(win_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+    
+    # Days with entries vs total days
+    cursor.execute("""
+        SELECT COUNT(DISTINCT date) as days_active
+        FROM life_os_journal WHERE date >= ?
+    """, (from_date,))
+    days_active = cursor.fetchone()['days_active']
+    
+    # Streak calculation (consecutive days with entries)
+    cursor.execute("""
+        SELECT DISTINCT date FROM life_os_journal 
+        WHERE date >= ? ORDER BY date DESC
+    """, (from_date,))
+    dates = [row['date'] for row in cursor.fetchall()]
+    
+    streak = 0
+    today = datetime.now().strftime("%Y-%m-%d")
+    check_date = today
+    for d in dates:
+        if d == check_date:
+            streak += 1
+            # Previous day
+            from datetime import timedelta
+            prev = datetime.strptime(check_date, "%Y-%m-%d") - timedelta(days=1)
+            check_date = prev.strftime("%Y-%m-%d")
+        else:
+            break
+    
+    conn.close()
+    
+    return {
+        "period_days": days,
+        "total_entries": total,
+        "days_active": days_active,
+        "response_rate": round(days_active / max(days, 1) * 100, 1),
+        "current_streak": streak,
+        "energy_trend": energy_trend,
+        "by_message": by_message,
+        "top_wins": [{"win": w, "count": c} for w, c in top_wins],
+        "avg_energy": round(sum(e.get('avg_energy', 0) or 0 for e in energy_trend) / max(len(energy_trend), 1), 1) if energy_trend else None
+    }
 
 @app.post("/api/scheduled-messages/seed-life-os")
 async def seed_life_os_messages(request: Request):
@@ -2686,6 +2847,62 @@ async def get_confluence_summary():
         "risks": active_risks,
         "bugs": active_bugs,
         "current_sprint": current_sprint['sprint_name'] if current_sprint else None
+    }
+
+
+@app.get("/api/confluence/all")
+async def get_confluence_all(team: Optional[str] = None):
+    """Returns ALL Confluence data in a single request for fast page load"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Sprints
+    cursor.execute("SELECT * FROM confluence_sprints ORDER BY sprint_number DESC")
+    sprints = [dict(row) for row in cursor.fetchall()]
+    
+    # Initiatives
+    if team:
+        cursor.execute("SELECT * FROM confluence_initiatives WHERE team LIKE ? ORDER BY beesip_id", (f'%{team}%',))
+    else:
+        cursor.execute("SELECT * FROM confluence_initiatives ORDER BY beesip_id")
+    initiatives = [dict(row) for row in cursor.fetchall()]
+    
+    # Epics
+    cursor.execute("SELECT * FROM confluence_epics ORDER BY beescad_id")
+    epics = [dict(row) for row in cursor.fetchall()]
+    
+    # Risks (active only)
+    cursor.execute("SELECT * FROM confluence_risks WHERE status != 'Done' ORDER BY gut_score DESC")
+    risks = [dict(row) for row in cursor.fetchall()]
+    
+    # Bugs (active only)
+    if team:
+        cursor.execute("SELECT * FROM confluence_bugs WHERE status NOT IN ('Done', 'Closed') AND team LIKE ? ORDER BY priority", (f'%{team}%',))
+    else:
+        cursor.execute("SELECT * FROM confluence_bugs WHERE status NOT IN ('Done', 'Closed') ORDER BY priority")
+    bugs = [dict(row) for row in cursor.fetchall()]
+    
+    # Sync status
+    cursor.execute("SELECT * FROM sync_log WHERE source = 'confluence' ORDER BY synced_at DESC LIMIT 1")
+    sync_row = cursor.fetchone()
+    sync_status = dict(sync_row) if sync_row else None
+    
+    conn.close()
+    
+    return {
+        "sprints": sprints,
+        "initiatives": initiatives,
+        "epics": epics,
+        "risks": risks,
+        "bugs": bugs,
+        "sync_status": sync_status,
+        "stats": {
+            "initiatives": len(initiatives),
+            "epics": len(epics),
+            "sprints": len(sprints),
+            "risks": len(risks),
+            "bugs": len(bugs)
+        }
     }
 
 

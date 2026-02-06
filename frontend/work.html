@@ -767,34 +767,37 @@
         });
         
         async function loadAllWorkData() {
+            const startTime = performance.now();
             try {
-                await Promise.all([
-                    loadSprints(),
-                    loadInitiatives(),
-                    loadEpics(),
-                    loadRisks(),
-                    loadBugs(),
-                    loadSyncStatus()
-                ]);
+                // Single API call instead of 6 separate ones
+                const teamParam = currentTeamFilter !== 'all' ? `?team=${currentTeamFilter}` : '';
+                const response = await fetch(`${API_BASE}/confluence/all${teamParam}`);
+                const data = await response.json();
+                
+                sprints = data.sprints || [];
+                initiatives = data.initiatives || [];
+                epics = data.epics || [];
+                risks = data.risks || [];
+                bugs = data.bugs || [];
+                
+                // Render everything
+                renderSprints();
+                renderInitiatives();
+                renderEpics();
+                renderRisks();
+                renderBugs();
                 updateStats();
+                
+                // Sync status
+                if (data.sync_status && data.sync_status.synced_at) {
+                    document.getElementById('last-sync').textContent = 
+                        `Última sync: ${formatDateTime(data.sync_status.synced_at)}`;
+                }
+                
+                const elapsed = Math.round(performance.now() - startTime);
+                console.log(`Work data loaded in ${elapsed}ms (single request)`);
             } catch (error) {
                 console.error('Error loading work data:', error);
-            }
-        }
-        
-        // ===========================================
-        // SPRINTS
-        // ===========================================
-        
-        async function loadSprints() {
-            try {
-                const response = await fetch(`${API_BASE}/confluence/sprints`);
-                sprints = await response.json();
-                renderSprints();
-            } catch (error) {
-                console.error('Error loading sprints:', error);
-                document.getElementById('sprint-timeline').innerHTML = 
-                    '<div class="empty-state-work"><p>Sem dados de sprint</p></div>';
             }
         }
         
@@ -806,7 +809,9 @@
                 return;
             }
             
-            container.innerHTML = sprints.map(sprint => `
+            // Show only last 5 sprints for speed
+            const recentSprints = sprints.slice(0, 5);
+            container.innerHTML = recentSprints.map(sprint => `
                 <div class="sprint-chip ${sprint.is_current ? 'current' : ''}" 
                      onclick="filterBySprint('${sprint.sprint_name}')">
                     <span class="sprint-name">${escapeHtml(sprint.sprint_name)}</span>
@@ -818,24 +823,6 @@
         function filterBySprint(sprintName) {
             // Future: filter epics by sprint
             console.log('Filter by sprint:', sprintName);
-        }
-        
-        // ===========================================
-        // INITIATIVES
-        // ===========================================
-        
-        async function loadInitiatives() {
-            try {
-                const url = currentTeamFilter === 'all' 
-                    ? `${API_BASE}/confluence/initiatives`
-                    : `${API_BASE}/confluence/initiatives?team=${currentTeamFilter}`;
-                    
-                const response = await fetch(url);
-                initiatives = await response.json();
-                renderInitiatives();
-            } catch (error) {
-                console.error('Error loading initiatives:', error);
-            }
         }
         
         function renderInitiatives() {
@@ -878,16 +865,6 @@
         // EPICS
         // ===========================================
         
-        async function loadEpics() {
-            try {
-                const response = await fetch(`${API_BASE}/confluence/epics`);
-                epics = await response.json();
-                renderEpics();
-            } catch (error) {
-                console.error('Error loading epics:', error);
-            }
-        }
-        
         function renderEpics() {
             const container = document.getElementById('epics-list');
             const filtered = epics; // Could add filtering later
@@ -924,16 +901,6 @@
         // RISKS
         // ===========================================
         
-        async function loadRisks() {
-            try {
-                const response = await fetch(`${API_BASE}/confluence/risks`);
-                risks = await response.json();
-                renderRisks();
-            } catch (error) {
-                console.error('Error loading risks:', error);
-            }
-        }
-        
         function renderRisks() {
             const container = document.getElementById('risks-list');
             
@@ -967,20 +934,6 @@
         // BUGS
         // ===========================================
         
-        async function loadBugs() {
-            try {
-                const url = currentTeamFilter === 'all' 
-                    ? `${API_BASE}/confluence/bugs`
-                    : `${API_BASE}/confluence/bugs?team=${currentTeamFilter}`;
-                    
-                const response = await fetch(url);
-                bugs = await response.json();
-                renderBugs();
-            } catch (error) {
-                console.error('Error loading bugs:', error);
-            }
-        }
-        
         function renderBugs() {
             const container = document.getElementById('bugs-list');
             const filtered = filterByTeam(bugs);
@@ -1009,25 +962,6 @@
                     </div>
                 </div>
             `).join('');
-        }
-        
-        // ===========================================
-        // SYNC STATUS
-        // ===========================================
-        
-        async function loadSyncStatus() {
-            try {
-                const response = await fetch(`${API_BASE}/confluence/sync/status`);
-                const status = await response.json();
-                
-                if (status.completed_at) {
-                    const date = new Date(status.completed_at);
-                    document.getElementById('last-sync').textContent = 
-                        `Última sync: ${formatDateTime(status.completed_at)}`;
-                }
-            } catch (error) {
-                console.log('Sync status not available');
-            }
         }
         
         async function syncConfluence() {
@@ -1103,9 +1037,8 @@
                     
                     currentTeamFilter = team;
                     
-                    // Reload filtered data
-                    loadInitiatives();
-                    loadBugs();
+                    // Reload all data with new filter
+                    loadAllWorkData();
                 });
             });
         }
