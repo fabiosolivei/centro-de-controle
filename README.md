@@ -92,10 +92,22 @@ python sync_confluence.py
 ## 🎨 Features do Dashboard
 
 - **GPM Dashboard** - Visão executiva para Group Product Manager
-- **Keyboard Shortcuts** - Navegação rápida (Cmd+K, j/k)
+- **Keyboard Shortcuts** - Navegação rápida (Cmd+K, C, B, N, R, S, ?, 1-3)
+- **Command Palette** - Busca universal estilo Linear (Cmd+K)
 - **Work Status** - Integração Confluence Situation Wall
 - **MBA Tracker** - Acompanhamento acadêmico
 - **Portfolio View** - Todos os projetos em uma tela
+- **API Cache** - Cache client-side com TTL configurável por endpoint
+- **Skeleton Loading** - Feedback visual durante carregamento
+- **Toast Notifications** - Feedback não-intrusivo para ações do usuário
+- **Responsive** - Mobile, tablet, desktop e ultra-wide (1920px+)
+
+## ♿ Acessibilidade
+
+- Touch targets mínimos de 44px (WCAG 2.1)
+- `:focus-visible` para navegação por teclado
+- `aria-label` em todos os botões com ícone/emoji
+- Contraste de texto muted ajustado (WCAG AA)
 
 ## 🔐 Segurança
 
