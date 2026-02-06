@@ -34,7 +34,7 @@
                 <a href="files.html" class="nav-link" aria-label="Arquivos">Arquivos</a>
             </nav>
             <div class="header-actions">
-                <button class="btn-icon" onclick="openCommandPalette()" title="Buscar (Cmd+K)" aria-label="Buscar">
+                <button class="btn-icon" onclick="openCommandPalette()" title="Buscar (Ctrl+K)" aria-label="Buscar">
                     <span>🔍</span>
                 </button>
                 <button class="btn-icon" onclick="syncData()" title="Sincronizar" aria-label="Sincronizar dados">
@@ -222,7 +222,7 @@
     </div>
 
     <!-- KEYBOARD HINT -->
-    <!-- Keyboard hints removed - discoverable via Cmd+K -->
+    <!-- Keyboard hints removed - discoverable via Ctrl+K -->
 
     <!-- TASK MODAL -->
     <div class="modal" id="task-modal">
@@ -1122,7 +1122,7 @@
                 const isTyping = ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
                 const isPaletteOpen = document.getElementById('command-palette').classList.contains('active');
                 
-                // Command palette (Cmd/Ctrl + K) - works always
+                // Command palette (Ctrl + K) - works always
                 if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
                     e.preventDefault();
                     if (isPaletteOpen) {
@@ -1133,7 +1133,7 @@
                     return;
                 }
                 
-                // New task (Cmd/Ctrl + N)
+                // New task (Ctrl + N)
                 if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
                     e.preventDefault();
                     openTaskModal();
@@ -1252,8 +1252,8 @@
         // Shortcuts help modal
         function showShortcutsHelp() {
             const shortcuts = [
-                { key: 'Cmd/Ctrl + K', desc: 'Command palette' },
-                { key: 'Cmd/Ctrl + N', desc: 'Nova tarefa' },
+                { key: 'Ctrl + K', desc: 'Command palette' },
+                { key: 'Ctrl + N', desc: 'Nova tarefa' },
                 { key: 'C', desc: 'Criar tarefa' },
                 { key: 'N', desc: 'Nova nota' },
                 { key: 'R', desc: 'Novo lembrete' },
