@@ -10,6 +10,22 @@ import re
 from datetime import datetime, date
 from typing import Optional, List
 from contextlib import asynccontextmanager
+from pathlib import Path
+
+# Load .env file
+_env_file = Path(__file__).parent / ".env"
+if _env_file.exists():
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(_env_file)
+    except ImportError:
+        # Fallback: manual .env parsing
+        with open(_env_file) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, _, value = line.partition('=')
+                    os.environ.setdefault(key.strip(), value.strip())
 
 from fastapi import FastAPI, HTTPException, Query, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -239,9 +255,149 @@ def init_db():
         )
     """)
     
+    # Tabela de Sync Log (unified, all sources)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS sync_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source TEXT NOT NULL,
+            status TEXT DEFAULT 'pending',
+            items_count INTEGER DEFAULT 0,
+            error_message TEXT,
+            synced_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
+    # Tabela de Meeting Notes (from Notion/Atlas push)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS meeting_notes (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            date TEXT,
+            project TEXT,
+            summary TEXT,
+            participants TEXT,
+            action_items TEXT,
+            source TEXT DEFAULT 'notion',
+            notion_url TEXT,
+            synced_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
     conn.commit()
     conn.close()
     print("✅ Database initialized")
+
+
+def log_sync(source: str, status: str, items_count: int = 0, error_message: str = None):
+    """Write a sync log entry"""
+    conn = get_db()
+    conn.execute("""
+        INSERT INTO sync_log (source, status, items_count, error_message, synced_at)
+        VALUES (?, ?, ?, ?, ?)
+    """, (source, status, items_count, error_message, datetime.now().isoformat()))
+    conn.commit()
+    conn.close()
+
+
+def _persist_confluence_data(data: dict, conn=None) -> int:
+    """Persist parsed Confluence situation wall data to SQLite. Returns total items synced."""
+    close_conn = False
+    if conn is None:
+        conn = get_db()
+        close_conn = True
+    
+    cursor = conn.cursor()
+    total = 0
+    
+    # Sprints
+    for sprint in data.get("sprints", []):
+        cursor.execute("""
+            INSERT OR REPLACE INTO confluence_sprints 
+            (sprint_name, sprint_number, start_date, end_date, release_date, is_current)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            sprint.get("name", ""),
+            sprint.get("number", 0),
+            sprint.get("start_date", ""),
+            sprint.get("end_date", ""),
+            sprint.get("release_date", ""),
+            sprint.get("is_current", False)
+        ))
+        total += 1
+    
+    # Initiatives
+    for init in data.get("initiatives", []):
+        cursor.execute("""
+            INSERT OR REPLACE INTO confluence_initiatives
+            (beesip_id, title, status, priority, team, kickoff_date, jira_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            init.get("beesip_id", ""),
+            init.get("title", ""),
+            init.get("status", ""),
+            init.get("priority", ""),
+            init.get("team", ""),
+            init.get("kickoff_date", ""),
+            init.get("jira_url", "")
+        ))
+        total += 1
+    
+    # Epics
+    for epic in data.get("epics", []):
+        cursor.execute("""
+            INSERT OR REPLACE INTO confluence_epics
+            (beescad_id, title, status, size, sprint, initiative_beesip, jira_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            epic.get("beescad_id", ""),
+            epic.get("title", ""),
+            epic.get("status", ""),
+            epic.get("size", ""),
+            epic.get("sprint", ""),
+            epic.get("initiative_beesip", ""),
+            epic.get("jira_url", "")
+        ))
+        total += 1
+    
+    # Risks
+    for risk in data.get("risks", []):
+        cursor.execute("""
+            INSERT OR REPLACE INTO confluence_risks
+            (beescad_id, title, assignee, status, priority, gut_score, jira_url)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (
+            risk.get("beescad_id", ""),
+            risk.get("title", ""),
+            risk.get("assignee", ""),
+            risk.get("status", ""),
+            risk.get("priority", ""),
+            risk.get("gut_score", 0),
+            risk.get("jira_url", "")
+        ))
+        total += 1
+    
+    # Bugs
+    for bug in data.get("bugs", []):
+        cursor.execute("""
+            INSERT OR REPLACE INTO confluence_bugs
+            (beescad_id, title, priority, status, team, jira_url)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            bug.get("beescad_id", ""),
+            bug.get("title", ""),
+            bug.get("priority", ""),
+            bug.get("status", ""),
+            bug.get("team", ""),
+            bug.get("jira_url", "")
+        ))
+        total += 1
+    
+    conn.commit()
+    if close_conn:
+        conn.close()
+    
+    return total
+
 
 # ============================================
 # PYDANTIC MODELS
@@ -1942,6 +2098,40 @@ async def get_recent_updates(limit: int = 20):
     except Exception as e:
         print(f"Error fetching reminder updates: {e}")
     
+    # 5. Meeting notes from database (synced from Notion)
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, title, date, project, summary, source, notion_url, synced_at
+            FROM meeting_notes
+            WHERE date >= date('now', '-7 days') OR synced_at >= datetime('now', '-7 days')
+            ORDER BY date DESC
+            LIMIT 20
+        """)
+        for row in cursor.fetchall():
+            note = dict(row)
+            # Avoid duplicates with file-based meeting notes
+            dupe = False
+            note_title_lower = note['title'].lower() if note['title'] else ''
+            for existing in updates:
+                if existing.get('entity_type') == 'meeting' and note_title_lower in existing.get('message', '').lower():
+                    dupe = True
+                    break
+            if not dupe:
+                updates.append({
+                    "type": "meeting_note",
+                    "message": f"Reuniao: {note['title']}" + (f" ({note['project']})" if note['project'] else ""),
+                    "icon": "📅",
+                    "timestamp": note['date'] or note['synced_at'],
+                    "entity_type": "meeting",
+                    "entity_id": note['id'],
+                    "notion_url": note.get('notion_url', '')
+                })
+        conn.close()
+    except Exception as e:
+        print(f"Error fetching meeting_notes from DB: {e}")
+    
     # Ordenar por timestamp (mais recente primeiro)
     updates.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
     
@@ -2407,28 +2597,50 @@ async def list_work_projects():
 
 @app.get("/api/sync/status")
 async def get_all_sync_status():
-    """Returns sync status for all data sources"""
+    """Returns sync status for all data sources (reads from sync_log + file checks)"""
     conn = get_db()
     
-    # Confluence sync status
-    confluence_status = {"status": "never_synced", "last_sync": None}
-    try:
-        row = conn.execute("""
-            SELECT status, completed_at, items_synced 
-            FROM confluence_sync_status 
-            ORDER BY started_at DESC LIMIT 1
-        """).fetchone()
-        if row:
-            confluence_status = {
-                "status": row["status"],
-                "last_sync": row["completed_at"],
-                "items": row["items_synced"]
-            }
-    except:
-        pass
+    def get_latest_sync(source_name):
+        """Get latest sync_log entry for a source"""
+        try:
+            row = conn.execute("""
+                SELECT status, items_count, synced_at, error_message
+                FROM sync_log
+                WHERE source = ?
+                ORDER BY synced_at DESC LIMIT 1
+            """, (source_name,)).fetchone()
+            if row:
+                return {
+                    "status": row["status"],
+                    "last_sync": row["synced_at"],
+                    "items": row["items_count"],
+                    "error": row["error_message"]
+                }
+        except:
+            pass
+        # Fallback: check old confluence_sync_status table
+        if source_name == "confluence":
+            try:
+                row = conn.execute("""
+                    SELECT status, completed_at, items_synced 
+                    FROM confluence_sync_status 
+                    ORDER BY started_at DESC LIMIT 1
+                """).fetchone()
+                if row:
+                    return {
+                        "status": row["status"],
+                        "last_sync": row["completed_at"],
+                        "items": row["items_synced"]
+                    }
+            except:
+                pass
+        return {"status": "never_synced", "last_sync": None}
+    
+    confluence_status = get_latest_sync("confluence")
+    notion_status = get_latest_sync("notion")
+    mba_status = get_latest_sync("mba")
     
     # Calendar: check CALENDARIO.md modification time
-    import os
     calendar_status = {"status": "unknown", "last_sync": None}
     cal_paths = [
         "/root/Nova/openclaw-workspace/CALENDARIO.md",
@@ -2437,104 +2649,77 @@ async def get_all_sync_status():
     for cal_path in cal_paths:
         if os.path.exists(cal_path):
             mtime = os.path.getmtime(cal_path)
-            from datetime import datetime as dt
             calendar_status = {
                 "status": "ok",
-                "last_sync": dt.fromtimestamp(mtime).isoformat(),
+                "last_sync": datetime.fromtimestamp(mtime).isoformat(),
                 "source": "CALENDARIO.md"
             }
             break
     
-    # MBA: check adalove-data.json
-    mba_status = {"status": "never_synced", "last_sync": None}
-    mba_paths = [
-        "/root/Nova/openclaw-workspace/docs/mba/adalove-data.json",
-        os.path.expanduser("~/Documents/Nova/openclaw-workspace/docs/mba/adalove-data.json")
-    ]
-    for mba_path in mba_paths:
-        if os.path.exists(mba_path):
-            mtime = os.path.getmtime(mba_path)
-            mba_status = {
-                "status": "ok",
-                "last_sync": dt.fromtimestamp(mtime).isoformat()
-            }
-            break
+    # MBA: also check file if sync_log is empty
+    if mba_status["status"] == "never_synced":
+        mba_paths = [
+            "/root/Nova/openclaw-workspace/docs/mba/adalove-data.json",
+            os.path.expanduser("~/Documents/Nova/openclaw-workspace/docs/mba/adalove-data.json")
+        ]
+        for mba_path in mba_paths:
+            if os.path.exists(mba_path):
+                mtime = os.path.getmtime(mba_path)
+                mba_status = {
+                    "status": "ok",
+                    "last_sync": datetime.fromtimestamp(mtime).isoformat()
+                }
+                break
     
     # Tasks/Projects: always available (local SQLite)
     task_count = conn.execute("SELECT COUNT(*) FROM tasks").fetchone()[0]
     project_count = conn.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
     
+    # Meeting notes count
+    meeting_count = 0
+    try:
+        meeting_count = conn.execute("SELECT COUNT(*) FROM meeting_notes").fetchone()[0]
+    except:
+        pass
+    
     return {
         "confluence": confluence_status,
         "calendar": calendar_status,
         "mba": mba_status,
+        "notion": notion_status,
         "tasks": {"status": "ok", "count": task_count},
-        "projects": {"status": "ok", "count": project_count}
+        "projects": {"status": "ok", "count": project_count},
+        "meetings": {"status": "ok", "count": meeting_count}
     }
 
 
 @app.post("/api/notion/sync")
 async def trigger_notion_sync():
-    """Triggers a Notion sync. Uses NOTION_TOKEN if available, otherwise returns instructions."""
-    import os, httpx
-    
-    notion_token = os.environ.get("NOTION_TOKEN", "")
-    meeting_db_id = os.environ.get("NOTION_MEETINGS_DB", "")
-    
-    if not notion_token:
-        return {
-            "status": "not_configured",
-            "message": "NOTION_TOKEN não configurado no backend. Use o Atlas MCP (Cursor) para sincronizar.",
-            "hint": "Execute: notion_sync_to_rag() via Atlas MCP"
-        }
-    
-    # Simple sync: fetch recent meeting notes from Notion API
+    """Triggers a Notion sync using the sync_notion_vps module."""
     try:
-        headers = {
-            "Authorization": f"Bearer {notion_token}",
-            "Notion-Version": "2022-06-28",
-            "Content-Type": "application/json"
-        }
+        from sync_notion_vps import sync_notion_meetings, NOTION_TOKEN
         
-        cutoff = (datetime.now() - __import__('datetime').timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%S")
+        if not NOTION_TOKEN:
+            return {
+                "status": "not_configured",
+                "message": "NOTION_TOKEN nao configurado. Adicione ao .env no backend."
+            }
         
-        async with httpx.AsyncClient(timeout=15) as client:
-            if meeting_db_id:
-                resp = await client.post(
-                    f"https://api.notion.com/v1/databases/{meeting_db_id}/query",
-                    headers=headers,
-                    json={
-                        "filter": {
-                            "timestamp": "last_edited_time",
-                            "last_edited_time": {"after": cutoff}
-                        },
-                        "page_size": 20
-                    }
-                )
-            else:
-                resp = await client.post(
-                    "https://api.notion.com/v1/search",
-                    headers=headers,
-                    json={
-                        "filter": {"value": "page", "property": "object"},
-                        "page_size": 20
-                    }
-                )
-            
-            if resp.status_code == 200:
-                data = resp.json()
-                pages = data.get("results", [])
-                return {
-                    "status": "ok",
-                    "pages_found": len(pages),
-                    "synced_at": datetime.now().isoformat()
-                }
-            else:
-                return {
-                    "status": "error",
-                    "message": f"Notion API returned {resp.status_code}",
-                    "detail": resp.text[:200]
-                }
+        import asyncio
+        success = await asyncio.to_thread(sync_notion_meetings)
+        
+        if success:
+            # Get count from DB
+            conn = get_db()
+            count = conn.execute("SELECT COUNT(*) FROM meeting_notes").fetchone()[0]
+            conn.close()
+            return {
+                "status": "ok",
+                "meetings_synced": count,
+                "synced_at": datetime.now().isoformat()
+            }
+        else:
+            return {"status": "error", "message": "Notion sync failed. Check logs."}
     except Exception as e:
         return {"status": "error", "message": str(e)}
 
@@ -2558,15 +2743,18 @@ async def trigger_full_sync():
     from fastapi.responses import JSONResponse
     results = {}
     
-    # 1. Confluence sync - delegate to the existing sync endpoint
+    # 1. Confluence sync - fetch, parse, AND persist to DB
     try:
         from situation_wall_parser import fetch_and_parse
         data = fetch_and_parse()
         if data:
-            results["confluence"] = {"status": "ok", "message": f"Confluence synced: {len(data.get('sprints', []))} sprints"}
+            total = _persist_confluence_data(data)
+            log_sync("confluence", "completed", total)
+            results["confluence"] = {"status": "ok", "message": f"Confluence synced: {total} items persisted"}
         else:
             results["confluence"] = {"status": "skipped", "message": "No data from Confluence"}
     except Exception as e:
+        log_sync("confluence", "error", error_message=str(e))
         results["confluence"] = {"status": "error", "message": str(e)}
     
     # 2. MBA - notify only (external sync)
@@ -2579,6 +2767,109 @@ async def trigger_full_sync():
     results["tasks"] = {"status": "ok", "message": "Local data, always available"}
     
     return results
+
+
+# ============================================
+# ATLAS PUSH ENDPOINTS (authenticated)
+# ============================================
+
+ATLAS_PUSH_KEY = os.environ.get("ATLAS_PUSH_KEY", "")
+
+from fastapi import Request, Depends
+
+def verify_atlas_key(request: Request):
+    """Verify the Atlas push API key"""
+    if not ATLAS_PUSH_KEY:
+        raise HTTPException(503, "Push not configured (ATLAS_PUSH_KEY not set)")
+    key = request.headers.get("X-Atlas-Key", "")
+    if key != ATLAS_PUSH_KEY:
+        raise HTTPException(401, "Invalid or missing Atlas key")
+
+
+@app.post("/api/sync/push/meetings")
+async def push_meetings(request: Request):
+    """Receive enriched meeting data from Atlas MCP"""
+    verify_atlas_key(request)
+    body = await request.json()
+    meetings = body.get("meetings", [])
+    
+    if not meetings:
+        return {"status": "error", "message": "No meetings provided"}
+    
+    conn = get_db()
+    synced = 0
+    for m in meetings:
+        try:
+            conn.execute("""
+                INSERT OR REPLACE INTO meeting_notes
+                (id, title, date, project, summary, participants, action_items, source, notion_url, synced_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                m.get("id", f"atlas-{datetime.now().timestamp()}"),
+                m.get("title", ""),
+                m.get("date", ""),
+                m.get("project", ""),
+                m.get("summary", ""),
+                m.get("participants", ""),
+                m.get("action_items", ""),
+                m.get("source", "atlas"),
+                m.get("notion_url", ""),
+                datetime.now().isoformat()
+            ))
+            synced += 1
+        except Exception as e:
+            print(f"Error pushing meeting: {e}")
+    
+    conn.commit()
+    log_sync("notion", "completed", synced)
+    conn.close()
+    
+    return {"status": "ok", "meetings_synced": synced}
+
+
+@app.post("/api/sync/push/mba")
+async def push_mba(request: Request):
+    """Receive MBA/Adalove data from Atlas MCP"""
+    verify_atlas_key(request)
+    body = await request.json()
+    
+    # Write to adalove-data.json
+    mba_paths = [
+        "/root/Nova/openclaw-workspace/docs/mba/adalove-data.json",
+        os.path.expanduser("~/Documents/Nova/openclaw-workspace/docs/mba/adalove-data.json")
+    ]
+    
+    written = False
+    for mba_path in mba_paths:
+        mba_dir = os.path.dirname(mba_path)
+        if os.path.exists(mba_dir):
+            with open(mba_path, 'w') as f:
+                json.dump(body, f, ensure_ascii=False, indent=2)
+            written = True
+            break
+    
+    if written:
+        log_sync("mba", "completed", body.get("resumo", {}).get("total_pendentes", 0) + 
+                 body.get("resumo", {}).get("total_em_andamento", 0) +
+                 body.get("resumo", {}).get("total_concluidas", 0))
+        return {"status": "ok", "message": "MBA data saved", "path": mba_path}
+    else:
+        return {"status": "error", "message": "Could not find MBA data directory"}
+
+
+@app.post("/api/sync/push/work-status")
+async def push_work_status(request: Request):
+    """Receive parsed Confluence situation wall data from Atlas MCP"""
+    verify_atlas_key(request)
+    body = await request.json()
+    
+    try:
+        total = _persist_confluence_data(body)
+        log_sync("confluence", "completed", total)
+        return {"status": "ok", "items_persisted": total}
+    except Exception as e:
+        log_sync("confluence", "error", error_message=str(e))
+        return {"status": "error", "message": str(e)}
 
 
 # ============================================

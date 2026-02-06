@@ -247,6 +247,17 @@ def sync_confluence_data():
         conn.commit()
         conn.close()
         
+        # Write to unified sync_log
+        try:
+            cursor2 = conn.cursor() if not conn.closed else get_db().cursor()
+            cursor2.execute("""
+                INSERT INTO sync_log (source, status, items_count, synced_at)
+                VALUES ('confluence', 'completed', ?, ?)
+            """, (items_synced, datetime.now().isoformat()))
+            cursor2.connection.commit()
+        except Exception:
+            pass  # sync_log table may not exist yet
+        
         print(f"[{datetime.now().isoformat()}] Sync completed: {items_synced} items synced")
         print(f"  Summary:")
         print(f"    - Sprints: {len(data.get('sprints', []))}")
