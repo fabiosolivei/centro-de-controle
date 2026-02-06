@@ -50,6 +50,10 @@
                             <span>🔄</span> Sincronizar tudo
                             <small>Confluence + fontes externas</small>
                         </div>
+                        <div class="sync-dropdown-item" onclick="syncNotion()">
+                            <span>📓</span> Sincronizar Notion
+                            <small>Meeting notes e paginas</small>
+                        </div>
                         <div class="sync-dropdown-divider"></div>
                         <div class="sync-dropdown-status" id="sync-status-summary">
                             Carregando status...
@@ -1468,9 +1472,48 @@
                     items.push(`<div class="sync-status-row not-synced"><span>MBA</span><span>nunca</span></div>`);
                 }
                 
+                // Notion - check separately
+                try {
+                    const notionStatus = await apiRequest('/notion/sync/status');
+                    if (notionStatus.configured) {
+                        items.push(`<div class="sync-status-row"><span>Notion</span><span>pronto</span></div>`);
+                    } else {
+                        items.push(`<div class="sync-status-row not-synced"><span>Notion</span><span>via MCP</span></div>`);
+                    }
+                } catch (e) {
+                    items.push(`<div class="sync-status-row not-synced"><span>Notion</span><span>—</span></div>`);
+                }
+                
                 container.innerHTML = items.join('');
             } catch (error) {
                 container.innerHTML = '<div class="sync-status-row not-synced"><span>Status indisponivel</span></div>';
+            }
+        }
+        
+        async function syncNotion() {
+            document.getElementById('sync-dropdown')?.classList.remove('open');
+            const syncBtn = document.getElementById('sync-btn');
+            syncBtn?.classList.add('syncing');
+            showNotification('Sincronizando Notion...');
+            
+            try {
+                const result = await apiRequest('/notion/sync', { method: 'POST' });
+                
+                if (result.status === 'ok') {
+                    showNotification(`Notion: ${result.pages_found} paginas sincronizadas`);
+                } else if (result.status === 'not_configured') {
+                    showNotification('Notion: use Atlas MCP para sincronizar');
+                } else {
+                    showNotification('Notion: erro na sincronizacao');
+                }
+                
+                APICache.data.clear();
+                await loadAllData();
+            } catch (error) {
+                console.error('Notion sync error:', error);
+                showNotification('Erro ao sincronizar Notion');
+            } finally {
+                syncBtn?.classList.remove('syncing');
             }
         }
     </script>

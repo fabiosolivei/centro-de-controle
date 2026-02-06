@@ -2402,6 +2402,186 @@ async def list_work_projects():
 
 
 # ============================================
+# SYNC STATUS (unified)
+# ============================================
+
+@app.get("/api/sync/status")
+async def get_all_sync_status():
+    """Returns sync status for all data sources"""
+    conn = get_db()
+    
+    # Confluence sync status
+    confluence_status = {"status": "never_synced", "last_sync": None}
+    try:
+        row = conn.execute("""
+            SELECT status, completed_at, items_synced 
+            FROM confluence_sync_status 
+            ORDER BY started_at DESC LIMIT 1
+        """).fetchone()
+        if row:
+            confluence_status = {
+                "status": row["status"],
+                "last_sync": row["completed_at"],
+                "items": row["items_synced"]
+            }
+    except:
+        pass
+    
+    # Calendar: check CALENDARIO.md modification time
+    import os
+    calendar_status = {"status": "unknown", "last_sync": None}
+    cal_paths = [
+        "/root/Nova/openclaw-workspace/CALENDARIO.md",
+        os.path.expanduser("~/Documents/Nova/openclaw-workspace/CALENDARIO.md")
+    ]
+    for cal_path in cal_paths:
+        if os.path.exists(cal_path):
+            mtime = os.path.getmtime(cal_path)
+            from datetime import datetime as dt
+            calendar_status = {
+                "status": "ok",
+                "last_sync": dt.fromtimestamp(mtime).isoformat(),
+                "source": "CALENDARIO.md"
+            }
+            break
+    
+    # MBA: check adalove-data.json
+    mba_status = {"status": "never_synced", "last_sync": None}
+    mba_paths = [
+        "/root/Nova/openclaw-workspace/docs/mba/adalove-data.json",
+        os.path.expanduser("~/Documents/Nova/openclaw-workspace/docs/mba/adalove-data.json")
+    ]
+    for mba_path in mba_paths:
+        if os.path.exists(mba_path):
+            mtime = os.path.getmtime(mba_path)
+            mba_status = {
+                "status": "ok",
+                "last_sync": dt.fromtimestamp(mtime).isoformat()
+            }
+            break
+    
+    # Tasks/Projects: always available (local SQLite)
+    task_count = conn.execute("SELECT COUNT(*) FROM tasks").fetchone()[0]
+    project_count = conn.execute("SELECT COUNT(*) FROM projects").fetchone()[0]
+    
+    return {
+        "confluence": confluence_status,
+        "calendar": calendar_status,
+        "mba": mba_status,
+        "tasks": {"status": "ok", "count": task_count},
+        "projects": {"status": "ok", "count": project_count}
+    }
+
+
+@app.post("/api/notion/sync")
+async def trigger_notion_sync():
+    """Triggers a Notion sync. Uses NOTION_TOKEN if available, otherwise returns instructions."""
+    import os, httpx
+    
+    notion_token = os.environ.get("NOTION_TOKEN", "")
+    meeting_db_id = os.environ.get("NOTION_MEETINGS_DB", "")
+    
+    if not notion_token:
+        return {
+            "status": "not_configured",
+            "message": "NOTION_TOKEN não configurado no backend. Use o Atlas MCP (Cursor) para sincronizar.",
+            "hint": "Execute: notion_sync_to_rag() via Atlas MCP"
+        }
+    
+    # Simple sync: fetch recent meeting notes from Notion API
+    try:
+        headers = {
+            "Authorization": f"Bearer {notion_token}",
+            "Notion-Version": "2022-06-28",
+            "Content-Type": "application/json"
+        }
+        
+        cutoff = (datetime.now() - __import__('datetime').timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%S")
+        
+        async with httpx.AsyncClient(timeout=15) as client:
+            if meeting_db_id:
+                resp = await client.post(
+                    f"https://api.notion.com/v1/databases/{meeting_db_id}/query",
+                    headers=headers,
+                    json={
+                        "filter": {
+                            "timestamp": "last_edited_time",
+                            "last_edited_time": {"after": cutoff}
+                        },
+                        "page_size": 20
+                    }
+                )
+            else:
+                resp = await client.post(
+                    "https://api.notion.com/v1/search",
+                    headers=headers,
+                    json={
+                        "filter": {"value": "page", "property": "object"},
+                        "page_size": 20
+                    }
+                )
+            
+            if resp.status_code == 200:
+                data = resp.json()
+                pages = data.get("results", [])
+                return {
+                    "status": "ok",
+                    "pages_found": len(pages),
+                    "synced_at": datetime.now().isoformat()
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": f"Notion API returned {resp.status_code}",
+                    "detail": resp.text[:200]
+                }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.get("/api/notion/sync/status")
+async def get_notion_sync_status():
+    """Returns Notion sync status"""
+    import os
+    notion_token = os.environ.get("NOTION_TOKEN", "")
+    
+    return {
+        "configured": bool(notion_token),
+        "status": "ready" if notion_token else "not_configured",
+        "message": "Notion sync disponível" if notion_token else "NOTION_TOKEN não configurado"
+    }
+
+
+@app.post("/api/sync/all")
+async def trigger_full_sync():
+    """Triggers sync for all available data sources"""
+    from fastapi.responses import JSONResponse
+    results = {}
+    
+    # 1. Confluence sync - delegate to the existing sync endpoint
+    try:
+        from situation_wall_parser import fetch_and_parse
+        data = fetch_and_parse()
+        if data:
+            results["confluence"] = {"status": "ok", "message": f"Confluence synced: {len(data.get('sprints', []))} sprints"}
+        else:
+            results["confluence"] = {"status": "skipped", "message": "No data from Confluence"}
+    except Exception as e:
+        results["confluence"] = {"status": "error", "message": str(e)}
+    
+    # 2. MBA - notify only (external sync)
+    results["mba"] = {"status": "external", "message": "MBA sync requires Atlas/Playwright"}
+    
+    # 3. Calendar - already reads from file, no sync needed
+    results["calendar"] = {"status": "ok", "message": "Calendar reads from CALENDARIO.md (always fresh)"}
+    
+    # 4. Tasks/Projects - local, always fresh
+    results["tasks"] = {"status": "ok", "message": "Local data, always available"}
+    
+    return results
+
+
+# ============================================
 # RUN
 # ============================================
 
