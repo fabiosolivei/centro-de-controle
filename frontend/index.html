@@ -37,9 +37,25 @@
                 <button class="btn-icon" onclick="openCommandPalette()" title="Buscar (Ctrl+K)" aria-label="Buscar">
                     <span>🔍</span>
                 </button>
-                <button class="btn-icon" onclick="syncData()" title="Sincronizar" aria-label="Sincronizar dados">
-                    <span>🔄</span>
-                </button>
+                <div class="sync-dropdown-wrapper">
+                    <button class="btn-icon" onclick="toggleSyncMenu()" title="Sincronizar" aria-label="Sincronizar dados" id="sync-btn">
+                        <span>🔄</span>
+                    </button>
+                    <div class="sync-dropdown" id="sync-dropdown">
+                        <div class="sync-dropdown-item" onclick="quickReload()">
+                            <span>⚡</span> Atualizar dados
+                            <small>Recarrega do servidor</small>
+                        </div>
+                        <div class="sync-dropdown-item" onclick="fullSync()">
+                            <span>🔄</span> Sincronizar tudo
+                            <small>Confluence + fontes externas</small>
+                        </div>
+                        <div class="sync-dropdown-divider"></div>
+                        <div class="sync-dropdown-status" id="sync-status-summary">
+                            Carregando status...
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </header>
@@ -693,8 +709,8 @@
             const shown = updates.slice(0, 5);
             const hasMore = updates.length > 5;
             container.innerHTML = shown.map(update => `
-                <div class="update-item ${getUpdateTypeClass(update.type || update.entity_type)}">
-                    <div class="update-icon">${update.icon || getUpdateIcon(update.type || update.entity_type)}</div>
+                <div class="update-item ${getUpdateTypeClass(update.entity_type || update.type)}">
+                    <div class="update-icon">${update.icon || getUpdateIcon(update.entity_type || update.type)}</div>
                     <div class="update-content">
                         <div class="update-title">${escapeHtml(update.message || update.title)}</div>
                         <div class="update-meta">${update.entity_type || ''} • ${formatTimeAgo(new Date(update.timestamp))}</div>
@@ -733,8 +749,8 @@
             }
             
             container.innerHTML = updates.slice(0, 5).map(update => `
-                <div class="update-item ${getUpdateTypeClass(update.type || update.entity_type)}">
-                    <div class="update-icon">${getUpdateIcon(update.type)}</div>
+                <div class="update-item ${getUpdateTypeClass(update.entity_type || update.type)}">
+                    <div class="update-icon">${getUpdateIcon(update.entity_type || update.type)}</div>
                     <div class="update-content">
                         <div class="update-title">${escapeHtml(update.title)}</div>
                         <div class="update-meta">${update.meta}</div>
@@ -758,6 +774,7 @@
         function getUpdateTypeClass(type) {
             const classes = {
                 'meeting': 'update-type-meeting',
+                'meeting_note': 'update-type-meeting',
                 'task_done': 'update-type-task',
                 'task_created': 'update-type-task',
                 'project': 'update-type-project',
@@ -1294,10 +1311,7 @@
         }
         
         function syncAllData() {
-            showNotification('Sincronizando...');
-            loadAllData().then(() => {
-                showNotification('Dados atualizados!');
-            });
+            fullSync();
         }
         
         function showNotification(message) {
@@ -1367,12 +1381,97 @@
             });
         }
         
-        async function syncData() {
-            await loadAllData();
+        // ===========================================
+        // SYNC SYSTEM
+        // ===========================================
+        
+        function toggleSyncMenu() {
+            const dropdown = document.getElementById('sync-dropdown');
+            const isOpen = dropdown.classList.contains('open');
+            dropdown.classList.toggle('open');
+            if (!isOpen) loadSyncStatus();
         }
         
-        async function syncNotion() {
-            showNotification('Sincronização com Notion iniciada...');
+        // Close sync menu when clicking outside
+        document.addEventListener('click', (e) => {
+            const wrapper = document.querySelector('.sync-dropdown-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                document.getElementById('sync-dropdown')?.classList.remove('open');
+            }
+        });
+        
+        async function quickReload() {
+            document.getElementById('sync-dropdown')?.classList.remove('open');
+            showNotification('Atualizando dados...');
+            APICache.data.clear();
+            await loadAllData();
+            showNotification('Dados atualizados!');
+        }
+        
+        async function fullSync() {
+            document.getElementById('sync-dropdown')?.classList.remove('open');
+            const syncBtn = document.getElementById('sync-btn');
+            syncBtn?.classList.add('syncing');
+            showNotification('Sincronizando fontes externas...');
+            
+            try {
+                const result = await apiRequest('/sync/all', { method: 'POST' });
+                
+                const messages = [];
+                if (result.confluence?.status === 'ok') messages.push('Confluence OK');
+                if (result.confluence?.status === 'error') messages.push('Confluence: erro');
+                
+                APICache.data.clear();
+                await loadAllData();
+                
+                showNotification(messages.length > 0 ? messages.join(' | ') : 'Sincronizado!');
+            } catch (error) {
+                console.error('Full sync error:', error);
+                showNotification('Erro na sincronização');
+                // Still reload local data
+                APICache.data.clear();
+                await loadAllData();
+            } finally {
+                syncBtn?.classList.remove('syncing');
+            }
+        }
+        
+        async function syncData() {
+            await quickReload();
+        }
+        
+        async function loadSyncStatus() {
+            const container = document.getElementById('sync-status-summary');
+            if (!container) return;
+            
+            try {
+                const status = await apiRequest('/sync/status');
+                
+                const items = [];
+                
+                // Confluence
+                if (status.confluence?.last_sync) {
+                    items.push(`<div class="sync-status-row"><span>Confluence</span><span>${formatTimeAgo(new Date(status.confluence.last_sync))}</span></div>`);
+                } else {
+                    items.push(`<div class="sync-status-row not-synced"><span>Confluence</span><span>nunca</span></div>`);
+                }
+                
+                // Calendar
+                if (status.calendar?.last_sync) {
+                    items.push(`<div class="sync-status-row"><span>Calendario</span><span>${formatTimeAgo(new Date(status.calendar.last_sync))}</span></div>`);
+                }
+                
+                // MBA
+                if (status.mba?.last_sync) {
+                    items.push(`<div class="sync-status-row"><span>MBA</span><span>${formatTimeAgo(new Date(status.mba.last_sync))}</span></div>`);
+                } else {
+                    items.push(`<div class="sync-status-row not-synced"><span>MBA</span><span>nunca</span></div>`);
+                }
+                
+                container.innerHTML = items.join('');
+            } catch (error) {
+                container.innerHTML = '<div class="sync-status-row not-synced"><span>Status indisponivel</span></div>';
+            }
         }
     </script>
 </body>
