@@ -283,6 +283,19 @@ def init_db():
         )
     """)
     
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS sibling_inbox (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            from_agent TEXT NOT NULL,
+            to_agent TEXT NOT NULL,
+            message TEXT NOT NULL,
+            context TEXT,
+            status TEXT DEFAULT 'pending',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            read_at TEXT
+        )
+    """)
+    
     conn.commit()
     conn.close()
     print("✅ Database initialized")
@@ -2870,6 +2883,205 @@ async def push_work_status(request: Request):
     except Exception as e:
         log_sync("confluence", "error", error_message=str(e))
         return {"status": "error", "message": str(e)}
+
+
+# ============================================
+# SIBLING COMMUNICATION (Atlas <-> Nova)
+# ============================================
+
+OPENCLAW_HOOK_TOKEN = os.environ.get("OPENCLAW_HOOK_TOKEN", "")
+OPENCLAW_GATEWAY = "http://localhost:18789"
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "2097306140")
+
+
+@app.post("/api/sibling/nova")
+async def send_to_nova(request: Request):
+    """Atlas sends a message to Nova via OpenClaw hooks/agent.
+    Triggers a full agent turn -- Nova will think about and respond to the message.
+    """
+    verify_atlas_key(request)
+    body = await request.json()
+    message = body.get("message", "")
+    
+    if not message:
+        raise HTTPException(400, "message is required")
+    
+    if not OPENCLAW_HOOK_TOKEN:
+        raise HTTPException(503, "OPENCLAW_HOOK_TOKEN not configured")
+    
+    # Relay to OpenClaw /hooks/agent
+    import httpx
+    try:
+        async with httpx.AsyncClient(timeout=15) as client:
+            resp = await client.post(
+                f"{OPENCLAW_GATEWAY}/hooks/agent",
+                headers={
+                    "Authorization": f"Bearer {OPENCLAW_HOOK_TOKEN}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "message": f"[Mensagem do Atlas (irmao)]\n\n{message}",
+                    "name": "Atlas",
+                    "sessionKey": body.get("session_key", "hook:atlas:main"),
+                    "deliver": body.get("deliver", True),
+                    "channel": "telegram",
+                    "to": TELEGRAM_CHAT_ID
+                }
+            )
+        
+        # Also log in sibling_inbox for history
+        conn = get_db()
+        conn.execute("""
+            INSERT INTO sibling_inbox (from_agent, to_agent, message, context, status)
+            VALUES ('atlas', 'nova', ?, ?, 'delivered')
+        """, (message, json.dumps(body.get("context", {}))))
+        conn.commit()
+        conn.close()
+        
+        return {
+            "status": "ok",
+            "openclaw_status": resp.status_code,
+            "delivered": True
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/sibling/nova/message")
+async def send_raw_to_nova(request: Request):
+    """Atlas sends a raw Telegram message (no agent turn).
+    Just drops text into the chat -- Nova sees it as context.
+    """
+    verify_atlas_key(request)
+    body = await request.json()
+    message = body.get("message", "")
+    
+    if not message:
+        raise HTTPException(400, "message is required")
+    
+    # Use openclaw CLI to send a raw message
+    import subprocess
+    try:
+        result = subprocess.run(
+            ["openclaw", "message", "send",
+             "--channel", "telegram",
+             "--target", TELEGRAM_CHAT_ID,
+             "--message", f"[Atlas] {message}"],
+            capture_output=True, text=True, timeout=15
+        )
+        
+        success = result.returncode == 0
+        
+        # Log in sibling_inbox
+        conn = get_db()
+        conn.execute("""
+            INSERT INTO sibling_inbox (from_agent, to_agent, message, context, status)
+            VALUES ('atlas', 'nova', ?, '{"type": "raw_message"}', ?)
+        """, (message, "delivered" if success else "failed"))
+        conn.commit()
+        conn.close()
+        
+        return {
+            "status": "ok" if success else "error",
+            "method": "openclaw_cli",
+            "output": result.stdout[:200] if success else result.stderr[:200]
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/sibling/atlas")
+async def send_to_atlas(request: Request):
+    """Nova sends a message to Atlas. Stored in inbox for Atlas to pick up.
+    No auth required from Nova (she runs on the same VPS).
+    """
+    body = await request.json()
+    message = body.get("message", "")
+    urgency = body.get("urgency", "normal")
+    
+    if not message:
+        raise HTTPException(400, "message is required")
+    
+    conn = get_db()
+    conn.execute("""
+        INSERT INTO sibling_inbox (from_agent, to_agent, message, context, status)
+        VALUES ('nova', 'atlas', ?, ?, 'pending')
+    """, (message, json.dumps({"urgency": urgency, **{k: v for k, v in body.items() if k not in ("message", "urgency")}})))
+    conn.commit()
+    
+    # Get the ID of the inserted message
+    cursor = conn.cursor()
+    cursor.execute("SELECT last_insert_rowid()")
+    msg_id = cursor.fetchone()[0]
+    conn.close()
+    
+    return {
+        "status": "ok",
+        "message_id": msg_id,
+        "note": "Message queued for Atlas. He will read it on next Cursor session."
+    }
+
+
+@app.get("/api/sibling/atlas/inbox")
+async def get_atlas_inbox(request: Request):
+    """Atlas checks for pending messages from Nova."""
+    verify_atlas_key(request)
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Get pending messages
+    cursor.execute("""
+        SELECT id, from_agent, message, context, status, created_at
+        FROM sibling_inbox
+        WHERE to_agent = 'atlas' AND status = 'pending'
+        ORDER BY created_at ASC
+    """)
+    
+    messages = []
+    ids = []
+    for row in cursor.fetchall():
+        msg = dict(row)
+        msg["context"] = json.loads(msg["context"]) if msg["context"] else {}
+        messages.append(msg)
+        ids.append(msg["id"])
+    
+    # Mark as read
+    if ids:
+        placeholders = ",".join("?" * len(ids))
+        conn.execute(f"""
+            UPDATE sibling_inbox SET status = 'read', read_at = ?
+            WHERE id IN ({placeholders})
+        """, [datetime.now().isoformat()] + ids)
+        conn.commit()
+    
+    conn.close()
+    
+    return {
+        "messages": messages,
+        "count": len(messages),
+        "has_urgent": any(m.get("context", {}).get("urgency") == "high" for m in messages)
+    }
+
+
+@app.get("/api/sibling/history")
+async def get_sibling_history(request: Request, limit: int = 20):
+    """Get recent sibling communication history."""
+    verify_atlas_key(request)
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT id, from_agent, to_agent, message, context, status, created_at, read_at
+        FROM sibling_inbox
+        ORDER BY created_at DESC
+        LIMIT ?
+    """, (limit,))
+    
+    history = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    
+    return {"history": history, "count": len(history)}
 
 
 # ============================================
