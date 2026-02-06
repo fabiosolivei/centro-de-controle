@@ -26,7 +26,14 @@
     <header class="header">
         <div class="header-content">
             <h1 class="logo">Centro de Controle</h1>
-            <div class="header-actions" style="display:flex; gap:12px; align-items:center;">
+            <nav class="header-nav">
+                <a href="index.html" class="nav-link active" aria-label="Dashboard">Dashboard</a>
+                <a href="portfolio.html" class="nav-link" aria-label="Portfolio">Portfolio</a>
+                <a href="mba.html" class="nav-link" aria-label="MBA">MBA</a>
+                <a href="work.html" class="nav-link" aria-label="Work Status">Work</a>
+                <a href="files.html" class="nav-link" aria-label="Arquivos">Arquivos</a>
+            </nav>
+            <div class="header-actions">
                 <button class="btn-icon" onclick="openCommandPalette()" title="Buscar (Cmd+K)" aria-label="Buscar">
                     <span>🔍</span>
                 </button>
@@ -38,47 +45,29 @@
     </header>
 
     <!-- MAIN CONTENT -->
-    <main class="main-content" style="max-width: 1800px; margin: 0 auto; padding: 20px;">
-        <!-- HERO GREETING -->
-        <div class="hero-greeting">
-            <div class="greeting-header">
-                <div class="greeting-text">
-                    <h1 id="greeting-message">Bom dia, Fabio</h1>
-                    <p id="greeting-summary">Carregando seu resumo...</p>
+    <main class="main-content dashboard-page">
+        <!-- HERO BAR (compact) -->
+        <div class="hero-bar">
+            <div class="hero-bar-left">
+                <h1 id="greeting-message" class="hero-title">Bom dia, Fabio</h1>
+                <p id="greeting-summary" class="hero-summary">Carregando seu resumo...</p>
+            </div>
+            <div class="hero-bar-right">
+                <div class="summary-chips" id="summary-chips">
+                    <!-- Populated by JS -->
                 </div>
-                <div class="greeting-date">
-                    <div class="date-day" id="date-day">--</div>
-                    <div class="date-month" id="date-month">---</div>
+                <div class="hero-actions">
+                    <button class="quick-action" onclick="openTaskModal()" aria-label="Nova Tarefa">
+                        <span>➕</span> Tarefa
+                    </button>
+                    <button class="quick-action" onclick="openNoteModal()" aria-label="Nova Nota">
+                        <span>📝</span> Nota
+                    </button>
+                    <button class="quick-action" onclick="openReminderModal()" aria-label="Novo Lembrete">
+                        <span>🔔</span> Lembrete
+                    </button>
                 </div>
             </div>
-            <div class="summary-chips" id="summary-chips">
-                <!-- Populated by JS -->
-            </div>
-        </div>
-        
-        <!-- QUICK ACTIONS BAR -->
-        <div class="quick-actions-bar">
-            <button class="quick-action" onclick="openTaskModal()" aria-label="Nova Tarefa">
-                <span>➕</span> Nova Tarefa
-            </button>
-            <button class="quick-action" onclick="openNoteModal()" aria-label="Nova Nota">
-                <span>📝</span> Nova Nota
-            </button>
-            <button class="quick-action" onclick="openReminderModal()" aria-label="Novo Lembrete">
-                <span>🔔</span> Lembrete
-            </button>
-            <button class="quick-action" onclick="window.location.href='portfolio.html'" aria-label="Ver Portfolio">
-                <span>💼</span> Portfolio
-            </button>
-            <button class="quick-action" onclick="window.location.href='mba.html'" aria-label="Ver MBA">
-                <span>🎓</span> MBA
-            </button>
-            <button class="quick-action" onclick="window.location.href='work.html'" aria-label="Ver Work Status">
-                <span>📊</span> Work Status
-            </button>
-            <button class="quick-action" onclick="syncNotion()" aria-label="Sincronizar com Notion">
-                <span>🔗</span> Sync Notion
-            </button>
         </div>
         
         <!-- MAIN DASHBOARD GRID -->
@@ -92,7 +81,10 @@
                         <span class="section-action" onclick="refreshCalendar()">Atualizar</span>
                     </div>
                     <div id="agenda-list">
-                        <p class="empty-state">Carregando agenda...</p>
+                        <div class="empty-state-styled loading">
+                            <span class="empty-icon">📅</span>
+                            <span>Carregando agenda...</span>
+                        </div>
                     </div>
                 </section>
                 
@@ -156,7 +148,10 @@
                         <a class="section-action" href="portfolio.html">Ver portfolio</a>
                     </div>
                     <div class="portfolio-grid" id="portfolio-grid">
-                        <p class="empty-state">Carregando projetos...</p>
+                        <div class="empty-state-styled loading">
+                            <span class="empty-icon">💼</span>
+                            <span>Carregando projetos...</span>
+                        </div>
                     </div>
                 </section>
                 
@@ -192,7 +187,10 @@
                         <span class="section-action" onclick="refreshUpdates()">Atualizar</span>
                     </div>
                     <div class="updates-list" id="updates-list">
-                        <p class="empty-state">Carregando updates...</p>
+                        <div class="empty-state-styled loading">
+                            <span class="empty-icon">🔔</span>
+                            <span>Carregando updates...</span>
+                        </div>
                     </div>
                 </section>
                 
@@ -203,7 +201,10 @@
                         <span class="section-action" onclick="openReminderModal()">+ Novo</span>
                     </div>
                     <div id="reminders-list">
-                        <p class="empty-state">Sem lembretes</p>
+                        <div class="empty-state-styled">
+                            <span class="empty-icon">✅</span>
+                            <span>Nenhum lembrete ativo</span>
+                        </div>
                     </div>
                 </section>
             </div>
@@ -221,12 +222,7 @@
     </div>
 
     <!-- KEYBOARD HINT -->
-    <div class="keyboard-hint">
-        <kbd>Cmd</kbd>+<kbd>K</kbd> Buscar &nbsp;|&nbsp;
-        <kbd>C</kbd> Tarefa &nbsp;|&nbsp;
-        <kbd>B</kbd> Board &nbsp;|&nbsp;
-        <kbd>?</kbd> Atalhos
-    </div>
+    <!-- Keyboard hints removed - discoverable via Cmd+K -->
 
     <!-- TASK MODAL -->
     <div class="modal" id="task-modal">
@@ -385,13 +381,6 @@
             const hour = new Date().getHours();
             const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
             document.getElementById('greeting-message').textContent = `${greeting}, Fabio`;
-            
-            // Update date
-            const now = new Date();
-            const day = now.getDate();
-            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-            document.getElementById('date-day').textContent = day;
-            document.getElementById('date-month').textContent = months[now.getMonth()];
         }
         
         async function loadAllData() {
@@ -498,7 +487,7 @@
             const workDbProjects = projects.filter(p => p.category === 'trabalho');
             
             if (workDbProjects.length === 0) {
-                container.innerHTML = '<p class="empty-state">Nenhum projeto de trabalho</p>';
+                container.innerHTML = '<div class="empty-state-styled"><span class="empty-icon">💼</span><span>Nenhum projeto de trabalho</span></div>';
                 return;
             }
             
@@ -532,7 +521,7 @@
             } catch (error) {
                 console.error('Error loading calendar:', error);
                 document.getElementById('agenda-list').innerHTML = 
-                    '<p class="empty-state">Não foi possível carregar a agenda</p>';
+                    '<div class="empty-state-styled error"><span class="empty-icon">⚠️</span><span>Não foi possível carregar a agenda</span></div>';
             }
         }
         
@@ -540,7 +529,7 @@
             const container = document.getElementById('agenda-list');
             
             if (!Array.isArray(events) || events.length === 0) {
-                container.innerHTML = '<p class="empty-state">Sem eventos hoje</p>';
+                container.innerHTML = '<div class="empty-state-styled"><span class="empty-icon">✅</span><span>Nenhum evento restante hoje</span></div>';
                 return;
             }
             
@@ -635,7 +624,7 @@
                 document.getElementById('work-epics').textContent = '-';
                 document.getElementById('work-sprints').textContent = '-';
                 document.getElementById('work-alerts').innerHTML = 
-                    '<p style="color: var(--text-muted); font-size: 0.75rem;">Sincronize com Confluence</p>';
+                    '<div class="sync-badge not-synced"><span>🔗</span> Não sincronizado</div>';
             }
         }
         
@@ -659,7 +648,7 @@
             const activeReminders = reminders.filter(r => !r.is_completed);
             
             if (activeReminders.length === 0) {
-                container.innerHTML = '<p class="empty-state">Sem lembretes</p>';
+                container.innerHTML = '<div class="empty-state-styled"><span class="empty-icon">✅</span><span>Nenhum lembrete ativo</span></div>';
                 return;
             }
             
@@ -701,15 +690,17 @@
                 return;
             }
             
-            container.innerHTML = updates.slice(0, 8).map(update => `
-                <div class="update-item">
+            const shown = updates.slice(0, 5);
+            const hasMore = updates.length > 5;
+            container.innerHTML = shown.map(update => `
+                <div class="update-item ${getUpdateTypeClass(update.type)}">
                     <div class="update-icon">${update.icon || getUpdateIcon(update.type)}</div>
                     <div class="update-content">
                         <div class="update-title">${escapeHtml(update.message || update.title)}</div>
                         <div class="update-meta">${update.entity_type || ''} • ${formatTimeAgo(new Date(update.timestamp))}</div>
                     </div>
                 </div>
-            `).join('');
+            `).join('') + (hasMore ? `<div class="update-more"><span class="section-action" onclick="loadUpdates()">Ver mais ${updates.length - 5} updates</span></div>` : '');
         }
         
         function renderSimulatedUpdates() {
@@ -737,12 +728,12 @@
             });
             
             if (updates.length === 0) {
-                container.innerHTML = '<p class="empty-state">Sem updates recentes</p>';
+                container.innerHTML = '<div class="empty-state-styled"><span class="empty-icon">🔔</span><span>Sem updates recentes</span></div>';
                 return;
             }
             
-            container.innerHTML = updates.slice(0, 6).map(update => `
-                <div class="update-item">
+            container.innerHTML = updates.slice(0, 5).map(update => `
+                <div class="update-item ${getUpdateTypeClass(update.type)}">
                     <div class="update-icon">${getUpdateIcon(update.type)}</div>
                     <div class="update-content">
                         <div class="update-title">${escapeHtml(update.title)}</div>
@@ -762,6 +753,18 @@
                 'deadline': '⏰'
             };
             return icons[type] || '🔔';
+        }
+        
+        function getUpdateTypeClass(type) {
+            const classes = {
+                'meeting': 'update-type-meeting',
+                'task_done': 'update-type-task',
+                'task_created': 'update-type-task',
+                'project': 'update-type-project',
+                'note': 'update-type-note',
+                'deadline': 'update-type-deadline'
+            };
+            return classes[type] || '';
         }
         
         function refreshUpdates() {
@@ -911,7 +914,7 @@
         
         function renderTaskList(taskList) {
             if (taskList.length === 0) {
-                return '<p class="empty-state">Nenhuma tarefa</p>';
+                return '<div class="empty-state-styled"><span class="empty-icon">✅</span><span>Nenhuma tarefa</span></div>';
             }
             
             return taskList.map(t => `

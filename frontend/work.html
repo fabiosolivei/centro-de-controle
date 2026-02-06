@@ -613,11 +613,15 @@
     <header class="header">
         <div class="header-content">
             <h1 class="logo">Centro de Controle</h1>
-            <div class="header-actions" style="display:flex; gap:12px; align-items:center;">
-                <button class="btn-icon" onclick="window.location.href='index.html'" title="Dashboard">
-                    <span>🏠</span>
-                </button>
-                <button class="btn-icon" onclick="syncConfluence()" title="Sincronizar">
+            <nav class="header-nav">
+                <a href="index.html" class="nav-link" aria-label="Dashboard">Dashboard</a>
+                <a href="portfolio.html" class="nav-link" aria-label="Portfolio">Portfolio</a>
+                <a href="mba.html" class="nav-link" aria-label="MBA">MBA</a>
+                <a href="work.html" class="nav-link active" aria-label="Work Status">Work</a>
+                <a href="files.html" class="nav-link" aria-label="Arquivos">Arquivos</a>
+            </nav>
+            <div class="header-actions">
+                <button class="btn-icon" onclick="syncConfluence()" title="Sincronizar" aria-label="Sincronizar">
                     <span>🔄</span>
                 </button>
             </div>
@@ -626,13 +630,6 @@
 
     <!-- MAIN CONTENT -->
     <main class="main-content" style="max-width: 1200px; display: block;">
-        
-        <!-- Breadcrumb -->
-        <nav class="breadcrumb">
-            <a href="index.html">Dashboard</a>
-            <span>/</span>
-            <span class="current">Work Status</span>
-        </nav>
         
         <!-- Work Header -->
         <div class="work-header">
