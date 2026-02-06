@@ -241,6 +241,72 @@ body {
     background: rgba(255, 255, 255, 0.06);
 }
 
+.sync-dropdown-label {
+    padding: 8px 16px 4px;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.sync-source {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+}
+
+.sync-source-icon {
+    flex-shrink: 0;
+    width: 20px;
+    text-align: center;
+}
+
+.sync-source-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sync-source-info span {
+    font-size: 0.82rem;
+    color: var(--text-primary);
+}
+
+.sync-ts {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+}
+
+.sync-source-badge {
+    flex-shrink: 0;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+}
+
+.sync-source-badge.ok {
+    background: var(--accent-green);
+    box-shadow: 0 0 6px var(--accent-green);
+}
+
+.sync-source-badge.stale {
+    background: var(--accent-orange);
+    box-shadow: 0 0 6px var(--accent-orange);
+}
+
+.sync-source-badge.error {
+    background: var(--accent-red);
+    box-shadow: 0 0 6px var(--accent-red);
+}
+
+.sync-source-badge.never {
+    background: rgba(255,255,255,0.15);
+}
+
 .sync-dropdown-status {
     padding: 10px 16px;
     font-size: 0.75rem;

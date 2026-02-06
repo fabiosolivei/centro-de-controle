@@ -44,19 +44,46 @@
                     <div class="sync-dropdown" id="sync-dropdown">
                         <div class="sync-dropdown-item" onclick="quickReload()">
                             <span>⚡</span> Atualizar dados
-                            <small>Recarrega do servidor</small>
-                        </div>
-                        <div class="sync-dropdown-item" onclick="fullSync()">
-                            <span>🔄</span> Sincronizar tudo
-                            <small>Confluence + fontes externas</small>
-                        </div>
-                        <div class="sync-dropdown-item" onclick="syncNotion()">
-                            <span>📓</span> Sincronizar Notion
-                            <small>Meeting notes e paginas</small>
+                            <small>Recarrega cache local</small>
                         </div>
                         <div class="sync-dropdown-divider"></div>
-                        <div class="sync-dropdown-status" id="sync-status-summary">
-                            Carregando status...
+                        <div class="sync-dropdown-label">Sincronizar fonte</div>
+                        <div class="sync-dropdown-item sync-source" onclick="syncSource('confluence')">
+                            <span class="sync-source-icon">🏢</span>
+                            <div class="sync-source-info">
+                                <span>Confluence</span>
+                                <small class="sync-ts" id="ts-confluence">--</small>
+                            </div>
+                            <span class="sync-source-badge" id="badge-confluence"></span>
+                        </div>
+                        <div class="sync-dropdown-item sync-source" onclick="syncSource('notion')">
+                            <span class="sync-source-icon">📓</span>
+                            <div class="sync-source-info">
+                                <span>Notion</span>
+                                <small class="sync-ts" id="ts-notion">--</small>
+                            </div>
+                            <span class="sync-source-badge" id="badge-notion"></span>
+                        </div>
+                        <div class="sync-dropdown-item sync-source" onclick="syncSource('calendar')">
+                            <span class="sync-source-icon">📅</span>
+                            <div class="sync-source-info">
+                                <span>Calendario</span>
+                                <small class="sync-ts" id="ts-calendar">--</small>
+                            </div>
+                            <span class="sync-source-badge" id="badge-calendar"></span>
+                        </div>
+                        <div class="sync-dropdown-item sync-source" onclick="syncSource('mba')">
+                            <span class="sync-source-icon">🎓</span>
+                            <div class="sync-source-info">
+                                <span>MBA / Adalove</span>
+                                <small class="sync-ts" id="ts-mba">--</small>
+                            </div>
+                            <span class="sync-source-badge" id="badge-mba"></span>
+                        </div>
+                        <div class="sync-dropdown-divider"></div>
+                        <div class="sync-dropdown-item" onclick="fullSync()">
+                            <span>🔄</span> Sincronizar tudo
+                            <small>Todas as fontes de uma vez</small>
                         </div>
                     </div>
                 </div>
@@ -1416,23 +1443,35 @@
             document.getElementById('sync-dropdown')?.classList.remove('open');
             const syncBtn = document.getElementById('sync-btn');
             syncBtn?.classList.add('syncing');
-            showNotification('Sincronizando fontes externas...');
+            showNotification('Sincronizando todas as fontes...');
             
             try {
-                const result = await apiRequest('/sync/all', { method: 'POST' });
+                // Run Confluence + Notion in parallel
+                const [confResult, notionResult] = await Promise.allSettled([
+                    apiRequest('/sync/all', { method: 'POST' }),
+                    apiRequest('/notion/sync', { method: 'POST' })
+                ]);
                 
                 const messages = [];
-                if (result.confluence?.status === 'ok') messages.push('Confluence OK');
-                if (result.confluence?.status === 'error') messages.push('Confluence: erro');
+                if (confResult.status === 'fulfilled' && confResult.value?.confluence?.status === 'ok') {
+                    messages.push('Confluence OK');
+                } else if (confResult.status === 'rejected' || confResult.value?.confluence?.status === 'error') {
+                    messages.push('Confluence: erro');
+                }
+                if (notionResult.status === 'fulfilled' && notionResult.value?.status === 'ok') {
+                    messages.push(`Notion OK (${notionResult.value.meetings_synced || 0})`);
+                } else {
+                    messages.push('Notion: erro');
+                }
                 
                 APICache.data.clear();
                 await loadAllData();
+                await loadSyncStatus();
                 
-                showNotification(messages.length > 0 ? messages.join(' | ') : 'Sincronizado!');
+                showNotification(messages.join(' | '));
             } catch (error) {
                 console.error('Full sync error:', error);
-                showNotification('Erro na sincronização');
-                // Still reload local data
+                showNotification('Erro na sincronizacao');
                 APICache.data.clear();
                 await loadAllData();
             } finally {
@@ -1445,73 +1484,85 @@
         }
         
         async function loadSyncStatus() {
-            const container = document.getElementById('sync-status-summary');
-            if (!container) return;
-            
             try {
                 const status = await apiRequest('/sync/status');
                 
-                const items = [];
-                
-                // Confluence
-                if (status.confluence?.last_sync) {
-                    items.push(`<div class="sync-status-row"><span>Confluence</span><span>${formatTimeAgo(new Date(status.confluence.last_sync))}</span></div>`);
-                } else {
-                    items.push(`<div class="sync-status-row not-synced"><span>Confluence</span><span>nunca</span></div>`);
-                }
-                
-                // Calendar
-                if (status.calendar?.last_sync) {
-                    items.push(`<div class="sync-status-row"><span>Calendario</span><span>${formatTimeAgo(new Date(status.calendar.last_sync))}</span></div>`);
-                }
-                
-                // MBA
-                if (status.mba?.last_sync) {
-                    items.push(`<div class="sync-status-row"><span>MBA</span><span>${formatTimeAgo(new Date(status.mba.last_sync))}</span></div>`);
-                } else {
-                    items.push(`<div class="sync-status-row not-synced"><span>MBA</span><span>nunca</span></div>`);
-                }
-                
-                // Notion - check separately
-                try {
-                    const notionStatus = await apiRequest('/notion/sync/status');
-                    if (notionStatus.configured) {
-                        items.push(`<div class="sync-status-row"><span>Notion</span><span>pronto</span></div>`);
+                const sources = ['confluence', 'notion', 'calendar', 'mba'];
+                for (const src of sources) {
+                    const tsEl = document.getElementById(`ts-${src}`);
+                    const badgeEl = document.getElementById(`badge-${src}`);
+                    if (!tsEl || !badgeEl) continue;
+                    
+                    const info = status[src] || {};
+                    const lastSync = info.last_sync;
+                    
+                    if (lastSync) {
+                        const ago = formatTimeAgo(new Date(lastSync));
+                        tsEl.textContent = ago;
+                        
+                        // Determine freshness: <1h = ok, <24h = stale, else error
+                        const ageMs = Date.now() - new Date(lastSync).getTime();
+                        const ageHours = ageMs / (1000 * 60 * 60);
+                        if (info.status === 'error') {
+                            badgeEl.className = 'sync-source-badge error';
+                        } else if (ageHours < 2) {
+                            badgeEl.className = 'sync-source-badge ok';
+                        } else if (ageHours < 24) {
+                            badgeEl.className = 'sync-source-badge stale';
+                        } else {
+                            badgeEl.className = 'sync-source-badge error';
+                        }
+                    } else if (info.status === 'never_synced') {
+                        tsEl.textContent = 'nunca sincronizado';
+                        badgeEl.className = 'sync-source-badge never';
+                    } else if (info.status === 'ok') {
+                        tsEl.textContent = info.source || 'arquivo local';
+                        badgeEl.className = 'sync-source-badge ok';
                     } else {
-                        items.push(`<div class="sync-status-row not-synced"><span>Notion</span><span>via MCP</span></div>`);
+                        tsEl.textContent = '--';
+                        badgeEl.className = 'sync-source-badge never';
                     }
-                } catch (e) {
-                    items.push(`<div class="sync-status-row not-synced"><span>Notion</span><span>—</span></div>`);
                 }
-                
-                container.innerHTML = items.join('');
             } catch (error) {
-                container.innerHTML = '<div class="sync-status-row not-synced"><span>Status indisponivel</span></div>';
+                console.error('Failed to load sync status:', error);
             }
         }
         
-        async function syncNotion() {
+        async function syncSource(source) {
             document.getElementById('sync-dropdown')?.classList.remove('open');
             const syncBtn = document.getElementById('sync-btn');
             syncBtn?.classList.add('syncing');
-            showNotification('Sincronizando Notion...');
+            
+            const names = {confluence: 'Confluence', notion: 'Notion', calendar: 'Calendario', mba: 'MBA'};
+            showNotification(`Sincronizando ${names[source] || source}...`);
             
             try {
-                const result = await apiRequest('/notion/sync', { method: 'POST' });
+                let result;
+                if (source === 'notion') {
+                    result = await apiRequest('/notion/sync', { method: 'POST' });
+                } else if (source === 'confluence') {
+                    result = await apiRequest('/sync/all', { method: 'POST' });
+                } else if (source === 'calendar' || source === 'mba') {
+                    showNotification(`${names[source]}: sincronizado via cron automatico`);
+                    syncBtn?.classList.remove('syncing');
+                    return;
+                }
                 
-                if (result.status === 'ok') {
-                    showNotification(`Notion: ${result.pages_found} paginas sincronizadas`);
-                } else if (result.status === 'not_configured') {
-                    showNotification('Notion: use Atlas MCP para sincronizar');
+                if (result?.status === 'ok') {
+                    const count = result.meetings_synced || result.items_synced || result.confluence?.items || '';
+                    showNotification(`${names[source]}: sincronizado${count ? ` (${count} itens)` : ''}`);
+                } else if (result?.status === 'not_configured') {
+                    showNotification(`${names[source]}: nao configurado no backend`);
                 } else {
-                    showNotification('Notion: erro na sincronizacao');
+                    showNotification(`${names[source]}: ${result?.message || 'erro'}`);
                 }
                 
                 APICache.data.clear();
                 await loadAllData();
+                await loadSyncStatus();
             } catch (error) {
-                console.error('Notion sync error:', error);
-                showNotification('Erro ao sincronizar Notion');
+                console.error(`Sync ${source} error:`, error);
+                showNotification(`Erro ao sincronizar ${names[source]}`);
             } finally {
                 syncBtn?.classList.remove('syncing');
             }
