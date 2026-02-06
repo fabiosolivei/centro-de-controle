@@ -693,8 +693,8 @@
             const shown = updates.slice(0, 5);
             const hasMore = updates.length > 5;
             container.innerHTML = shown.map(update => `
-                <div class="update-item ${getUpdateTypeClass(update.type)}">
-                    <div class="update-icon">${update.icon || getUpdateIcon(update.type)}</div>
+                <div class="update-item ${getUpdateTypeClass(update.type || update.entity_type)}">
+                    <div class="update-icon">${update.icon || getUpdateIcon(update.type || update.entity_type)}</div>
                     <div class="update-content">
                         <div class="update-title">${escapeHtml(update.message || update.title)}</div>
                         <div class="update-meta">${update.entity_type || ''} • ${formatTimeAgo(new Date(update.timestamp))}</div>
@@ -733,7 +733,7 @@
             }
             
             container.innerHTML = updates.slice(0, 5).map(update => `
-                <div class="update-item ${getUpdateTypeClass(update.type)}">
+                <div class="update-item ${getUpdateTypeClass(update.type || update.entity_type)}">
                     <div class="update-icon">${getUpdateIcon(update.type)}</div>
                     <div class="update-content">
                         <div class="update-title">${escapeHtml(update.title)}</div>

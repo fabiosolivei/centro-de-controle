@@ -397,8 +397,7 @@ body {
 }
 
 /* Dashboard page: hero, quick-actions, and dashboard-grid must span all columns */
-.dashboard-page .hero-greeting,
-.dashboard-page .quick-actions-bar,
+.dashboard-page .hero-bar,
 .dashboard-page .dashboard-grid {
     grid-column: 1 / -1;
 }

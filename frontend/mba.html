@@ -597,6 +597,7 @@
         
         function updateCurrentDate() {
             const dateEl = document.getElementById('current-date');
+            if (!dateEl) return;
             const options = { weekday: 'long', day: 'numeric', month: 'long' };
             const today = new Date().toLocaleDateString('pt-BR', options);
             dateEl.textContent = today.charAt(0).toUpperCase() + today.slice(1);
