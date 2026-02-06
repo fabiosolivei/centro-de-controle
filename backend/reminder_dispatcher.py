@@ -1,39 +1,46 @@
 #!/usr/bin/env python3
 """
-Reminder Dispatcher - Verifica lembretes pendentes e envia notificações
+Reminder & Scheduled Message Dispatcher
 
-Este script deve ser executado periodicamente (a cada minuto) via cron.
-Verifica lembretes com due_datetime <= now() e envia via Telegram.
+Runs every minute via cron. Handles two types of notifications:
+1. One-time reminders (existing system)
+2. Recurring scheduled messages (Life Operating System)
 
-Uso:
-  python reminder_dispatcher.py
+Sends via OpenClaw CLI to Telegram (same mechanism as sibling relay).
 
-Cron (a cada minuto):
-  * * * * * cd /home/fabio/Documents/centro-de-controle/backend && python3 reminder_dispatcher.py >> /tmp/reminder_dispatcher.log 2>&1
+Cron:
+  * * * * * cd /root/Nova/openclaw-workspace/projects/centro-de-controle/backend && python3 reminder_dispatcher.py >> /tmp/reminder_dispatcher.log 2>&1
 """
 
 import os
 import sqlite3
-import httpx
-from datetime import datetime, timedelta
-import pytz
+import subprocess
+from datetime import datetime
 
-# Configurações
-DB_PATH = os.path.join(os.path.dirname(__file__), "database.db")
-TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
-TIMEZONE = pytz.timezone("America/Sao_Paulo")
+# Try to import pytz, fall back to manual offset
+try:
+    import pytz
+    TIMEZONE = pytz.timezone("America/Sao_Paulo")
+    def now_local():
+        return datetime.now(TIMEZONE)
+except ImportError:
+    from datetime import timedelta, timezone
+    SP_TZ = timezone(timedelta(hours=-3))
+    def now_local():
+        return datetime.now(SP_TZ)
 
-# Carregar do .env se existir
-env_file = os.path.join(os.path.dirname(__file__), ".env")
+# Configuracoes
+DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "database.db")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "2097306140")
+
+# Load .env if exists
+env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
 if os.path.exists(env_file):
     with open(env_file) as f:
         for line in f:
             if "=" in line and not line.startswith("#"):
                 key, value = line.strip().split("=", 1)
-                os.environ.setdefault(key, value)
-    TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
-    TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
+                os.environ.setdefault(key.strip(), value.strip())
 
 
 def get_db():
@@ -42,106 +49,167 @@ def get_db():
     return conn
 
 
-def get_due_reminders():
-    """Busca lembretes com due_datetime <= agora e não completados"""
+def send_telegram_message(text: str) -> bool:
+    """Send message via OpenClaw CLI (same as sibling relay)"""
+    try:
+        result = subprocess.run(
+            ["openclaw", "message", "send",
+             "--channel", "telegram",
+             "--target", TELEGRAM_CHAT_ID,
+             "--message", text],
+            capture_output=True, text=True, timeout=15
+        )
+        if result.returncode == 0:
+            return True
+        else:
+            print(f"  openclaw CLI error: {result.stderr[:200]}")
+            # Fallback: try direct Telegram API
+            return send_telegram_direct(text)
+    except FileNotFoundError:
+        print("  openclaw CLI not found, trying direct Telegram API")
+        return send_telegram_direct(text)
+    except Exception as e:
+        print(f"  openclaw CLI exception: {e}")
+        return send_telegram_direct(text)
+
+
+def send_telegram_direct(text: str) -> bool:
+    """Fallback: send via Telegram Bot API directly"""
+    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    if not bot_token:
+        print(f"  No TELEGRAM_BOT_TOKEN set, cannot send: {text[:50]}...")
+        return False
+    
+    try:
+        import httpx
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        response = httpx.post(url, json={
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": text,
+            "parse_mode": "Markdown"
+        }, timeout=10)
+        return response.status_code == 200
+    except Exception as e:
+        print(f"  Telegram API error: {e}")
+        return False
+
+
+def process_one_time_reminders():
+    """Process one-time reminders (existing system)"""
     conn = get_db()
     cursor = conn.cursor()
     
-    now = datetime.now(TIMEZONE).strftime("%Y-%m-%dT%H:%M")
+    now_str = now_local().strftime("%Y-%m-%dT%H:%M")
     
     cursor.execute("""
         SELECT * FROM reminders 
         WHERE is_completed = 0 
         AND datetime(due_datetime) <= datetime(?)
         ORDER BY due_datetime ASC
-    """, (now,))
+    """, (now_str,))
     
     reminders = [dict(row) for row in cursor.fetchall()]
-    conn.close()
-    return reminders
-
-
-def send_telegram_notification(reminder: dict) -> bool:
-    """Envia notificação via Telegram"""
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        print(f"⚠️ Telegram não configurado. Lembrete: {reminder['title']}")
-        return False
     
-    # Formatar mensagem
-    priority_emoji = {
-        "high": "🔴",
-        "urgent": "🚨",
-        "normal": "🔔",
-        "low": "📝"
-    }.get(reminder.get("priority", "normal"), "🔔")
-    
-    message = f"""{priority_emoji} **LEMBRETE**
-
-📌 {reminder['title']}
-
-{reminder.get('description', '') if reminder.get('description') else ''}
-
-⏰ Agendado para: {reminder['due_datetime']}
-"""
-    
-    try:
-        url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-        response = httpx.post(url, json={
-            "chat_id": TELEGRAM_CHAT_ID,
-            "text": message,
-            "parse_mode": "Markdown"
-        }, timeout=10)
+    for reminder in reminders:
+        priority_emoji = {
+            "high": "🔴", "urgent": "🚨", "normal": "🔔", "low": "📝"
+        }.get(reminder.get("priority", "normal"), "🔔")
         
-        if response.status_code == 200:
-            print(f"✅ Notificação enviada: {reminder['title']}")
-            return True
+        text = f"{priority_emoji} LEMBRETE\n\n{reminder['title']}"
+        if reminder.get("description"):
+            text += f"\n\n{reminder['description']}"
+        
+        print(f"  Sending reminder: {reminder['title'][:50]}...")
+        if send_telegram_message(text):
+            cursor.execute("UPDATE reminders SET is_completed = 1 WHERE id = ?", (reminder['id'],))
+            conn.commit()
+            print(f"  ✅ Sent and marked complete")
         else:
-            print(f"❌ Erro ao enviar: {response.status_code} - {response.text}")
-            return False
-    except Exception as e:
-        print(f"❌ Erro de conexão: {e}")
-        return False
+            print(f"  ⚠️ Failed, will retry next minute")
+    
+    conn.close()
+    return len(reminders)
 
 
-def mark_as_notified(reminder_id: int):
-    """Marca lembrete como completado após notificação"""
+def process_scheduled_messages():
+    """Process recurring scheduled messages (Life Operating System)"""
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("UPDATE reminders SET is_completed = 1 WHERE id = ?", (reminder_id,))
-    conn.commit()
+    
+    now = now_local()
+    current_time = now.strftime("%H:%M")
+    # Python weekday: Mon=0, Sun=6. Our system: Mon=1, Sun=7
+    current_day = str(now.isoweekday())
+    today_date = now.strftime("%Y-%m-%d")
+    
+    # Find active messages matching current time and day
+    cursor.execute("""
+        SELECT * FROM scheduled_messages 
+        WHERE is_active = 1 
+        AND time = ?
+    """, (current_time,))
+    
+    messages = [dict(row) for row in cursor.fetchall()]
+    sent_count = 0
+    
+    for msg in messages:
+        # Check if today is in the scheduled days
+        scheduled_days = msg['days'].split(',')
+        if current_day not in scheduled_days:
+            continue
+        
+        # Check if already sent today (prevent duplicates)
+        if msg.get('last_sent_at') and msg['last_sent_at'].startswith(today_date):
+            continue
+        
+        # Send the message
+        category_prefix = {
+            "life_os": "🧠",
+            "mba": "📚",
+            "work": "💼",
+        }.get(msg.get("category", "life_os"), "📌")
+        
+        text = f"{category_prefix} {msg['message']}"
+        
+        print(f"  Sending scheduled: {msg['name']} ({current_time})")
+        if send_telegram_message(text):
+            cursor.execute(
+                "UPDATE scheduled_messages SET last_sent_at = ? WHERE id = ?",
+                (now.isoformat(), msg['id'])
+            )
+            conn.commit()
+            sent_count += 1
+            print(f"  ✅ Sent: {msg['name']}")
+        else:
+            print(f"  ⚠️ Failed: {msg['name']}")
+    
     conn.close()
+    return sent_count
 
 
 def main():
-    timestamp = datetime.now(TIMEZONE).strftime("%Y-%m-%d %H:%M:%S")
-    print(f"\n[{timestamp}] Verificando lembretes pendentes...")
+    now = now_local()
+    timestamp = now.strftime("%Y-%m-%d %H:%M:%S")
     
-    # Verificar se DB existe
+    # Only log header every 15 minutes to reduce noise
+    if now.minute % 15 == 0:
+        print(f"\n[{timestamp}] Dispatcher check (day={now.isoweekday()}, time={now.strftime('%H:%M')})")
+    
     if not os.path.exists(DB_PATH):
-        print(f"❌ Database não encontrado: {DB_PATH}")
+        print(f"❌ Database not found: {DB_PATH}")
         return
     
-    # Buscar lembretes pendentes
-    reminders = get_due_reminders()
+    # Process one-time reminders
+    reminder_count = process_one_time_reminders()
     
-    if not reminders:
-        print("✓ Nenhum lembrete pendente")
-        return
+    # Process recurring scheduled messages
+    scheduled_count = process_scheduled_messages()
     
-    print(f"📋 {len(reminders)} lembrete(s) para notificar")
-    
-    # Processar cada lembrete
-    for reminder in reminders:
-        print(f"\n📌 Processando: {reminder['title']}")
-        print(f"   Due: {reminder['due_datetime']}")
-        
-        # Enviar notificação
-        if send_telegram_notification(reminder):
-            # Marcar como completado após notificação bem-sucedida
-            mark_as_notified(reminder['id'])
-            print(f"   ✅ Marcado como completado")
-        else:
-            print(f"   ⚠️ Notificação falhou, tentará novamente")
+    # Only log when something happened or every 15 min
+    if reminder_count > 0 or scheduled_count > 0:
+        print(f"[{timestamp}] Sent: {reminder_count} reminders, {scheduled_count} scheduled messages")
+    elif now.minute % 15 == 0:
+        print(f"  ✓ No messages due")
 
 
 if __name__ == "__main__":

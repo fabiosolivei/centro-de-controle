@@ -27,7 +27,7 @@ if _env_file.exists():
                     key, _, value = line.partition('=')
                     os.environ.setdefault(key.strip(), value.strip())
 
-from fastapi import FastAPI, HTTPException, Query, UploadFile, File
+from fastapi import FastAPI, HTTPException, Query, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -296,9 +296,40 @@ def init_db():
         )
     """)
     
+    # Tabela de Mensagens Agendadas Recorrentes (Life Operating System)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS scheduled_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            message TEXT NOT NULL,
+            time TEXT NOT NULL,
+            days TEXT NOT NULL DEFAULT '1,2,3,4,5,6,7',
+            priority TEXT DEFAULT 'normal',
+            category TEXT DEFAULT 'life_os',
+            is_active INTEGER DEFAULT 1,
+            last_sent_at TEXT,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
     conn.commit()
     conn.close()
     print("✅ Database initialized")
+
+
+# ============================================
+# AUTH HELPERS
+# ============================================
+
+ATLAS_PUSH_KEY = os.environ.get("ATLAS_PUSH_KEY", "")
+
+def verify_atlas_key(request: Request):
+    """Verify the Atlas push API key"""
+    if not ATLAS_PUSH_KEY:
+        raise HTTPException(503, "Push not configured (ATLAS_PUSH_KEY not set)")
+    key = request.headers.get("X-Atlas-Key", "")
+    if key != ATLAS_PUSH_KEY:
+        raise HTTPException(401, "Invalid or missing Atlas key")
 
 
 def log_sync(source: str, status: str, items_count: int = 0, error_message: str = None):
@@ -446,6 +477,20 @@ class ReminderCreate(BaseModel):
 class Reminder(ReminderCreate):
     id: int
     is_completed: bool
+    created_at: str
+
+class ScheduledMessageCreate(BaseModel):
+    name: str
+    message: str
+    time: str  # HH:MM format
+    days: str = "1,2,3,4,5,6,7"  # 1=Mon, 7=Sun
+    priority: str = "normal"
+    category: str = "life_os"
+
+class ScheduledMessage(ScheduledMessageCreate):
+    id: int
+    is_active: bool
+    last_sent_at: Optional[str] = None
     created_at: str
 
 class NoteCreate(BaseModel):
@@ -683,6 +728,148 @@ async def delete_reminder(reminder_id: int):
     conn.commit()
     conn.close()
     return {"message": "Reminder deleted"}
+
+# ============================================
+# SCHEDULED MESSAGES ROUTES (Life Operating System)
+# ============================================
+
+@app.get("/api/scheduled-messages", response_model=List[dict])
+async def get_scheduled_messages(category: Optional[str] = None, active_only: bool = True):
+    """Lista mensagens agendadas recorrentes"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    query = "SELECT * FROM scheduled_messages WHERE 1=1"
+    params = []
+    
+    if active_only:
+        query += " AND is_active = 1"
+    if category:
+        query += " AND category = ?"
+        params.append(category)
+    
+    query += " ORDER BY time ASC"
+    cursor.execute(query, params)
+    messages = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+    return messages
+
+@app.post("/api/scheduled-messages", response_model=dict)
+async def create_scheduled_message(msg: ScheduledMessageCreate):
+    """Cria uma nova mensagem agendada recorrente"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        INSERT INTO scheduled_messages (name, message, time, days, priority, category)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (msg.name, msg.message, msg.time, msg.days, msg.priority, msg.category))
+    
+    msg_id = cursor.lastrowid
+    conn.commit()
+    
+    cursor.execute("SELECT * FROM scheduled_messages WHERE id = ?", (msg_id,))
+    new_msg = dict(cursor.fetchone())
+    conn.close()
+    
+    return new_msg
+
+@app.put("/api/scheduled-messages/{msg_id}", response_model=dict)
+async def update_scheduled_message(msg_id: int, msg: ScheduledMessageCreate):
+    """Atualiza uma mensagem agendada"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("""
+        UPDATE scheduled_messages 
+        SET name = ?, message = ?, time = ?, days = ?, priority = ?, category = ?,
+            is_active = 1
+        WHERE id = ?
+    """, (msg.name, msg.message, msg.time, msg.days, msg.priority, msg.category, msg_id))
+    
+    if cursor.rowcount == 0:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Scheduled message not found")
+    
+    conn.commit()
+    cursor.execute("SELECT * FROM scheduled_messages WHERE id = ?", (msg_id,))
+    updated = dict(cursor.fetchone())
+    conn.close()
+    return updated
+
+@app.delete("/api/scheduled-messages/{msg_id}")
+async def delete_scheduled_message(msg_id: int):
+    """Deleta uma mensagem agendada"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("DELETE FROM scheduled_messages WHERE id = ?", (msg_id,))
+    if cursor.rowcount == 0:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Scheduled message not found")
+    
+    conn.commit()
+    conn.close()
+    return {"message": "Scheduled message deleted"}
+
+@app.put("/api/scheduled-messages/{msg_id}/toggle")
+async def toggle_scheduled_message(msg_id: int):
+    """Ativa/desativa uma mensagem agendada"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT is_active FROM scheduled_messages WHERE id = ?", (msg_id,))
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Scheduled message not found")
+    
+    new_state = 0 if row["is_active"] else 1
+    cursor.execute("UPDATE scheduled_messages SET is_active = ? WHERE id = ?", (new_state, msg_id))
+    conn.commit()
+    conn.close()
+    return {"message": f"Scheduled message {'activated' if new_state else 'deactivated'}", "is_active": bool(new_state)}
+
+@app.post("/api/scheduled-messages/seed-life-os")
+async def seed_life_os_messages(request: Request):
+    """Seeds all Life Operating System scheduled messages (idempotent)"""
+    verify_atlas_key(request)
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Clear existing life_os messages to make this idempotent
+    cursor.execute("DELETE FROM scheduled_messages WHERE category = 'life_os'")
+    
+    messages = [
+        # Daily messages (Mon-Fri = 1,2,3,4,5)
+        ("morning_energy", "Bom dia, Fabio! Qual sua energia hoje (1-5)? Quais sao as 3 coisas mais importantes pra hoje? Circula a UNICA que mais importa.", "08:30", "1,2,3,4,5", "high", "life_os"),
+        ("sprint1_done", "Primeiro sprint completo! O que voce entregou nessa primeira sessao de foco?", "10:00", "1,2,3,4,5", "normal", "life_os"),
+        ("lunch_break", "Hora do almoco. Come longe do computador. Respira.", "12:00", "1,2,3,4,5", "normal", "life_os"),
+        ("wins_journal", "Hora de registrar. Quais 3 coisas voce REALIZOU hoje? (Nao o que faltou -- o que voce FEZ)", "16:30", "1,2,3,4,5", "high", "life_os"),
+        ("work_stop", "Voce parou de trabalhar? Lembre-se: seu terapeuta disse pra nao trabalhar fora do horario. O que voce vai fazer agora que NAO e trabalho?", "18:00", "1,2,3,4,5", "high", "life_os"),
+        # Daily messages (every day including weekends)
+        ("meditation_night", "Meditacao noturna. 15 minutos. Muse Athena. Sem desculpa, Fabio.", "21:00", "1,2,3,4,5,6,7", "normal", "life_os"),
+        ("phone_away", "Celular em outro comodo. Roupa da academia separada. Boa noite, Fabio.", "22:00", "1,2,3,4,5,6,7", "normal", "life_os"),
+        # Weekly messages
+        ("sunday_planning", "Hora do planejamento semanal! Antes de planejar, me conta: quais foram suas 3 VITORIAS essa semana? Celebra antes de cobrar.", "19:00", "7", "high", "life_os"),
+        ("wednesday_mba", "MBA check: tem algum deadline essa semana? Algum material pra revisar? Nao deixa pra ultima hora.", "12:00", "3", "normal", "life_os"),
+        ("friday_review", "Revisao da semana. O que FUNCIONOU no seu sistema? O que precisa ajustar? Sem julgamento, so dados.", "16:00", "5", "high", "life_os"),
+        # Weekend messages
+        ("weekend_morning", "Bom dia! Fim de semana e pra descansar e recarregar. Qual o UNICO projeto pessoal que voce quer avancar hoje? (max 4h)", "09:00", "6,7", "normal", "life_os"),
+    ]
+    
+    for name, message, time, days, priority, category in messages:
+        cursor.execute("""
+            INSERT INTO scheduled_messages (name, message, time, days, priority, category)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (name, message, time, days, priority, category))
+    
+    conn.commit()
+    count = len(messages)
+    conn.close()
+    
+    return {"message": f"Life OS seeded with {count} scheduled messages", "count": count}
 
 # ============================================
 # NOTES ROUTES
@@ -2785,18 +2972,6 @@ async def trigger_full_sync():
 # ============================================
 # ATLAS PUSH ENDPOINTS (authenticated)
 # ============================================
-
-ATLAS_PUSH_KEY = os.environ.get("ATLAS_PUSH_KEY", "")
-
-from fastapi import Request, Depends
-
-def verify_atlas_key(request: Request):
-    """Verify the Atlas push API key"""
-    if not ATLAS_PUSH_KEY:
-        raise HTTPException(503, "Push not configured (ATLAS_PUSH_KEY not set)")
-    key = request.headers.get("X-Atlas-Key", "")
-    if key != ATLAS_PUSH_KEY:
-        raise HTTPException(401, "Invalid or missing Atlas key")
 
 
 @app.post("/api/sync/push/meetings")

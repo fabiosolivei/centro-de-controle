@@ -865,3 +865,75 @@ function calculateMBAResumo(data) {
 if (document.getElementById('mba-section')) {
     loadMBAStats();
 }
+
+// ============================================
+// LIFE OPERATING SYSTEM
+// ============================================
+
+let lifeOsMessages = [];
+let lifeOsExpanded = false;
+
+async function loadLifeOS() {
+    try {
+        const response = await fetch(`${API_BASE}/scheduled-messages`);
+        if (!response.ok) return;
+        lifeOsMessages = await response.json();
+        renderLifeOS();
+    } catch (error) {
+        console.log('Life OS not available:', error.message);
+    }
+}
+
+function renderLifeOS() {
+    const summaryEl = document.getElementById('life-os-summary');
+    const messagesEl = document.getElementById('life-os-messages');
+    
+    if (!summaryEl || !messagesEl) return;
+    
+    const active = lifeOsMessages.filter(m => m.is_active);
+    const today = new Date().getDay(); // 0=Sun, 1=Mon...
+    const todayISO = today === 0 ? '7' : String(today);
+    const todayMsgs = active.filter(m => m.days.split(',').includes(todayISO));
+    
+    const now = new Date();
+    const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+    
+    const nextMsg = todayMsgs.filter(m => m.time > currentTime).sort((a,b) => a.time.localeCompare(b.time))[0];
+    
+    summaryEl.innerHTML = `
+        <span style="color:var(--text-primary);font-weight:500">${active.length} mensagens ativas</span> · 
+        ${todayMsgs.length} hoje · 
+        ${nextMsg ? `Próxima: <strong>${nextMsg.time}</strong> (${nextMsg.name.replace(/_/g, ' ')})` : 'Todas enviadas hoje ✅'}
+    `;
+    
+    if (lifeOsExpanded) {
+        const dayNames = {'1':'Seg','2':'Ter','3':'Qua','4':'Qui','5':'Sex','6':'Sáb','7':'Dom'};
+        messagesEl.innerHTML = todayMsgs.sort((a,b) => a.time.localeCompare(b.time)).map(m => {
+            const sent = m.last_sent_at && m.last_sent_at.startsWith(now.toISOString().slice(0,10));
+            return `
+                <div class="reminder-item" style="opacity:${sent ? '0.5' : '1'}" data-priority="${m.priority}">
+                    <div style="width:2rem;text-align:center;font-size:0.8rem;font-weight:600;color:var(--accent)">${m.time}</div>
+                    <div class="reminder-content">
+                        <div class="reminder-title">${escapeHtml(m.message).substring(0, 80)}${m.message.length > 80 ? '...' : ''}</div>
+                        <div class="reminder-time">${m.days.split(',').map(d => dayNames[d] || d).join(', ')} · ${m.name.replace(/_/g, ' ')}${sent ? ' · ✅ Enviada' : ''}</div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        messagesEl.style.display = 'block';
+    } else {
+        messagesEl.style.display = 'none';
+    }
+}
+
+function toggleLifeOsExpand() {
+    lifeOsExpanded = !lifeOsExpanded;
+    const toggle = document.getElementById('life-os-toggle');
+    if (toggle) toggle.textContent = lifeOsExpanded ? 'Recolher' : 'Expandir';
+    renderLifeOS();
+}
+
+// Load Life OS on page load
+if (document.getElementById('life-os-summary')) {
+    loadLifeOS();
+}
