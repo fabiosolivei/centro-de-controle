@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0d1117">
     <meta name="description" content="Centro de Controle - Dashboard do Fábio">
     <title>Centro de Controle</title>
-    <link rel="stylesheet" href="/css/style.css?v=4">
+    <link rel="stylesheet" href="css/style.css?v=5">
     <link rel="manifest" href="manifest.json">
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +16,7 @@
     <script>
         const AUTH_HASH = 'f379eaffb6d3420d190c693e60b4e0c50f018cca3ec9c9bea2ca3ee069ae1f4d';
         if (sessionStorage.getItem('auth_token') !== AUTH_HASH) {
-            window.location.href = '/login';
+            window.location.href = 'login';
         }
     </script>
     <!-- GPM Dashboard Styles moved to style.css -->
@@ -27,11 +27,11 @@
         <div class="header-content">
             <h1 class="logo">Centro de Controle</h1>
             <nav class="header-nav">
-                <a href="/" class="nav-link active" aria-label="Dashboard">Dashboard</a>
-                <a href="/portfolio" class="nav-link" aria-label="Portfolio">Portfolio</a>
-                <a href="/mba" class="nav-link" aria-label="MBA">MBA</a>
-                <a href="/work" class="nav-link" aria-label="Work Status">Work</a>
-                <a href="/files" class="nav-link" aria-label="Arquivos">Arquivos</a>
+                <a href="./" class="nav-link active" aria-label="Dashboard">Dashboard</a>
+                <a href="portfolio" class="nav-link" aria-label="Portfolio">Portfolio</a>
+                <a href="mba" class="nav-link" aria-label="MBA">MBA</a>
+                <a href="work" class="nav-link" aria-label="Work Status">Work</a>
+                <a href="files" class="nav-link" aria-label="Arquivos">Arquivos</a>
             </nav>
             <div class="header-actions">
                 <button class="btn-icon" onclick="openCommandPalette()" title="Buscar (Ctrl+K)" aria-label="Buscar">
@@ -164,7 +164,7 @@
                 <section class="card">
                     <div class="section-header-row">
                         <h2 class="section-title">🎓 MBA Inteli</h2>
-                        <a class="section-action" href="/mba">Ver tudo</a>
+                        <a class="section-action" href="mba">Ver tudo</a>
                     </div>
                     <div class="kanban-mini">
                         <div class="kanban-mini-col todo">
@@ -192,7 +192,7 @@
                 <section class="card">
                     <div class="section-header-row">
                         <h2 class="section-title">💼 Projetos Trabalho</h2>
-                        <a class="section-action" href="/portfolio">Ver portfolio</a>
+                        <a class="section-action" href="portfolio">Ver portfolio</a>
                     </div>
                     <div class="portfolio-grid" id="portfolio-grid">
                         <div class="empty-state-styled loading">
@@ -206,7 +206,7 @@
                 <section class="card">
                     <div class="section-header-row">
                         <h2 class="section-title">📊 Work Status</h2>
-                        <a class="section-action" href="/work">Ver tudo</a>
+                        <a class="section-action" href="work">Ver tudo</a>
                     </div>
                     <div class="kanban-mini" id="work-status-mini">
                         <div class="kanban-mini-col todo">
