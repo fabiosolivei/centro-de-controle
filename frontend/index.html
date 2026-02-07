@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0d1117">
     <meta name="description" content="Centro de Controle - Dashboard do Fábio">
     <title>Centro de Controle</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="/css/style.css?v=4">
     <link rel="manifest" href="manifest.json">
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,7 +16,7 @@
     <script>
         const AUTH_HASH = 'f379eaffb6d3420d190c693e60b4e0c50f018cca3ec9c9bea2ca3ee069ae1f4d';
         if (sessionStorage.getItem('auth_token') !== AUTH_HASH) {
-            window.location.href = 'login.html';
+            window.location.href = '/login';
         }
     </script>
     <!-- GPM Dashboard Styles moved to style.css -->
@@ -27,11 +27,11 @@
         <div class="header-content">
             <h1 class="logo">Centro de Controle</h1>
             <nav class="header-nav">
-                <a href="index.html" class="nav-link active" aria-label="Dashboard">Dashboard</a>
-                <a href="portfolio.html" class="nav-link" aria-label="Portfolio">Portfolio</a>
-                <a href="mba.html" class="nav-link" aria-label="MBA">MBA</a>
-                <a href="work.html" class="nav-link" aria-label="Work Status">Work</a>
-                <a href="files.html" class="nav-link" aria-label="Arquivos">Arquivos</a>
+                <a href="/" class="nav-link active" aria-label="Dashboard">Dashboard</a>
+                <a href="/portfolio" class="nav-link" aria-label="Portfolio">Portfolio</a>
+                <a href="/mba" class="nav-link" aria-label="MBA">MBA</a>
+                <a href="/work" class="nav-link" aria-label="Work Status">Work</a>
+                <a href="/files" class="nav-link" aria-label="Arquivos">Arquivos</a>
             </nav>
             <div class="header-actions">
                 <button class="btn-icon" onclick="openCommandPalette()" title="Buscar (Ctrl+K)" aria-label="Buscar">
@@ -164,7 +164,7 @@
                 <section class="card">
                     <div class="section-header-row">
                         <h2 class="section-title">🎓 MBA Inteli</h2>
-                        <a class="section-action" href="mba.html">Ver tudo</a>
+                        <a class="section-action" href="/mba">Ver tudo</a>
                     </div>
                     <div class="kanban-mini">
                         <div class="kanban-mini-col todo">
@@ -192,7 +192,7 @@
                 <section class="card">
                     <div class="section-header-row">
                         <h2 class="section-title">💼 Projetos Trabalho</h2>
-                        <a class="section-action" href="portfolio.html">Ver portfolio</a>
+                        <a class="section-action" href="/portfolio">Ver portfolio</a>
                     </div>
                     <div class="portfolio-grid" id="portfolio-grid">
                         <div class="empty-state-styled loading">
@@ -206,7 +206,7 @@
                 <section class="card">
                     <div class="section-header-row">
                         <h2 class="section-title">📊 Work Status</h2>
-                        <a class="section-action" href="work.html">Ver tudo</a>
+                        <a class="section-action" href="/work">Ver tudo</a>
                     </div>
                     <div class="kanban-mini" id="work-status-mini">
                         <div class="kanban-mini-col todo">
@@ -227,18 +227,17 @@
                     </div>
                 </section>
                 
-                <!-- Recent Updates -->
+                <!-- Weekly Brief -->
                 <section class="card">
                     <div class="section-header-row">
-                        <h2 class="section-title">🔔 Updates Recentes</h2>
-                        <span class="section-action" onclick="refreshUpdates()">Atualizar</span>
+                        <h2 class="section-title">📋 Weekly Brief</h2>
+                        <span class="section-action" onclick="toggleBriefExpand()" id="brief-toggle">Expandir</span>
                     </div>
-                    <div class="updates-list" id="updates-list">
-                        <div class="empty-state-styled loading">
-                            <span class="empty-icon">🔔</span>
-                            <span>Carregando updates...</span>
-                        </div>
+                    <div id="brief-summary" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">
+                        Carregando...
                     </div>
+                    <div id="brief-glance" style="font-size:0.82rem;line-height:1.6;"></div>
+                    <div id="brief-detail" style="display:none;margin-top:0.5rem;"></div>
                 </section>
                 
                 <!-- Reminders -->
@@ -455,7 +454,8 @@
                     loadWorkStatus()
                 ]);
                 updateSummary();
-                loadUpdates();
+                loadWeeklyBrief();
+                loadLifeOS();
             } catch (error) {
                 console.error('Error loading data:', error);
             }
@@ -729,107 +729,185 @@
         }
         
         // ===========================================
-        // UPDATES
+        // WEEKLY BRIEF
         // ===========================================
         
-        async function loadUpdates() {
+        let weeklyBriefData = null;
+        let briefExpanded = false;
+        
+        async function loadWeeklyBrief() {
             try {
-                const data = await apiRequest('/updates/recent?limit=10');
-                renderUpdates(data.updates || []);
+                weeklyBriefData = await apiRequest('/weekly-brief');
+                renderWeeklyBrief();
             } catch (error) {
-                console.log('Updates API not available, using simulated data');
-                renderSimulatedUpdates();
+                console.log('Weekly Brief not available:', error.message);
+                const el = document.getElementById('brief-summary');
+                if (el) el.innerHTML = '<span style="color:var(--text-muted)">Nenhum brief disponivel</span>';
             }
         }
         
-        function renderUpdates(updates) {
-            const container = document.getElementById('updates-list');
+        function renderWeeklyBrief() {
+            const summaryEl = document.getElementById('brief-summary');
+            const glanceEl = document.getElementById('brief-glance');
+            const detailEl = document.getElementById('brief-detail');
+            if (!summaryEl || !weeklyBriefData) return;
             
-            if (!updates || updates.length === 0) {
-                renderSimulatedUpdates();
-                return;
+            const b = weeklyBriefData;
+            const urgentCount = (b.action_items_urgent || []).length;
+            const importantCount = (b.action_items_important || []).length;
+            const decisionCount = (b.decisions || []).length;
+            
+            summaryEl.innerHTML = `
+                <span style="color:var(--text-primary);font-weight:500">${escapeHtml(b.title || 'Weekly Brief')}</span> · 
+                ${urgentCount} urgente${urgentCount !== 1 ? 's' : ''} · 
+                ${importantCount} importante${importantCount !== 1 ? 's' : ''} · 
+                ${decisionCount} decisao${decisionCount !== 1 ? 'es' : ''}
+            `;
+            
+            // Week at a glance (always visible)
+            if (b.week_glance) {
+                const lines = b.week_glance.split('\n').filter(l => l.trim());
+                glanceEl.innerHTML = lines.map(line => {
+                    const today = line.includes('Today') || line.includes('HOJE');
+                    return `<div style="padding:2px 0;${today ? 'color:var(--accent);font-weight:600;' : ''}">${escapeHtml(line)}</div>`;
+                }).join('');
             }
             
-            const shown = updates.slice(0, 5);
-            const hasMore = updates.length > 5;
-            container.innerHTML = shown.map(update => `
-                <div class="update-item ${getUpdateTypeClass(update.entity_type || update.type)}">
-                    <div class="update-icon">${update.icon || getUpdateIcon(update.entity_type || update.type)}</div>
-                    <div class="update-content">
-                        <div class="update-title">${escapeHtml(update.message || update.title)}</div>
-                        <div class="update-meta">${update.entity_type || ''} • ${formatTimeAgo(new Date(update.timestamp))}</div>
-                    </div>
-                </div>
-            `).join('') + (hasMore ? `<div class="update-more"><span class="section-action" onclick="loadUpdates()">Ver mais ${updates.length - 5} updates</span></div>` : '');
-        }
-        
-        function renderSimulatedUpdates() {
-            const container = document.getElementById('updates-list');
-            
-            // Create updates from recent activity
-            const updates = [];
-            
-            // Recent tasks
-            tasks.filter(t => t.status === 'done').slice(0, 2).forEach(t => {
-                updates.push({
-                    type: 'task_done',
-                    title: `Tarefa concluída: ${t.title}`,
-                    meta: formatTimeAgo(new Date(t.updated_at || t.created_at))
-                });
-            });
-            
-            // Work projects
-            projects.filter(p => p.category === 'trabalho').slice(0, 3).forEach(p => {
-                updates.push({
-                    type: 'project',
-                    title: `${p.name}`,
-                    meta: `${p.progress || 0}% concluído`
-                });
-            });
-            
-            if (updates.length === 0) {
-                container.innerHTML = '<div class="empty-state-styled"><span class="empty-icon">🔔</span><span>Sem updates recentes</span></div>';
-                return;
+            // Expanded detail
+            if (briefExpanded) {
+                let html = '';
+                
+                // Urgent action items
+                if (b.action_items_urgent && b.action_items_urgent.length > 0) {
+                    html += '<div style="margin-top:0.5rem;"><strong style="color:#ef4444;font-size:0.8rem;">URGENTE</strong>';
+                    html += b.action_items_urgent.map(item => `
+                        <div class="reminder-item" style="border-left:3px solid #ef4444;">
+                            <div class="reminder-content">
+                                <div class="reminder-title">${escapeHtml(item.action || item)}</div>
+                                <div class="reminder-time">${escapeHtml(item.deadline || '')} ${item.owner ? '· ' + escapeHtml(item.owner) : ''}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                    html += '</div>';
+                }
+                
+                // Important action items
+                if (b.action_items_important && b.action_items_important.length > 0) {
+                    html += '<div style="margin-top:0.5rem;"><strong style="color:#f59e0b;font-size:0.8rem;">IMPORTANTE</strong>';
+                    html += b.action_items_important.map(item => `
+                        <div class="reminder-item">
+                            <div class="reminder-content">
+                                <div class="reminder-title">${escapeHtml(item.action || item)}</div>
+                                <div class="reminder-time">${escapeHtml(item.context || '')}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                    html += '</div>';
+                }
+                
+                // Decisions
+                if (b.decisions && b.decisions.length > 0) {
+                    html += '<div style="margin-top:0.5rem;"><strong style="color:var(--accent);font-size:0.8rem;">DECISOES</strong>';
+                    html += b.decisions.map(d => `
+                        <div class="reminder-item">
+                            <div class="reminder-content">
+                                <div class="reminder-title">${escapeHtml(d.decision || d)}</div>
+                                <div class="reminder-time">${escapeHtml(d.options || '')} ${d.deadline ? '· ' + escapeHtml(d.deadline) : ''}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                    html += '</div>';
+                }
+                
+                // Energy check
+                if (b.energy_check) {
+                    const e = b.energy_check;
+                    html += '<div style="margin-top:0.5rem;font-size:0.8rem;">';
+                    if (e.meeting_load) html += `<div>Reunioes: ${'█'.repeat(Math.round(e.meeting_load/15*10))}${'░'.repeat(10-Math.round(e.meeting_load/15*10))} ${e.meeting_load}/15</div>`;
+                    if (e.deadline_press) html += `<div>Deadlines: ${'█'.repeat(Math.round(e.deadline_press/15*10))}${'░'.repeat(10-Math.round(e.deadline_press/15*10))} ${e.deadline_press}/15</div>`;
+                    if (e.energy_risk) html += `<div>Energia: ${'█'.repeat(Math.round(e.energy_risk/15*10))}${'░'.repeat(10-Math.round(e.energy_risk/15*10))} ${e.energy_risk}/15</div>`;
+                    html += '</div>';
+                }
+                
+                detailEl.innerHTML = html;
+                detailEl.style.display = 'block';
+            } else {
+                detailEl.style.display = 'none';
             }
+        }
+        
+        function toggleBriefExpand() {
+            briefExpanded = !briefExpanded;
+            const toggle = document.getElementById('brief-toggle');
+            if (toggle) toggle.textContent = briefExpanded ? 'Recolher' : 'Expandir';
+            renderWeeklyBrief();
+        }
+        
+        // ===========================================
+        // LIFE OPERATING SYSTEM
+        // ===========================================
+        
+        let lifeOsMessages = [];
+        let lifeOsExpanded = false;
+        
+        async function loadLifeOS() {
+            try {
+                const response = await fetch(`${API_BASE}/scheduled-messages`);
+                if (!response.ok) return;
+                lifeOsMessages = await response.json();
+                renderLifeOS();
+            } catch (error) {
+                console.log('Life OS not available:', error.message);
+                const el = document.getElementById('life-os-summary');
+                if (el) el.innerHTML = '<span style="color:var(--text-muted)">Life OS indisponivel</span>';
+            }
+        }
+        
+        function renderLifeOS() {
+            const summaryEl = document.getElementById('life-os-summary');
+            const messagesEl = document.getElementById('life-os-messages');
+            if (!summaryEl || !messagesEl) return;
             
-            container.innerHTML = updates.slice(0, 5).map(update => `
-                <div class="update-item ${getUpdateTypeClass(update.entity_type || update.type)}">
-                    <div class="update-icon">${getUpdateIcon(update.entity_type || update.type)}</div>
-                    <div class="update-content">
-                        <div class="update-title">${escapeHtml(update.title)}</div>
-                        <div class="update-meta">${update.meta}</div>
-                    </div>
-                </div>
-            `).join('');
+            const active = lifeOsMessages.filter(m => m.is_active);
+            const today = new Date().getDay();
+            const todayISO = today === 0 ? '7' : String(today);
+            const todayMsgs = active.filter(m => m.days.split(',').includes(todayISO));
+            
+            const now = new Date();
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            const nextMsg = todayMsgs.filter(m => m.time > currentTime).sort((a,b) => a.time.localeCompare(b.time))[0];
+            
+            summaryEl.innerHTML = `
+                <span style="color:var(--text-primary);font-weight:500">${active.length} mensagens ativas</span> · 
+                ${todayMsgs.length} hoje · 
+                ${nextMsg ? 'Proxima: <strong>' + nextMsg.time + '</strong> (' + nextMsg.name.replace(/_/g, ' ') + ')' : 'Todas enviadas hoje'}
+            `;
+            
+            if (lifeOsExpanded) {
+                const dayNames = {'1':'Seg','2':'Ter','3':'Qua','4':'Qui','5':'Sex','6':'Sab','7':'Dom'};
+                messagesEl.innerHTML = todayMsgs.sort((a,b) => a.time.localeCompare(b.time)).map(m => {
+                    const sent = m.last_sent_at && m.last_sent_at.startsWith(now.toISOString().slice(0,10));
+                    return `
+                        <div class="reminder-item" style="opacity:${sent ? '0.5' : '1'}" data-priority="${m.priority}">
+                            <div style="width:2rem;text-align:center;font-size:0.8rem;font-weight:600;color:var(--accent)">${m.time}</div>
+                            <div class="reminder-content">
+                                <div class="reminder-title">${escapeHtml(m.message).substring(0, 80)}${m.message.length > 80 ? '...' : ''}</div>
+                                <div class="reminder-time">${m.days.split(',').map(d => dayNames[d] || d).join(', ')} · ${m.name.replace(/_/g, ' ')}${sent ? ' · Enviada' : ''}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                messagesEl.style.display = 'block';
+            } else {
+                messagesEl.style.display = 'none';
+            }
         }
         
-        function getUpdateIcon(type) {
-            const icons = {
-                'meeting': '📅',
-                'task_done': '✅',
-                'task_created': '📋',
-                'project': '💼',
-                'note': '📝',
-                'deadline': '⏰'
-            };
-            return icons[type] || '🔔';
-        }
-        
-        function getUpdateTypeClass(type) {
-            const classes = {
-                'meeting': 'update-type-meeting',
-                'meeting_note': 'update-type-meeting',
-                'task_done': 'update-type-task',
-                'task_created': 'update-type-task',
-                'project': 'update-type-project',
-                'note': 'update-type-note',
-                'deadline': 'update-type-deadline'
-            };
-            return classes[type] || '';
-        }
-        
-        function refreshUpdates() {
-            loadUpdates();
+        function toggleLifeOsExpand() {
+            lifeOsExpanded = !lifeOsExpanded;
+            const toggle = document.getElementById('life-os-toggle');
+            if (toggle) toggle.textContent = lifeOsExpanded ? 'Recolher' : 'Expandir';
+            renderLifeOS();
         }
         
         // ===========================================

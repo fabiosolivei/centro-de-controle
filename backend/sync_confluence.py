@@ -26,7 +26,8 @@ from dotenv import load_dotenv
 load_dotenv(BACKEND_DIR / '.env')
 
 from confluence_client import ConfluenceClient
-from situation_wall_parser import SituationWallParser
+from situation_wall_parser import SituationWallParser, Risk, Bug
+from dataclasses import asdict
 
 
 # Database path - same as main.py
@@ -161,16 +162,119 @@ def sync_confluence_data():
         page_data = client.get_situation_wall()
         
         print(f"  Parsing page: {page_data['title']} (v{page_data['version']})")
-        parser = SituationWallParser(page_data['html_content'])
+        
+        # ── Parse storage format (XML) for reliable structural data ──
+        parser = SituationWallParser(page_data['storage_content'])
         data = parser.parse_all()
         
+        # ── Enrich with Jira API (titles, statuses) ──────────────────
+        all_keys = []
+        all_keys.extend(i["beesip_id"] for i in data["initiatives"])
+        all_keys.extend(e["beescad_id"] for e in data["epics"])
+        
+        jira_enriched = 0
+        if all_keys:
+            print(f"  Enriching {len(all_keys)} issues from Jira API...")
+            try:
+                jira_issues = client.get_issues_batch(all_keys)
+                parser.enrich_with_jira_data(data, jira_issues)
+                jira_enriched = len(jira_issues)
+                print(f"    Got {jira_enriched} issue details from Jira")
+            except Exception as jira_err:
+                print(f"    WARNING: Jira enrichment failed: {jira_err}")
+                print(f"    Structural data (keys, teams, priorities) still saved")
+        
+        # ── Fetch Risks via JQL extracted from storage ───────────────
+        risks_jql = data.get("risks_jql")
+        if risks_jql:
+            print(f"  Fetching risks via JQL...")
+            try:
+                risk_issues = client.search_jira(
+                    risks_jql,
+                    fields=["summary", "assignee", "status", "priority", "customfield_13715"]
+                )
+                for issue in risk_issues:
+                    key = issue.get("key", "")
+                    fields_data = issue.get("fields", {})
+                    status_obj = fields_data.get("status", {})
+                    priority_obj = fields_data.get("priority", {})
+                    assignee_obj = fields_data.get("assignee", {})
+                    gut_field = fields_data.get("customfield_13715")
+                    
+                    data["risks"].append(asdict(Risk(
+                        beescad_id=key,
+                        title=fields_data.get("summary", ""),
+                        assignee=assignee_obj.get("displayName", "") if assignee_obj else "",
+                        status=status_obj.get("name", "") if status_obj else "",
+                        priority=priority_obj.get("name", "") if priority_obj else "",
+                        gut_score=int(gut_field) if gut_field else 0,
+                        jira_url=f"https://ab-inbev.atlassian.net/browse/{key}"
+                    )))
+                print(f"    Got {len(data['risks'])} risks")
+            except Exception as risk_err:
+                print(f"    WARNING: Risks fetch failed: {risk_err}")
+        
+        # ── Fetch Bugs via JQL extracted from storage ────────────────
+        bugs_jql = data.get("bugs_jql")
+        if bugs_jql:
+            print(f"  Fetching bugs via JQL...")
+            try:
+                bug_issues = client.search_jira(
+                    bugs_jql,
+                    fields=["summary", "status", "priority", "customfield_13230"]
+                )
+                for issue in bug_issues:
+                    key = issue.get("key", "")
+                    fields_data = issue.get("fields", {})
+                    status_obj = fields_data.get("status", {})
+                    priority_obj = fields_data.get("priority", {})
+                    team_field = fields_data.get("customfield_13230")
+                    
+                    team = ""
+                    if isinstance(team_field, list):
+                        team = ", ".join(t.get("value", "") for t in team_field if isinstance(t, dict))
+                    elif isinstance(team_field, dict):
+                        team = team_field.get("value", "")
+                    elif isinstance(team_field, str):
+                        team = team_field
+                    
+                    data["bugs"].append(asdict(Bug(
+                        beescad_id=key,
+                        title=fields_data.get("summary", ""),
+                        priority=priority_obj.get("name", "") if priority_obj else "",
+                        status=status_obj.get("name", "") if status_obj else "",
+                        team=team,
+                        jira_url=f"https://ab-inbev.atlassian.net/browse/{key}"
+                    )))
+                print(f"    Got {len(data['bugs'])} bugs")
+            except Exception as bug_err:
+                print(f"    WARNING: Bugs fetch failed: {bug_err}")
+        
+        # ── Quality logging ──────────────────────────────────────────
+        inits_with_title = sum(1 for i in data["initiatives"] if i.get("title"))
+        epics_with_title = sum(1 for e in data["epics"] if e.get("title"))
+        total_inits = len(data["initiatives"])
+        total_epics = len(data["epics"])
+        print(f"  Parse quality:")
+        print(f"    Initiatives with title: {inits_with_title}/{total_inits}")
+        print(f"    Epics with title: {epics_with_title}/{total_epics}")
+        print(f"    Jira issues enriched: {jira_enriched}")
+        
+        # ── Clear old data and sync to DB ────────────────────────────
         items_synced = 0
+        
+        # Clear old data to avoid stale entries
+        cursor.execute("DELETE FROM confluence_sprints")
+        cursor.execute("DELETE FROM confluence_initiatives")
+        cursor.execute("DELETE FROM confluence_epics")
+        cursor.execute("DELETE FROM confluence_risks")
+        cursor.execute("DELETE FROM confluence_bugs")
         
         # Sync sprints
         print(f"  Syncing {len(data.get('sprints', []))} sprints...")
         for sprint in data.get('sprints', []):
             cursor.execute("""
-                INSERT OR REPLACE INTO confluence_sprints 
+                INSERT INTO confluence_sprints 
                 (sprint_name, sprint_number, start_date, end_date, release_date, is_current, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -184,7 +288,7 @@ def sync_confluence_data():
         print(f"  Syncing {len(data.get('initiatives', []))} initiatives...")
         for init in data.get('initiatives', []):
             cursor.execute("""
-                INSERT OR REPLACE INTO confluence_initiatives
+                INSERT INTO confluence_initiatives
                 (beesip_id, title, status, priority, team, kickoff_date, zone_approval, jira_url, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -199,7 +303,7 @@ def sync_confluence_data():
         for epic in data.get('epics', []):
             milestones_json = json.dumps(epic.get('milestones')) if epic.get('milestones') else None
             cursor.execute("""
-                INSERT OR REPLACE INTO confluence_epics
+                INSERT INTO confluence_epics
                 (beescad_id, initiative_beesip, title, status, size, sprint, milestones, jira_url, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -213,7 +317,7 @@ def sync_confluence_data():
         print(f"  Syncing {len(data.get('risks', []))} risks...")
         for risk in data.get('risks', []):
             cursor.execute("""
-                INSERT OR REPLACE INTO confluence_risks
+                INSERT INTO confluence_risks
                 (beescad_id, title, assignee, status, priority, gut_score, jira_url, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -227,7 +331,7 @@ def sync_confluence_data():
         print(f"  Syncing {len(data.get('bugs', []))} bugs...")
         for bug in data.get('bugs', []):
             cursor.execute("""
-                INSERT OR REPLACE INTO confluence_bugs
+                INSERT INTO confluence_bugs
                 (beescad_id, title, priority, status, team, jira_url, updated_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             """, (
@@ -249,12 +353,13 @@ def sync_confluence_data():
         
         # Write to unified sync_log
         try:
-            cursor2 = conn.cursor() if not conn.closed else get_db().cursor()
-            cursor2.execute("""
+            log_conn = get_db()
+            log_conn.execute("""
                 INSERT INTO sync_log (source, status, items_count, synced_at)
                 VALUES ('confluence', 'completed', ?, ?)
             """, (items_synced, datetime.now().isoformat()))
-            cursor2.connection.commit()
+            log_conn.commit()
+            log_conn.close()
         except Exception:
             pass  # sync_log table may not exist yet
         

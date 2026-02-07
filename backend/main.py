@@ -328,6 +328,23 @@ def init_db():
         )
     """)
     
+    # Tabela de Weekly Briefs (intelligence pushed from Atlas)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS weekly_briefs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            week_start TEXT NOT NULL UNIQUE,
+            title TEXT NOT NULL,
+            week_glance TEXT,
+            action_items_urgent TEXT DEFAULT '[]',
+            action_items_important TEXT DEFAULT '[]',
+            decisions TEXT DEFAULT '[]',
+            energy_check TEXT DEFAULT '{}',
+            full_markdown TEXT,
+            generated_at TEXT,
+            pushed_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
     conn.commit()
     conn.close()
     print("✅ Database initialized")
@@ -1886,6 +1903,14 @@ async def serve_files_page():
         return FileResponse(files_path)
     return {"message": "Files page not found"}
 
+@app.get("/work")
+async def serve_work_page():
+    """Serve a página de Work Status"""
+    work_path = os.path.join(FRONTEND_DIR, "work.html")
+    if os.path.exists(work_path):
+        return FileResponse(work_path)
+    return {"message": "Work page not found"}
+
 @app.get("/mba")
 async def serve_mba_page():
     """Serve a página do MBA"""
@@ -1893,6 +1918,22 @@ async def serve_mba_page():
     if os.path.exists(mba_path):
         return FileResponse(mba_path)
     return {"message": "MBA page not found"}
+
+@app.get("/portfolio")
+async def serve_portfolio_page():
+    """Serve a página de Portfolio"""
+    portfolio_path = os.path.join(FRONTEND_DIR, "portfolio.html")
+    if os.path.exists(portfolio_path):
+        return FileResponse(portfolio_path)
+    return {"message": "Portfolio page not found"}
+
+@app.get("/login")
+async def serve_login_page():
+    """Serve a página de Login"""
+    login_path = os.path.join(FRONTEND_DIR, "login.html")
+    if os.path.exists(login_path):
+        return FileResponse(login_path)
+    return {"message": "Login page not found"}
 
 @app.get("/manifest.json")
 async def serve_manifest():
@@ -3275,6 +3316,68 @@ async def push_work_status(request: Request):
     except Exception as e:
         log_sync("confluence", "error", error_message=str(e))
         return {"status": "error", "message": str(e)}
+
+
+@app.post("/api/sync/push/weekly-brief")
+async def push_weekly_brief(request: Request):
+    """Receive weekly brief data from Atlas MCP"""
+    verify_atlas_key(request)
+    body = await request.json()
+    
+    week_start = body.get("week_start", "")
+    if not week_start:
+        raise HTTPException(400, "week_start is required (YYYY-MM-DD)")
+    
+    conn = get_db()
+    try:
+        conn.execute("""
+            INSERT OR REPLACE INTO weekly_briefs 
+            (week_start, title, week_glance, action_items_urgent, action_items_important,
+             decisions, energy_check, full_markdown, generated_at, pushed_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            week_start,
+            body.get("title", f"Week of {week_start}"),
+            body.get("week_glance", ""),
+            json.dumps(body.get("action_items_urgent", []), ensure_ascii=False),
+            json.dumps(body.get("action_items_important", []), ensure_ascii=False),
+            json.dumps(body.get("decisions", []), ensure_ascii=False),
+            json.dumps(body.get("energy_check", {}), ensure_ascii=False),
+            body.get("full_markdown", ""),
+            body.get("generated_at", datetime.now().isoformat()),
+            datetime.now().isoformat()
+        ))
+        conn.commit()
+        log_sync("weekly-brief", "completed", 1)
+        return {"status": "ok", "week_start": week_start}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+    finally:
+        conn.close()
+
+
+@app.get("/api/weekly-brief")
+async def get_weekly_brief():
+    """Get the latest weekly brief"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM weekly_briefs ORDER BY week_start DESC LIMIT 1")
+    row = cursor.fetchone()
+    conn.close()
+    
+    if not row:
+        raise HTTPException(404, "No weekly brief available")
+    
+    brief = dict(row)
+    # Parse JSON fields
+    for field in ["action_items_urgent", "action_items_important", "decisions", "energy_check"]:
+        if brief.get(field) and isinstance(brief[field], str):
+            try:
+                brief[field] = json.loads(brief[field])
+            except:
+                pass
+    
+    return brief
 
 
 # ============================================

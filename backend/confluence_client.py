@@ -7,7 +7,7 @@ Handles authentication and API calls to Atlassian Confluence Cloud
 import os
 import base64
 import httpx
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -90,6 +90,105 @@ class ConfluenceClient:
     def get_page_storage(self, page_id: Optional[str] = None) -> str:
         """Get page body in storage format (Confluence XML)"""
         return self.get_page_body(page_id, format="storage")
+    
+    # ── Jira REST API methods ──────────────────────────────────────────
+    
+    @property
+    def jira_base_url(self) -> str:
+        """Derive Jira base URL from Confluence URL (same Atlassian site)"""
+        # https://ab-inbev.atlassian.net/wiki -> https://ab-inbev.atlassian.net
+        return self.base_url.replace("/wiki", "")
+    
+    def _jira_request(self, method: str, endpoint: str, **kwargs) -> Dict[str, Any]:
+        """Make a Jira REST API request"""
+        url = f"{self.jira_base_url}{endpoint}"
+        response = self.client.request(
+            method=method,
+            url=url,
+            headers=self.headers,
+            **kwargs
+        )
+        response.raise_for_status()
+        return response.json()
+    
+    def search_jira(self, jql: str, fields: List[str] = None, max_results: int = 100) -> List[Dict[str, Any]]:
+        """
+        Execute a JQL search against the Jira REST API.
+        
+        Uses /rest/api/3/search/jql (the new endpoint, as /rest/api/3/search is 410 Gone).
+        
+        Args:
+            jql: JQL query string
+            fields: List of fields to return (e.g. ["summary", "status", "priority"])
+            max_results: Maximum number of results
+            
+        Returns:
+            List of issue dicts with key and requested fields
+        """
+        if fields is None:
+            fields = ["summary", "status", "priority", "assignee"]
+        
+        payload = {
+            "jql": jql,
+            "fields": fields,
+            "maxResults": max_results
+        }
+        
+        try:
+            data = self._jira_request("POST", "/rest/api/3/search/jql", json=payload)
+            return data.get("issues", [])
+        except Exception as e:
+            print(f"Jira search failed: {e}")
+            return []
+    
+    def get_issues_batch(self, keys: List[str], fields: List[str] = None) -> Dict[str, Dict[str, Any]]:
+        """
+        Batch-fetch issue details by keys.
+        
+        Args:
+            keys: List of Jira issue keys (e.g. ["BEESIP-10009", "BEESCAD-20981"])
+            fields: Fields to retrieve
+            
+        Returns:
+            Dict mapping issue key -> {summary, status, priority, ...}
+        """
+        if not keys:
+            return {}
+        
+        if fields is None:
+            fields = ["summary", "status", "priority", "assignee", "issuetype"]
+        
+        result = {}
+        
+        # Jira has a limit on JQL length, batch in groups of 50
+        batch_size = 50
+        for i in range(0, len(keys), batch_size):
+            batch = keys[i:i + batch_size]
+            jql = f"key in ({','.join(batch)})"
+            
+            issues = self.search_jira(jql, fields=fields, max_results=batch_size)
+            
+            for issue in issues:
+                key = issue.get("key", "")
+                fields_data = issue.get("fields", {})
+                
+                # Normalize status and priority to simple strings
+                status_obj = fields_data.get("status", {})
+                priority_obj = fields_data.get("priority", {})
+                assignee_obj = fields_data.get("assignee", {})
+                issuetype_obj = fields_data.get("issuetype", {})
+                
+                result[key] = {
+                    "summary": fields_data.get("summary", ""),
+                    "status": status_obj.get("name", "") if status_obj else "",
+                    "priority": priority_obj.get("name", "") if priority_obj else "",
+                    "assignee": assignee_obj.get("displayName", "") if assignee_obj else "",
+                    "issuetype": issuetype_obj.get("name", "") if issuetype_obj else "",
+                }
+        
+        return result
+    
+    # ── Confluence page methods ──────────────────────────────────────
     
     def test_connection(self) -> bool:
         """Test if the API connection works"""
@@ -175,17 +274,96 @@ class AsyncConfluenceClient:
         """Get page body as rendered HTML"""
         return await self.get_page_body(page_id, format="view")
     
+    async def get_page_storage(self, page_id: Optional[str] = None) -> str:
+        """Get page body in storage format (Confluence XML)"""
+        return await self.get_page_body(page_id, format="storage")
+    
+    # ── Jira REST API methods (async) ────────────────────────────────
+    
+    @property
+    def jira_base_url(self) -> str:
+        """Derive Jira base URL from Confluence URL"""
+        return self.base_url.replace("/wiki", "")
+    
+    async def _jira_request(self, method: str, endpoint: str, **kwargs) -> Dict[str, Any]:
+        """Make an async Jira REST API request"""
+        url = f"{self.jira_base_url}{endpoint}"
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.request(
+                method=method,
+                url=url,
+                headers=self.headers,
+                **kwargs
+            )
+            response.raise_for_status()
+            return response.json()
+    
+    async def search_jira(self, jql: str, fields: List[str] = None, max_results: int = 100) -> List[Dict[str, Any]]:
+        """Execute a JQL search against the Jira REST API (async)."""
+        if fields is None:
+            fields = ["summary", "status", "priority", "assignee"]
+        
+        payload = {
+            "jql": jql,
+            "fields": fields,
+            "maxResults": max_results
+        }
+        
+        try:
+            data = await self._jira_request("POST", "/rest/api/3/search/jql", json=payload)
+            return data.get("issues", [])
+        except Exception as e:
+            print(f"Jira search failed: {e}")
+            return []
+    
+    async def get_issues_batch(self, keys: List[str], fields: List[str] = None) -> Dict[str, Dict[str, Any]]:
+        """Batch-fetch issue details by keys (async)."""
+        if not keys:
+            return {}
+        
+        if fields is None:
+            fields = ["summary", "status", "priority", "assignee", "issuetype"]
+        
+        result = {}
+        batch_size = 50
+        for i in range(0, len(keys), batch_size):
+            batch = keys[i:i + batch_size]
+            jql = f"key in ({','.join(batch)})"
+            issues = await self.search_jira(jql, fields=fields, max_results=batch_size)
+            
+            for issue in issues:
+                key = issue.get("key", "")
+                fields_data = issue.get("fields", {})
+                status_obj = fields_data.get("status", {})
+                priority_obj = fields_data.get("priority", {})
+                assignee_obj = fields_data.get("assignee", {})
+                issuetype_obj = fields_data.get("issuetype", {})
+                
+                result[key] = {
+                    "summary": fields_data.get("summary", ""),
+                    "status": status_obj.get("name", "") if status_obj else "",
+                    "priority": priority_obj.get("name", "") if priority_obj else "",
+                    "assignee": assignee_obj.get("displayName", "") if assignee_obj else "",
+                    "issuetype": issuetype_obj.get("name", "") if issuetype_obj else "",
+                }
+        
+        return result
+    
+    # ── Situation Wall ───────────────────────────────────────────────
+    
     async def get_situation_wall(self) -> Dict[str, Any]:
         """Get the Situation Wall page with full content"""
         page = await self.get_page()
         html_content = await self.get_page_html()
+        storage_content = await self.get_page_storage()
         
         return {
             "id": page.get("id"),
             "title": page.get("title"),
             "version": page.get("version", {}).get("number"),
             "last_modified": page.get("version", {}).get("createdAt"),
-            "html_content": html_content
+            "html_content": html_content,
+            "storage_content": storage_content
         }
 
 
