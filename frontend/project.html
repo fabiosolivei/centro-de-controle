@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0d1117">
     <title>Projeto - Centro de Controle</title>
-    <link rel="stylesheet" href="/css/style.css?v=4">
+    <link rel="stylesheet" href="css/style.css?v=5">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -13,7 +13,7 @@
     <script>
         const AUTH_HASH = 'f379eaffb6d3420d190c693e60b4e0c50f018cca3ec9c9bea2ca3ee069ae1f4d';
         if (sessionStorage.getItem('auth_token') !== AUTH_HASH) {
-            window.location.href = '/login';
+            window.location.href = 'login';
         }
     </script>
     <style>
@@ -657,11 +657,11 @@
         <div class="header-content">
             <h1 class="logo">Centro de Controle</h1>
             <nav class="header-nav">
-                <a href="/" class="nav-link" aria-label="Dashboard">Dashboard</a>
-                <a href="/portfolio" class="nav-link active" aria-label="Portfolio">Portfolio</a>
-                <a href="/mba" class="nav-link" aria-label="MBA">MBA</a>
-                <a href="/work" class="nav-link" aria-label="Work Status">Work</a>
-                <a href="/files" class="nav-link" aria-label="Arquivos">Arquivos</a>
+                <a href="./" class="nav-link" aria-label="Dashboard">Dashboard</a>
+                <a href="portfolio" class="nav-link active" aria-label="Portfolio">Portfolio</a>
+                <a href="mba" class="nav-link" aria-label="MBA">MBA</a>
+                <a href="work" class="nav-link" aria-label="Work Status">Work</a>
+                <a href="files" class="nav-link" aria-label="Arquivos">Arquivos</a>
             </nav>
             <div class="header-actions"></div>
         </div>
@@ -669,7 +669,7 @@
 
     <main class="main-content" style="display: block;">
         <div class="project-header">
-            <a href="/portfolio" class="back-btn">← Voltar ao Portfolio</a>
+            <a href="portfolio" class="back-btn">← Voltar ao Portfolio</a>
             <div class="project-title-section">
                 <h1 id="project-name">Carregando...</h1>
                 <div class="project-meta">
