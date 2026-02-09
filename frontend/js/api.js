@@ -496,6 +496,21 @@ const ObservabilityAPI = {
     async getWeeklyReports(weeks = 4) {
         return apiRequest(`/reports/weekly?weeks=${weeks}`);
     },
+
+    /**
+     * Get cost metrics (balance, spend, by model, daily)
+     * @param {number} days - Period in days (default 30)
+     */
+    async getCostMetrics(days = 30) {
+        return apiRequest(`/metrics/costs?days=${days}`);
+    },
+
+    /**
+     * Get live Moonshot balance
+     */
+    async getCostBalance() {
+        return apiRequest(`/metrics/costs/balance`);
+    },
 };
 
 // ============================================
