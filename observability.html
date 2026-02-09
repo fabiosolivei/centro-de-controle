@@ -45,9 +45,30 @@
         /* Stat Cards Row */
         .stat-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .stat-cards-section {
             margin-bottom: var(--spacing-xl);
+        }
+
+        .stat-cards-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: var(--spacing-sm);
+            padding-left: 4px;
+        }
+
+        @media (max-width: 700px) {
+            .stat-cards { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (max-width: 450px) {
+            .stat-cards { grid-template-columns: 1fr; }
         }
 
         .stat-card {
@@ -246,31 +267,53 @@
             </div>
         </div>
 
-        <!-- Stat Cards -->
-        <div class="stat-cards">
-            <div class="stat-card">
-                <div class="stat-icon">🔧</div>
-                <div class="stat-value" id="stat-tool-health">--</div>
-                <div class="stat-label">Tool Health (24h)</div>
-                <div class="stat-trend neutral" id="stat-tool-trend">loading...</div>
+        <!-- Stat Cards: Row 1 — Cost -->
+        <div class="stat-cards-section">
+            <div class="stat-cards-label">Cost</div>
+            <div class="stat-cards">
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-value" id="stat-balance">--</div>
+                    <div class="stat-label">Moonshot Balance</div>
+                    <div class="stat-trend neutral" id="stat-balance-trend">loading...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💸</div>
+                    <div class="stat-value" id="stat-spend">--</div>
+                    <div class="stat-label">Nova Spend (30d)</div>
+                    <div class="stat-trend neutral" id="stat-spend-trend">loading...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🤖</div>
+                    <div class="stat-value" id="stat-llm-calls">--</div>
+                    <div class="stat-label">LLM Calls (30d)</div>
+                    <div class="stat-trend neutral" id="stat-llm-trend">loading...</div>
+                </div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon">🧭</div>
-                <div class="stat-value" id="stat-routing">--</div>
-                <div class="stat-label">Routing Evals (7d)</div>
-                <div class="stat-trend neutral" id="stat-routing-trend">loading...</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">⭐</div>
-                <div class="stat-value" id="stat-quality">--</div>
-                <div class="stat-label">Quality Score (30d)</div>
-                <div class="stat-trend neutral" id="stat-quality-trend">loading...</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">📊</div>
-                <div class="stat-value" id="stat-tool-calls">--</div>
-                <div class="stat-label">Tool Calls (7d)</div>
-                <div class="stat-trend neutral" id="stat-calls-trend">loading...</div>
+        </div>
+
+        <!-- Stat Cards: Row 2 — Quality & Operations -->
+        <div class="stat-cards-section">
+            <div class="stat-cards-label">Quality & Operations</div>
+            <div class="stat-cards">
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-value" id="stat-quality">--</div>
+                    <div class="stat-label">Quality Score (30d)</div>
+                    <div class="stat-trend neutral" id="stat-quality-trend">loading...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔧</div>
+                    <div class="stat-value" id="stat-tool-health">--</div>
+                    <div class="stat-label">Tool Health (24h)</div>
+                    <div class="stat-trend neutral" id="stat-tool-trend">loading...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🧭</div>
+                    <div class="stat-value" id="stat-routing">--</div>
+                    <div class="stat-label">Routing Accuracy (7d)</div>
+                    <div class="stat-trend neutral" id="stat-routing-trend">loading...</div>
+                </div>
             </div>
         </div>
 
@@ -325,15 +368,21 @@
                 <!-- Grafana -->
                 <div class="embed-card">
                     <div class="embed-card-header">
-                        <h3>Grafana — System Health & Analytics</h3>
-                        <a id="grafana-link" href="#" target="_blank">Open Full UI</a>
+                        <h3 id="grafana-title">Grafana — Nova Cost Tracker</h3>
+                        <div style="display: flex; gap: 12px; align-items: center;">
+                            <button id="grafana-toggle" onclick="toggleGrafanaDashboard()" 
+                                    style="font-size:0.7rem; padding:3px 8px; border:1px solid rgba(255,255,255,0.15); border-radius:4px; background:transparent; color:var(--accent-primary); cursor:pointer;">
+                                Switch to Quality
+                            </button>
+                            <a id="grafana-link" href="#" target="_blank">Open Full UI</a>
+                        </div>
                     </div>
                     <div id="grafana-embed">
                         <div class="embed-placeholder" id="grafana-placeholder">
                             <div class="placeholder-icon">📈</div>
                             <div id="grafana-status">Checking connection...</div>
                             <div style="font-size: 0.75rem; color: var(--text-muted);">
-                                System health, routing analytics, weekly quality trends
+                                Cost tracking, token usage, balance history
                             </div>
                         </div>
                     </div>
@@ -356,11 +405,64 @@
         Atlas Observability Layer — Langfuse v3 + Grafana + Centro de Controle
     </footer>
 
-    <script src="js/api.js?v=6"></script>
+    <script src="js/api.js?v=7"></script>
     <script>
         // ============================================
         // OBSERVABILITY PAGE LOGIC
         // ============================================
+
+        async function loadCostMetrics() {
+            try {
+                // Fetch balance and cost data in parallel
+                const [balanceData, costData] = await Promise.all([
+                    ObservabilityAPI.getCostBalance().catch(() => null),
+                    ObservabilityAPI.getCostMetrics(30).catch(() => null),
+                ]);
+
+                // Moonshot Balance
+                if (balanceData && balanceData.available_balance != null) {
+                    const bal = balanceData.available_balance;
+                    document.getElementById('stat-balance').textContent = `$${bal.toFixed(2)}`;
+                    document.getElementById('stat-balance-trend').textContent = 
+                        bal > 10 ? 'Healthy' : bal > 2 ? 'Getting low' : 'Critical!';
+                    document.getElementById('stat-balance-trend').className = 
+                        'stat-trend ' + (bal > 10 ? 'positive' : bal > 2 ? 'neutral' : 'negative');
+                } else {
+                    document.getElementById('stat-balance').textContent = 'N/A';
+                    document.getElementById('stat-balance-trend').textContent = 'Balance unavailable';
+                    document.getElementById('stat-balance-trend').className = 'stat-trend neutral';
+                }
+
+                // Nova Spend (30d) and LLM Calls (30d)
+                if (costData) {
+                    const spend = costData.spend_from_balance || costData.totals?.total_cost_usd || 0;
+                    const totalCalls = costData.totals?.total_calls || 0;
+                    const models = costData.by_model?.length || 0;
+
+                    document.getElementById('stat-spend').textContent = `$${spend.toFixed(2)}`;
+                    document.getElementById('stat-spend-trend').textContent = 
+                        totalCalls > 0 ? `$${(spend / totalCalls).toFixed(4)}/call avg` : 'No calls yet';
+                    document.getElementById('stat-spend-trend').className = 'stat-trend neutral';
+
+                    document.getElementById('stat-llm-calls').textContent = totalCalls.toString();
+                    document.getElementById('stat-llm-trend').textContent = 
+                        models > 0 ? `${models} model${models > 1 ? 's' : ''}` : 'No models';
+                    document.getElementById('stat-llm-trend').className = 'stat-trend neutral';
+                } else {
+                    document.getElementById('stat-spend').textContent = 'N/A';
+                    document.getElementById('stat-spend-trend').textContent = 'Cost data unavailable';
+                    document.getElementById('stat-spend-trend').className = 'stat-trend neutral';
+                    document.getElementById('stat-llm-calls').textContent = 'N/A';
+                    document.getElementById('stat-llm-trend').textContent = 'Cost data unavailable';
+                    document.getElementById('stat-llm-trend').className = 'stat-trend neutral';
+                }
+            } catch (e) {
+                document.getElementById('stat-balance').textContent = 'ERR';
+                document.getElementById('stat-spend').textContent = 'ERR';
+                document.getElementById('stat-llm-calls').textContent = 'ERR';
+                console.error('Cost metrics error:', e);
+            }
+        }
 
         async function loadToolMetrics() {
             try {
@@ -375,14 +477,6 @@
                     total > 0 ? `${total} calls today` : 'No calls yet';
                 document.getElementById('stat-tool-trend').className = 
                     'stat-trend ' + (rate >= 95 ? 'positive' : rate >= 80 ? 'neutral' : 'negative');
-
-                // Also load 7d stats for total calls card
-                const weekData = await ObservabilityAPI.getToolMetrics(7);
-                const weekTotal = weekData.overall?.total || 0;
-                document.getElementById('stat-tool-calls').textContent = weekTotal.toString();
-                document.getElementById('stat-calls-trend').textContent = 
-                    `${weekData.tools?.length || 0} distinct tools`;
-                document.getElementById('stat-calls-trend').className = 'stat-trend neutral';
             } catch (e) {
                 document.getElementById('stat-tool-health').textContent = 'ERR';
                 console.error('Tool metrics error:', e);
@@ -396,9 +490,10 @@
                 const total = stats.total_evals || 0;
                 const acc = stats.avg_accuracy;
 
-                document.getElementById('stat-routing').textContent = total.toString();
+                document.getElementById('stat-routing').textContent = 
+                    acc != null ? `${(acc * 100).toFixed(1)}%` : 'N/A';
                 document.getElementById('stat-routing-trend').textContent = 
-                    acc != null ? `Accuracy: ${(acc * 100).toFixed(1)}%` : 'No accuracy data';
+                    total > 0 ? `${total} evaluations` : 'No evaluations yet';
                 document.getElementById('stat-routing-trend').className = 
                     'stat-trend ' + (acc >= 0.9 ? 'positive' : acc >= 0.7 ? 'neutral' : 'negative');
             } catch (e) {
@@ -478,6 +573,7 @@
             
             // Load all in parallel
             await Promise.all([
+                loadCostMetrics(),
                 loadToolMetrics(),
                 loadRoutingMetrics(),
                 loadQualityMetrics(),
@@ -505,8 +601,8 @@
             }
             // From GitHub Pages or any remote device: use VPS HTTPS proxy
             return {
-                langfuse: `http://${TAILSCALE_IP}:3100`,
-                langfuseHealth: `${VPS_BASE}/langfuse/api/public/health`,
+                langfuse: `${VPS_BASE}:9443`,
+                langfuseHealth: `${VPS_BASE}:9443/api/public/health`,
                 grafana: `${VPS_BASE}/grafana/`,
                 grafanaHealth: `${VPS_BASE}/grafana/api/health`,
                 grafanaEmbed: `${VPS_BASE}/grafana`
@@ -540,15 +636,39 @@
 
             // Check Grafana
             const gfUp = await checkService(urls.grafanaHealth);
+            window._grafanaOnline = gfUp;
+            window._grafanaEmbedBase = urls.grafanaEmbed;
+            window._currentGrafanaDash = 'cost'; // default to cost dashboard
             if (gfUp) {
                 document.getElementById('grafana-embed').innerHTML = 
-                    `<iframe src="${urls.grafanaEmbed}/d/atlas-system-health/atlas-system-health?orgId=1&kiosk" 
-                             loading="lazy" title="Grafana System Health Dashboard"></iframe>`;
+                    `<iframe id="grafana-iframe" src="${urls.grafanaEmbed}/d/nova-cost-tracker/nova-cost-tracker?orgId=1&kiosk" 
+                             loading="lazy" title="Grafana Nova Cost Tracker"></iframe>`;
             } else {
                 document.getElementById('grafana-status').innerHTML = 
                     `<span style="color: #ef4444;">Grafana offline</span><br>
                      <span style="font-size:0.8rem">Ensure PC is on and Docker is running.<br>
                      Start: cd ~/Documents/langfuse-server && docker compose up -d</span>`;
+            }
+        }
+
+        function toggleGrafanaDashboard() {
+            if (!window._grafanaOnline) return;
+            const iframe = document.getElementById('grafana-iframe');
+            if (!iframe) return;
+            const base = window._grafanaEmbedBase;
+            const btn = document.getElementById('grafana-toggle');
+            const title = document.getElementById('grafana-title');
+
+            if (window._currentGrafanaDash === 'cost') {
+                iframe.src = `${base}/d/atlas-quality-perf/atlas-quality-and-performance?orgId=1&kiosk`;
+                btn.textContent = 'Switch to Cost';
+                title.textContent = 'Grafana — Quality & Performance';
+                window._currentGrafanaDash = 'quality';
+            } else {
+                iframe.src = `${base}/d/nova-cost-tracker/nova-cost-tracker?orgId=1&kiosk`;
+                btn.textContent = 'Switch to Quality';
+                title.textContent = 'Grafana — Nova Cost Tracker';
+                window._currentGrafanaDash = 'cost';
             }
         }
 
