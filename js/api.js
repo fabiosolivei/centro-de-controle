@@ -498,6 +498,76 @@ const ObservabilityAPI = {
     },
 };
 
+// ============================================
+// UI HELPERS - Error & Loading States
+// ============================================
+
+/**
+ * Show a skeleton loading state inside a container
+ * @param {string} containerId - DOM element ID
+ * @param {number} count - Number of skeleton items
+ */
+function showLoadingState(containerId, count = 3) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = Array.from({ length: count }, () => 
+        `<div class="skeleton skeleton-card" style="margin-bottom: 12px;"></div>`
+    ).join('');
+}
+
+/**
+ * Show an error state inside a container with retry
+ * @param {string} containerId - DOM element ID
+ * @param {string} message - Error message
+ * @param {Function} retryFn - Function to call on retry
+ */
+function showErrorState(containerId, message, retryFn) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    const retryId = `retry-${containerId}-${Date.now()}`;
+    el.innerHTML = `
+        <div class="error-state">
+            <div class="error-icon">⚠️</div>
+            <div class="error-message">${message}</div>
+            ${retryFn ? `<button class="error-retry" id="${retryId}">Tentar novamente</button>` : ''}
+        </div>`;
+    if (retryFn) {
+        document.getElementById(retryId)?.addEventListener('click', retryFn);
+    }
+}
+
+/**
+ * Show an empty state inside a container
+ * @param {string} containerId - DOM element ID
+ * @param {string} icon - Emoji icon
+ * @param {string} text - Message text
+ */
+function showEmptyState(containerId, icon = '📭', text = 'Nenhum item encontrado') {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+    el.innerHTML = `
+        <div class="empty-state">
+            <div class="empty-icon">${icon}</div>
+            <div class="empty-text">${text}</div>
+        </div>`;
+}
+
+/**
+ * Safely load data with error handling
+ * @param {Function} fn - Async function to execute
+ * @param {string} containerId - Container to show error in (optional)
+ */
+async function safeLoad(fn, containerId) {
+    try {
+        await fn();
+    } catch (error) {
+        console.error(`Load error${containerId ? ` [${containerId}]` : ''}:`, error);
+        if (containerId) {
+            showErrorState(containerId, error.message || 'Erro ao carregar dados', () => safeLoad(fn, containerId));
+        }
+    }
+}
+
 // Export para uso global
 window.TasksAPI = TasksAPI;
 window.RemindersAPI = RemindersAPI;
@@ -508,3 +578,7 @@ window.ProjectsAPI = ProjectsAPI;
 window.CalendarAPI = CalendarAPI;
 window.MBAAPI = MBAAPI;
 window.ObservabilityAPI = ObservabilityAPI;
+window.showLoadingState = showLoadingState;
+window.showErrorState = showErrorState;
+window.showEmptyState = showEmptyState;
+window.safeLoad = safeLoad;
