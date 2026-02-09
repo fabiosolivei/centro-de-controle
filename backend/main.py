@@ -344,7 +344,120 @@ def init_db():
             pushed_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
-    
+
+    # Atlas canonical memory mirror — decisions log
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS atlas_decisions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            decision_text TEXT NOT NULL,
+            rationale TEXT,
+            category TEXT NOT NULL DEFAULT 'architecture',
+            superseded_by INTEGER,
+            conversation_id TEXT,
+            created_by TEXT DEFAULT 'atlas',
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Atlas canonical memory mirror — state snapshots
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS state_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            section TEXT NOT NULL,
+            key TEXT NOT NULL,
+            value TEXT NOT NULL,
+            status TEXT DEFAULT 'active',
+            updated_by TEXT DEFAULT 'atlas',
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # ============================================
+    # OBSERVABILITY TABLES
+    # ============================================
+
+    # Session-level tracking
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS conversation_turns (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            turn_number INTEGER DEFAULT 1,
+            role TEXT NOT NULL DEFAULT 'user',
+            content_preview TEXT,
+            intent_classified TEXT,
+            tools_called TEXT,
+            tools_failed TEXT,
+            duration_ms INTEGER,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Per-tool-call telemetry
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS tool_calls (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT,
+            tool_name TEXT NOT NULL,
+            arguments_preview TEXT,
+            status TEXT DEFAULT 'success',
+            error_message TEXT,
+            duration_ms INTEGER,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Intent accuracy tracking
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS routing_evaluations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT,
+            query_preview TEXT,
+            intents_classified TEXT,
+            intents_expected TEXT,
+            tools_called TEXT,
+            tools_succeeded TEXT,
+            context_tokens_estimate INTEGER,
+            accuracy_score REAL,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # LLM-as-judge results
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS quality_scores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT,
+            evaluator TEXT NOT NULL DEFAULT 'claude',
+            dimension TEXT NOT NULL,
+            score INTEGER NOT NULL,
+            rationale TEXT,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Aggregated daily reports
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS daily_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            report_date TEXT NOT NULL UNIQUE,
+            report_json TEXT NOT NULL,
+            summary TEXT,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Aggregated weekly reports
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS weekly_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            report_date TEXT NOT NULL UNIQUE,
+            report_json TEXT NOT NULL,
+            summary TEXT,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     conn.commit()
     conn.close()
     print("✅ Database initialized")
@@ -2958,6 +3071,74 @@ class ExploreRequest(BaseModel):
     project: str = Field(default="3TPM", description="Projeto para salvar")
 
 
+# --- Atlas Canonical Memory Mirror Models ---
+
+class DecisionCreate(BaseModel):
+    """Create a new decision record (mirrors DECISIONS.md)"""
+    date: str = Field(..., description="Decision date YYYY-MM-DD")
+    decision_text: str = Field(..., description="What was decided")
+    rationale: Optional[str] = Field(None, description="Why it was decided")
+    category: str = Field("architecture", description="architecture, workflow, precedence, non-goals")
+    conversation_id: Optional[str] = Field(None, description="Optional conversation reference")
+
+class StateSnapshotCreate(BaseModel):
+    """Create/update a state snapshot (mirrors STATE.md sections)"""
+    section: str = Field(..., description="active_projects, priorities, pending_items, recent_decisions")
+    key: str = Field(..., description="Item name e.g. 'Context Engine', 'Centro de Controle'")
+    value: str = Field(..., description="Current state/status text")
+    status: str = Field("active", description="active, completed, cancelled")
+
+
+# ============================================
+# OBSERVABILITY MODELS
+# ============================================
+
+class ConversationTurnCreate(BaseModel):
+    """Log a conversation turn"""
+    session_id: str = Field(..., description="UUID session identifier")
+    turn_number: int = Field(1, description="Turn number in session")
+    role: str = Field("user", description="user/atlas/router/writer")
+    content_preview: Optional[str] = Field(None, description="First 200 chars, no secrets")
+    intent_classified: Optional[str] = Field(None, description="Comma-separated intents")
+    tools_called: Optional[str] = Field(None, description="Comma-separated tool names")
+    tools_failed: Optional[str] = Field(None, description="Comma-separated failed tools")
+    duration_ms: Optional[int] = Field(None, description="Turn duration in ms")
+
+class ToolCallCreate(BaseModel):
+    """Log a tool call"""
+    session_id: Optional[str] = Field(None, description="Session UUID")
+    tool_name: str = Field(..., description="Tool name")
+    arguments_preview: Optional[str] = Field(None, description="First 100 chars of args")
+    status: str = Field("success", description="success/error/timeout")
+    error_message: Optional[str] = Field(None, description="Error message if failed")
+    duration_ms: Optional[int] = Field(None, description="Call duration in ms")
+
+class RoutingEvalCreate(BaseModel):
+    """Log a routing evaluation"""
+    session_id: Optional[str] = Field(None, description="Session UUID")
+    query_preview: Optional[str] = Field(None, description="First 200 chars of query")
+    intents_classified: Optional[str] = Field(None, description="Comma-separated classified intents")
+    intents_expected: Optional[str] = Field(None, description="Ground truth intents if known")
+    tools_called: Optional[str] = Field(None, description="Comma-separated tools called")
+    tools_succeeded: Optional[str] = Field(None, description="Comma-separated succeeded tools")
+    context_tokens_estimate: Optional[int] = Field(None, description="Estimated context tokens")
+    accuracy_score: Optional[float] = Field(None, description="Accuracy score 0-1")
+
+class QualityScoreCreate(BaseModel):
+    """Log an LLM-as-judge quality score"""
+    session_id: Optional[str] = Field(None, description="Session UUID")
+    evaluator: str = Field("claude", description="Model name or 'human'")
+    dimension: str = Field(..., description="relevance/accuracy/completeness/conciseness")
+    score: int = Field(..., ge=1, le=5, description="Score 1-5")
+    rationale: Optional[str] = Field(None, description="Evaluation rationale")
+
+class ReportCreate(BaseModel):
+    """Log a daily or weekly report"""
+    report_date: str = Field(..., description="Report date YYYY-MM-DD")
+    report_json: str = Field(..., description="Full structured report as JSON string")
+    summary: Optional[str] = Field(None, description="1-2 sentence human-readable summary")
+
+
 @app.post("/api/explore")
 async def explore_work_item(request: ExploreRequest):
     """
@@ -3577,6 +3758,452 @@ async def get_sibling_history(request: Request, limit: int = 20):
     conn.close()
     
     return {"history": history, "count": len(history)}
+
+
+# ============================================
+# ATLAS CANONICAL MEMORY MIRROR
+# ============================================
+
+@app.get("/api/decisions")
+async def list_decisions(
+    request: Request,
+    category: Optional[str] = None,
+    limit: int = 50,
+    include_superseded: bool = False,
+):
+    """List decisions from the canonical memory mirror."""
+    verify_atlas_key(request)
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    query = "SELECT * FROM atlas_decisions"
+    params = []
+    conditions = []
+
+    if category:
+        conditions.append("category = ?")
+        params.append(category)
+    if not include_superseded:
+        conditions.append("superseded_by IS NULL")
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    query += " ORDER BY created_at DESC LIMIT ?"
+    params.append(limit)
+
+    cursor.execute(query, params)
+    decisions = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+
+    return {"decisions": decisions, "count": len(decisions)}
+
+
+@app.post("/api/decisions")
+async def create_decision(request: Request, decision: DecisionCreate):
+    """Record a new decision (mirrors DECISIONS.md append)."""
+    verify_atlas_key(request)
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        INSERT INTO atlas_decisions (date, decision_text, rationale, category, conversation_id, created_by)
+        VALUES (?, ?, ?, ?, ?, 'atlas')
+    """, (decision.date, decision.decision_text, decision.rationale,
+          decision.category, decision.conversation_id))
+
+    decision_id = cursor.lastrowid
+    conn.commit()
+
+    cursor.execute("SELECT * FROM atlas_decisions WHERE id = ?", (decision_id,))
+    new_decision = dict(cursor.fetchone())
+    conn.close()
+
+    return new_decision
+
+
+@app.post("/api/decisions/{decision_id}/supersede")
+async def supersede_decision(request: Request, decision_id: int, superseded_by: int):
+    """Mark a decision as superseded by another."""
+    verify_atlas_key(request)
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        "UPDATE atlas_decisions SET superseded_by = ? WHERE id = ?",
+        (superseded_by, decision_id),
+    )
+
+    if cursor.rowcount == 0:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Decision not found")
+
+    conn.commit()
+    conn.close()
+
+    return {"message": f"Decision {decision_id} marked as superseded by {superseded_by}"}
+
+
+@app.get("/api/state-snapshots")
+async def list_state_snapshots(
+    request: Request,
+    section: Optional[str] = None,
+    status: Optional[str] = None,
+    limit: int = 50,
+):
+    """List state snapshots from the canonical memory mirror."""
+    verify_atlas_key(request)
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    query = "SELECT * FROM state_snapshots"
+    params = []
+    conditions = []
+
+    if section:
+        conditions.append("section = ?")
+        params.append(section)
+    if status:
+        conditions.append("status = ?")
+        params.append(status)
+
+    if conditions:
+        query += " WHERE " + " AND ".join(conditions)
+
+    query += " ORDER BY updated_at DESC LIMIT ?"
+    params.append(limit)
+
+    cursor.execute(query, params)
+    snapshots = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+
+    return {"snapshots": snapshots, "count": len(snapshots)}
+
+
+@app.post("/api/state-snapshots")
+async def create_state_snapshot(request: Request, snapshot: StateSnapshotCreate):
+    """Create or update a state snapshot (upsert by section+key)."""
+    verify_atlas_key(request)
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Check if entry exists for this section+key
+    cursor.execute(
+        "SELECT id FROM state_snapshots WHERE section = ? AND key = ?",
+        (snapshot.section, snapshot.key),
+    )
+    existing = cursor.fetchone()
+
+    if existing:
+        # Update existing
+        cursor.execute("""
+            UPDATE state_snapshots
+            SET value = ?, status = ?, updated_by = 'atlas', updated_at = CURRENT_TIMESTAMP
+            WHERE section = ? AND key = ?
+        """, (snapshot.value, snapshot.status, snapshot.section, snapshot.key))
+        snapshot_id = existing["id"]
+    else:
+        # Insert new
+        cursor.execute("""
+            INSERT INTO state_snapshots (section, key, value, status, updated_by)
+            VALUES (?, ?, ?, ?, 'atlas')
+        """, (snapshot.section, snapshot.key, snapshot.value, snapshot.status))
+        snapshot_id = cursor.lastrowid
+
+    conn.commit()
+
+    cursor.execute("SELECT * FROM state_snapshots WHERE id = ?", (snapshot_id,))
+    result = dict(cursor.fetchone())
+    conn.close()
+
+    return result
+
+
+@app.get("/api/state-snapshots/latest")
+async def get_latest_state_snapshots(request: Request):
+    """Get the latest state snapshot for each section+key pair."""
+    verify_atlas_key(request)
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT s1.* FROM state_snapshots s1
+        INNER JOIN (
+            SELECT section, key, MAX(updated_at) as max_updated
+            FROM state_snapshots
+            GROUP BY section, key
+        ) s2 ON s1.section = s2.section AND s1.key = s2.key AND s1.updated_at = s2.max_updated
+        ORDER BY s1.section, s1.key
+    """)
+
+    snapshots = [dict(row) for row in cursor.fetchall()]
+    conn.close()
+
+    return {"snapshots": snapshots, "count": len(snapshots)}
+
+
+# ============================================
+# OBSERVABILITY ENDPOINTS — Telemetry Ingestion
+# ============================================
+
+@app.post("/api/telemetry/conversation-turn")
+async def log_conversation_turn(turn: ConversationTurnCreate, request: Request):
+    """Log a conversation turn (fire-and-forget from atlas-mcp)."""
+    verify_atlas_key(request)
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO conversation_turns
+        (session_id, turn_number, role, content_preview, intent_classified, tools_called, tools_failed, duration_ms)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (turn.session_id, turn.turn_number, turn.role, turn.content_preview,
+          turn.intent_classified, turn.tools_called, turn.tools_failed, turn.duration_ms))
+    turn_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return {"id": turn_id, "status": "logged"}
+
+
+@app.post("/api/telemetry/tool-call")
+async def log_tool_call(tc: ToolCallCreate, request: Request):
+    """Log a tool call (fire-and-forget from atlas-mcp)."""
+    verify_atlas_key(request)
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO tool_calls
+        (session_id, tool_name, arguments_preview, status, error_message, duration_ms)
+        VALUES (?, ?, ?, ?, ?, ?)
+    """, (tc.session_id, tc.tool_name, tc.arguments_preview, tc.status, tc.error_message, tc.duration_ms))
+    tc_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return {"id": tc_id, "status": "logged"}
+
+
+@app.post("/api/telemetry/routing-eval")
+async def log_routing_eval(re_eval: RoutingEvalCreate, request: Request):
+    """Log a routing evaluation (fire-and-forget from atlas-mcp)."""
+    verify_atlas_key(request)
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO routing_evaluations
+        (session_id, query_preview, intents_classified, intents_expected, tools_called,
+         tools_succeeded, context_tokens_estimate, accuracy_score)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (re_eval.session_id, re_eval.query_preview, re_eval.intents_classified,
+          re_eval.intents_expected, re_eval.tools_called, re_eval.tools_succeeded,
+          re_eval.context_tokens_estimate, re_eval.accuracy_score))
+    eval_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return {"id": eval_id, "status": "logged"}
+
+
+@app.post("/api/telemetry/quality-score")
+async def log_quality_score(qs: QualityScoreCreate, request: Request):
+    """Log an LLM-as-judge quality score."""
+    verify_atlas_key(request)
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO quality_scores
+        (session_id, evaluator, dimension, score, rationale)
+        VALUES (?, ?, ?, ?, ?)
+    """, (qs.session_id, qs.evaluator, qs.dimension, qs.score, qs.rationale))
+    qs_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return {"id": qs_id, "status": "logged"}
+
+
+# ============================================
+# OBSERVABILITY ENDPOINTS — Reports
+# ============================================
+
+@app.post("/api/reports/daily")
+async def push_daily_report(report: ReportCreate, request: Request):
+    """Push a daily evaluation report."""
+    verify_atlas_key(request)
+    conn = get_db()
+    cursor = conn.cursor()
+    # Upsert by report_date
+    cursor.execute("SELECT id FROM daily_reports WHERE report_date = ?", (report.report_date,))
+    existing = cursor.fetchone()
+    if existing:
+        cursor.execute("""
+            UPDATE daily_reports SET report_json = ?, summary = ?, timestamp = CURRENT_TIMESTAMP
+            WHERE report_date = ?
+        """, (report.report_json, report.summary, report.report_date))
+        report_id = existing["id"]
+    else:
+        cursor.execute("""
+            INSERT INTO daily_reports (report_date, report_json, summary) VALUES (?, ?, ?)
+        """, (report.report_date, report.report_json, report.summary))
+        report_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return {"id": report_id, "status": "saved"}
+
+
+@app.post("/api/reports/weekly")
+async def push_weekly_report(report: ReportCreate, request: Request):
+    """Push a weekly evaluation report."""
+    verify_atlas_key(request)
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM weekly_reports WHERE report_date = ?", (report.report_date,))
+    existing = cursor.fetchone()
+    if existing:
+        cursor.execute("""
+            UPDATE weekly_reports SET report_json = ?, summary = ?, timestamp = CURRENT_TIMESTAMP
+            WHERE report_date = ?
+        """, (report.report_json, report.summary, report.report_date))
+        report_id = existing["id"]
+    else:
+        cursor.execute("""
+            INSERT INTO weekly_reports (report_date, report_json, summary) VALUES (?, ?, ?)
+        """, (report.report_date, report.report_json, report.summary))
+        report_id = cursor.lastrowid
+    conn.commit()
+    conn.close()
+    return {"id": report_id, "status": "saved"}
+
+
+@app.get("/api/reports/daily")
+async def get_daily_reports(days: int = Query(7, ge=1, le=90)):
+    """Get recent daily reports."""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT * FROM daily_reports
+        ORDER BY report_date DESC LIMIT ?
+    """, (days,))
+    reports = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+    return {"reports": reports, "count": len(reports)}
+
+
+@app.get("/api/reports/weekly")
+async def get_weekly_reports(weeks: int = Query(4, ge=1, le=52)):
+    """Get recent weekly reports."""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT * FROM weekly_reports
+        ORDER BY report_date DESC LIMIT ?
+    """, (weeks,))
+    reports = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+    return {"reports": reports, "count": len(reports)}
+
+
+# ============================================
+# OBSERVABILITY ENDPOINTS — Metrics Aggregation
+# ============================================
+
+@app.get("/api/metrics/tools")
+async def get_tool_metrics(days: int = Query(7, ge=1, le=90)):
+    """Aggregated tool call stats for last N days."""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT
+            tool_name,
+            COUNT(*) as total_calls,
+            SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as success_count,
+            SUM(CASE WHEN status = 'error' THEN 1 ELSE 0 END) as error_count,
+            SUM(CASE WHEN status = 'timeout' THEN 1 ELSE 0 END) as timeout_count,
+            ROUND(AVG(duration_ms), 0) as avg_duration_ms,
+            ROUND(100.0 * SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) / COUNT(*), 1) as success_rate
+        FROM tool_calls
+        WHERE timestamp >= datetime('now', ? || ' days')
+        GROUP BY tool_name
+        ORDER BY total_calls DESC
+    """, (f"-{days}",))
+    tools = [dict(r) for r in cursor.fetchall()]
+
+    # Overall stats
+    cursor.execute("""
+        SELECT
+            COUNT(*) as total,
+            SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as success,
+            ROUND(100.0 * SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) / MAX(COUNT(*), 1), 1) as success_rate,
+            ROUND(AVG(duration_ms), 0) as avg_duration_ms
+        FROM tool_calls
+        WHERE timestamp >= datetime('now', ? || ' days')
+    """, (f"-{days}",))
+    overall = dict(cursor.fetchone())
+    conn.close()
+    return {"tools": tools, "overall": overall, "days": days}
+
+
+@app.get("/api/metrics/routing")
+async def get_routing_metrics(days: int = Query(7, ge=1, le=90)):
+    """Aggregated routing evaluation stats for last N days."""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT
+            COUNT(*) as total_evals,
+            ROUND(AVG(accuracy_score), 3) as avg_accuracy,
+            ROUND(AVG(context_tokens_estimate), 0) as avg_context_tokens
+        FROM routing_evaluations
+        WHERE timestamp >= datetime('now', ? || ' days')
+          AND accuracy_score IS NOT NULL
+    """, (f"-{days}",))
+    stats = dict(cursor.fetchone())
+
+    # Intent distribution
+    cursor.execute("""
+        SELECT intents_classified, COUNT(*) as count
+        FROM routing_evaluations
+        WHERE timestamp >= datetime('now', ? || ' days')
+          AND intents_classified IS NOT NULL
+        GROUP BY intents_classified
+        ORDER BY count DESC
+        LIMIT 20
+    """, (f"-{days}",))
+    intents = [dict(r) for r in cursor.fetchall()]
+    conn.close()
+    return {"stats": stats, "intent_distribution": intents, "days": days}
+
+
+@app.get("/api/metrics/quality")
+async def get_quality_metrics(days: int = Query(30, ge=1, le=365)):
+    """Quality score trends for last N days."""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT
+            dimension,
+            ROUND(AVG(score), 2) as avg_score,
+            COUNT(*) as sample_count,
+            MIN(score) as min_score,
+            MAX(score) as max_score
+        FROM quality_scores
+        WHERE timestamp >= datetime('now', ? || ' days')
+        GROUP BY dimension
+        ORDER BY dimension
+    """, (f"-{days}",))
+    dimensions = [dict(r) for r in cursor.fetchall()]
+
+    # Overall average
+    cursor.execute("""
+        SELECT ROUND(AVG(score), 2) as overall_avg, COUNT(*) as total_scores
+        FROM quality_scores
+        WHERE timestamp >= datetime('now', ? || ' days')
+    """, (f"-{days}",))
+    overall = dict(cursor.fetchone())
+    conn.close()
+    return {"dimensions": dimensions, "overall": overall, "days": days}
 
 
 # ============================================

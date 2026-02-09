@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0d1117">
+    <meta name="description" content="Centro de Controle - Observability">
+    <title>Observability | Centro de Controle</title>
+    <link rel="stylesheet" href="css/style.css?v=5">
+    <link rel="manifest" href="manifest.json">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Auth Check -->
+    <script>
+        const AUTH_HASH = 'f379eaffb6d3420d190c693e60b4e0c50f018cca3ec9c9bea2ca3ee069ae1f4d';
+        if (sessionStorage.getItem('auth_token') !== AUTH_HASH) {
+            window.location.href = 'login';
+        }
+    </script>
+    <style>
+        /* Observability Specific Styles */
+        .obs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-xl);
+            padding: var(--spacing-lg);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(6, 182, 212, 0.05));
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: var(--radius-lg);
+        }
+
+        .obs-header h1 {
+            font-size: 1.5rem;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .obs-header p {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+        }
+
+        /* Stat Cards Row */
+        .stat-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-card .stat-icon {
+            font-size: 2rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .stat-card .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .stat-card .stat-trend {
+            font-size: 0.75rem;
+            margin-top: 8px;
+        }
+
+        .stat-card .stat-trend.positive { color: #10b981; }
+        .stat-card .stat-trend.negative { color: #ef4444; }
+        .stat-card .stat-trend.neutral { color: var(--text-muted); }
+
+        /* Embed Section */
+        .embed-section {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .embed-section h2 {
+            font-size: 1.2rem;
+            color: var(--text-primary);
+            margin-bottom: var(--spacing-md);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .embed-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-lg);
+        }
+
+        @media (max-width: 900px) {
+            .embed-grid { grid-template-columns: 1fr; }
+        }
+
+        .embed-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+
+        .embed-card-header {
+            padding: var(--spacing-md) var(--spacing-lg);
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .embed-card-header h3 {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .embed-card-header a {
+            font-size: 0.75rem;
+            color: var(--accent-blue);
+            text-decoration: none;
+        }
+
+        .embed-card-header a:hover { text-decoration: underline; }
+
+        .embed-card iframe {
+            width: 100%;
+            height: 400px;
+            border: none;
+        }
+
+        .embed-placeholder {
+            height: 400px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            gap: 12px;
+        }
+
+        .embed-placeholder .placeholder-icon { font-size: 3rem; opacity: 0.5; }
+        .embed-placeholder a { color: var(--accent-blue); text-decoration: none; }
+        .embed-placeholder a:hover { text-decoration: underline; }
+
+        /* Reports Section */
+        .reports-section {
+            margin-bottom: var(--spacing-xl);
+        }
+
+        .report-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .report-card .report-date {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .report-card .report-summary {
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            line-height: 1.5;
+        }
+
+        .report-card .report-type {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-right: 8px;
+        }
+
+        .report-type.daily { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
+        .report-type.weekly { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+
+        .loading-state {
+            text-align: center;
+            padding: var(--spacing-xl);
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-content">
+            <h1 class="logo">Centro de Controle</h1>
+            <nav class="header-nav">
+                <a href="./" class="nav-link" aria-label="Dashboard">Dashboard</a>
+                <a href="portfolio" class="nav-link" aria-label="Portfolio">Portfolio</a>
+                <a href="mba" class="nav-link" aria-label="MBA">MBA</a>
+                <a href="work" class="nav-link" aria-label="Work Status">Work</a>
+                <a href="files" class="nav-link" aria-label="Arquivos">Arquivos</a>
+                <a href="observability" class="nav-link active" aria-label="Observability">Observability</a>
+            </nav>
+            <div class="header-actions">
+                <button class="btn-icon" onclick="loadAllData()" title="Refresh" aria-label="Refresh">
+                    <span>🔄</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="main-content" style="max-width: 1200px; display: block;">
+
+        <!-- Header -->
+        <div class="obs-header">
+            <div>
+                <h1>Observability</h1>
+                <p>Atlas AI Agent — Traces, Metrics, Quality Scores</p>
+            </div>
+            <div style="text-align: right; font-size: 0.75rem; color: var(--text-muted);">
+                <div>Langfuse v3 + Grafana</div>
+                <div id="last-refresh">Last refresh: --</div>
+            </div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stat-cards">
+            <div class="stat-card">
+                <div class="stat-icon">🔧</div>
+                <div class="stat-value" id="stat-tool-health">--</div>
+                <div class="stat-label">Tool Health (24h)</div>
+                <div class="stat-trend neutral" id="stat-tool-trend">loading...</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🧭</div>
+                <div class="stat-value" id="stat-routing">--</div>
+                <div class="stat-label">Routing Evals (7d)</div>
+                <div class="stat-trend neutral" id="stat-routing-trend">loading...</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-value" id="stat-quality">--</div>
+                <div class="stat-label">Quality Score (30d)</div>
+                <div class="stat-trend neutral" id="stat-quality-trend">loading...</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-value" id="stat-tool-calls">--</div>
+                <div class="stat-label">Tool Calls (7d)</div>
+                <div class="stat-trend neutral" id="stat-calls-trend">loading...</div>
+            </div>
+        </div>
+
+        <!-- Embed Section: Langfuse + Grafana -->
+        <div class="embed-section">
+            <h2>Live Dashboards</h2>
+            <div class="embed-grid">
+                <!-- Langfuse -->
+                <div class="embed-card">
+                    <div class="embed-card-header">
+                        <h3>Langfuse — Traces & Agent Graphs</h3>
+                        <a href="http://localhost:3100" target="_blank">Open Full UI</a>
+                    </div>
+                    <div id="langfuse-embed">
+                        <div class="embed-placeholder">
+                            <div class="placeholder-icon">🔍</div>
+                            <div>Langfuse v3 running at <strong>localhost:3100</strong></div>
+                            <div>
+                                <a href="http://localhost:3100" target="_blank">Open Langfuse Dashboard</a>
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">
+                                Traces, spans, agent graphs, LLM-as-judge scores
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grafana -->
+                <div class="embed-card">
+                    <div class="embed-card-header">
+                        <h3>Grafana — System Health & Analytics</h3>
+                        <a href="http://localhost:3001" target="_blank">Open Full UI</a>
+                    </div>
+                    <div id="grafana-embed">
+                        <iframe 
+                            src="http://localhost:3001/d/atlas-system-health/atlas-system-health?orgId=1&kiosk"
+                            loading="lazy"
+                            title="Grafana System Health Dashboard">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div class="reports-section">
+            <h2>Recent Reports</h2>
+            <div id="reports-container">
+                <div class="loading-state">Loading reports...</div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 0.75rem;">
+        Atlas Observability Layer — Langfuse v3 + Grafana + Centro de Controle
+    </footer>
+
+    <script src="js/api.js?v=5"></script>
+    <script>
+        // ============================================
+        // OBSERVABILITY PAGE LOGIC
+        // ============================================
+
+        async function loadToolMetrics() {
+            try {
+                const data = await ObservabilityAPI.getToolMetrics(1);
+                const overall = data.overall || {};
+                const rate = overall.success_rate;
+                const total = overall.total || 0;
+
+                document.getElementById('stat-tool-health').textContent = 
+                    rate != null ? `${rate}%` : (total === 0 ? 'N/A' : '--');
+                document.getElementById('stat-tool-trend').textContent = 
+                    total > 0 ? `${total} calls today` : 'No calls yet';
+                document.getElementById('stat-tool-trend').className = 
+                    'stat-trend ' + (rate >= 95 ? 'positive' : rate >= 80 ? 'neutral' : 'negative');
+
+                // Also load 7d stats for total calls card
+                const weekData = await ObservabilityAPI.getToolMetrics(7);
+                const weekTotal = weekData.overall?.total || 0;
+                document.getElementById('stat-tool-calls').textContent = weekTotal.toString();
+                document.getElementById('stat-calls-trend').textContent = 
+                    `${weekData.tools?.length || 0} distinct tools`;
+                document.getElementById('stat-calls-trend').className = 'stat-trend neutral';
+            } catch (e) {
+                document.getElementById('stat-tool-health').textContent = 'ERR';
+                console.error('Tool metrics error:', e);
+            }
+        }
+
+        async function loadRoutingMetrics() {
+            try {
+                const data = await ObservabilityAPI.getRoutingMetrics(7);
+                const stats = data.stats || {};
+                const total = stats.total_evals || 0;
+                const acc = stats.avg_accuracy;
+
+                document.getElementById('stat-routing').textContent = total.toString();
+                document.getElementById('stat-routing-trend').textContent = 
+                    acc != null ? `Accuracy: ${(acc * 100).toFixed(1)}%` : 'No accuracy data';
+                document.getElementById('stat-routing-trend').className = 
+                    'stat-trend ' + (acc >= 0.9 ? 'positive' : acc >= 0.7 ? 'neutral' : 'negative');
+            } catch (e) {
+                document.getElementById('stat-routing').textContent = 'ERR';
+                console.error('Routing metrics error:', e);
+            }
+        }
+
+        async function loadQualityMetrics() {
+            try {
+                const data = await ObservabilityAPI.getQualityMetrics(30);
+                const overall = data.overall || {};
+                const avg = overall.overall_avg;
+                const total = overall.total_scores || 0;
+
+                document.getElementById('stat-quality').textContent = 
+                    avg != null ? `${avg}/5` : 'N/A';
+                document.getElementById('stat-quality-trend').textContent = 
+                    total > 0 ? `${total} evaluations` : 'No evaluations yet';
+                document.getElementById('stat-quality-trend').className = 
+                    'stat-trend ' + (avg >= 4 ? 'positive' : avg >= 3 ? 'neutral' : 'negative');
+            } catch (e) {
+                document.getElementById('stat-quality').textContent = 'ERR';
+                console.error('Quality metrics error:', e);
+            }
+        }
+
+        async function loadReports() {
+            try {
+                const [daily, weekly] = await Promise.all([
+                    ObservabilityAPI.getDailyReports(3),
+                    ObservabilityAPI.getWeeklyReports(2),
+                ]);
+
+                const container = document.getElementById('reports-container');
+                const reports = [];
+
+                // Merge and sort by date
+                for (const r of (weekly.reports || [])) {
+                    reports.push({ ...r, type: 'weekly' });
+                }
+                for (const r of (daily.reports || [])) {
+                    reports.push({ ...r, type: 'daily' });
+                }
+                reports.sort((a, b) => (b.report_date || '').localeCompare(a.report_date || ''));
+
+                if (reports.length === 0) {
+                    container.innerHTML = `
+                        <div class="report-card">
+                            <div class="report-summary" style="color: var(--text-muted);">
+                                No reports yet. Reports are generated daily at 07:00 and weekly on Sundays at 08:00.
+                            </div>
+                        </div>`;
+                    return;
+                }
+
+                container.innerHTML = reports.map(r => `
+                    <div class="report-card">
+                        <div class="report-date">
+                            <span class="report-type ${r.type}">${r.type}</span>
+                            ${r.report_date || 'Unknown date'}
+                        </div>
+                        <div class="report-summary">${r.summary || 'No summary available'}</div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('reports-container').innerHTML = `
+                    <div class="report-card">
+                        <div class="report-summary" style="color: #ef4444;">Failed to load reports: ${e.message}</div>
+                    </div>`;
+            }
+        }
+
+        async function loadAllData() {
+            document.getElementById('last-refresh').textContent = 
+                `Last refresh: ${new Date().toLocaleTimeString()}`;
+            
+            // Load all in parallel
+            await Promise.all([
+                loadToolMetrics(),
+                loadRoutingMetrics(),
+                loadQualityMetrics(),
+                loadReports(),
+            ]);
+        }
+
+        // Initial load
+        loadAllData();
+
+        // Auto-refresh every 60 seconds
+        setInterval(loadAllData, 60000);
+    </script>
+</body>
+</html>

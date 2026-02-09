@@ -457,6 +457,47 @@ const MBAAPI = {
     },
 };
 
+// ============================================
+// OBSERVABILITY API
+// ============================================
+
+const ObservabilityAPI = {
+    /**
+     * Get tool metrics for last N days
+     */
+    async getToolMetrics(days = 7) {
+        return apiRequest(`/metrics/tools?days=${days}`);
+    },
+
+    /**
+     * Get routing evaluation metrics
+     */
+    async getRoutingMetrics(days = 7) {
+        return apiRequest(`/metrics/routing?days=${days}`);
+    },
+
+    /**
+     * Get quality score metrics
+     */
+    async getQualityMetrics(days = 30) {
+        return apiRequest(`/metrics/quality?days=${days}`);
+    },
+
+    /**
+     * Get recent daily reports
+     */
+    async getDailyReports(days = 7) {
+        return apiRequest(`/reports/daily?days=${days}`);
+    },
+
+    /**
+     * Get recent weekly reports
+     */
+    async getWeeklyReports(weeks = 4) {
+        return apiRequest(`/reports/weekly?weeks=${weeks}`);
+    },
+};
+
 // Export para uso global
 window.TasksAPI = TasksAPI;
 window.RemindersAPI = RemindersAPI;
@@ -466,3 +507,4 @@ window.EventsAPI = EventsAPI;
 window.ProjectsAPI = ProjectsAPI;
 window.CalendarAPI = CalendarAPI;
 window.MBAAPI = MBAAPI;
+window.ObservabilityAPI = ObservabilityAPI;
