@@ -118,6 +118,23 @@
             </div>
         </div>
         
+        <!-- OFFLINE BANNER -->
+        <div id="offline-banner" class="offline-banner" style="display:none;">
+            <span>Backend indisponivel -- dados podem estar desatualizados</span>
+            <button onclick="loadAllData()">Tentar novamente</button>
+        </div>
+
+        <!-- PRIORITY PULSE -->
+        <div class="priority-pulse" id="priority-pulse" style="display:none;">
+            <div class="pulse-header">
+                <div class="pulse-title">PRIORITY PULSE</div>
+                <div class="pulse-count" id="pulse-count">0 items</div>
+            </div>
+            <div class="pulse-items" id="pulse-items">
+                <!-- Populated by JS -->
+            </div>
+        </div>
+
         <!-- MAIN DASHBOARD GRID -->
         <div class="dashboard-grid">
             <!-- LEFT COLUMN: Today + Tasks -->
@@ -129,10 +146,7 @@
                         <span class="section-action" onclick="refreshCalendar()">Atualizar</span>
                     </div>
                     <div id="agenda-list">
-                        <div class="empty-state-styled loading">
-                            <span class="empty-icon">📅</span>
-                            <span>Carregando agenda...</span>
-                        </div>
+                        <div class="skeleton skeleton-list" style="height:120px;"></div>
                     </div>
                 </section>
                 
@@ -165,7 +179,7 @@
                 <section class="card">
                     <div class="section-header-row">
                         <h2 class="section-title">🎓 MBA Inteli</h2>
-                        <a class="section-action" href="mba">Ver tudo</a>
+                        <a class="section-action" href="mba">Ver detalhes</a>
                     </div>
                     <div class="kanban-mini">
                         <div class="kanban-mini-col todo">
@@ -193,13 +207,10 @@
                 <section class="card">
                     <div class="section-header-row">
                         <h2 class="section-title">💼 Projetos Trabalho</h2>
-                        <a class="section-action" href="portfolio">Ver portfolio</a>
+                        <a class="section-action" href="portfolio">Ver detalhes</a>
                     </div>
                     <div class="portfolio-grid" id="portfolio-grid">
-                        <div class="empty-state-styled loading">
-                            <span class="empty-icon">💼</span>
-                            <span>Carregando projetos...</span>
-                        </div>
+                        <div class="skeleton skeleton-list" style="height:100px;"></div>
                     </div>
                 </section>
                 
@@ -207,7 +218,7 @@
                 <section class="card">
                     <div class="section-header-row">
                         <h2 class="section-title">📊 Work Status</h2>
-                        <a class="section-action" href="work">Ver tudo</a>
+                        <a class="section-action" href="work">Ver detalhes</a>
                     </div>
                     <div class="kanban-mini" id="work-status-mini">
                         <div class="kanban-mini-col todo">
@@ -232,10 +243,10 @@
                 <section class="card">
                     <div class="section-header-row">
                         <h2 class="section-title">📋 Weekly Brief</h2>
-                        <span class="section-action" onclick="toggleBriefExpand()" id="brief-toggle">Expandir</span>
+                        <span class="section-action" onclick="toggleBriefExpand()" id="brief-toggle">Ver mais</span>
                     </div>
                     <div id="brief-summary" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">
-                        Carregando...
+                        <div class="skeleton skeleton-text" style="height:14px;width:70%;"></div>
                     </div>
                     <div id="brief-glance" style="font-size:0.82rem;line-height:1.6;"></div>
                     <div id="brief-detail" style="display:none;margin-top:0.5rem;"></div>
@@ -259,10 +270,10 @@
                 <section class="card">
                     <div class="section-header-row">
                         <h2 class="section-title">🧠 Life OS</h2>
-                        <span class="section-action" onclick="toggleLifeOsExpand()" id="life-os-toggle">Expandir</span>
+                        <span class="section-action" onclick="toggleLifeOsExpand()" id="life-os-toggle">Ver mais</span>
                     </div>
                     <div id="life-os-summary" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">
-                        Carregando...
+                        <div class="skeleton skeleton-text" style="height:14px;width:60%;"></div>
                     </div>
                     <div id="life-os-messages" style="display:none;">
                     </div>
@@ -272,7 +283,7 @@
                 <section class="card">
                     <div class="section-header-row">
                         <h2 class="section-title">📡 Observability</h2>
-                        <a href="observability" class="section-action" style="text-decoration:none;color:var(--accent-blue);">View Details</a>
+                        <a href="observability" class="section-action" style="text-decoration:none;color:var(--accent-blue);">Ver detalhes</a>
                     </div>
                     <div id="obs-summary" style="font-size:0.85rem;color:var(--text-secondary);">
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
@@ -285,7 +296,7 @@
                                 <div style="font-size:1.2rem;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;" id="obs-last-eval">--</div>
                             </div>
                         </div>
-                        <div style="font-size:0.75rem;color:var(--text-muted);" id="obs-report-summary">Loading...</div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);" id="obs-report-summary"><div class="skeleton skeleton-text" style="height:12px;width:50%;"></div></div>
                     </div>
                 </section>
             </div>
@@ -464,7 +475,23 @@
             document.getElementById('greeting-message').textContent = `${greeting}, Fabio`;
         }
         
+        // Shared state for Priority Pulse
+        let _calendarEvents = [];
+        let _mbaDeadlines = [];
+        let _workAlerts = {};
+        let _apiOnline = true;
+
         async function loadAllData() {
+            // Health check first
+            try {
+                const health = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(5000) });
+                _apiOnline = health.ok;
+            } catch {
+                _apiOnline = false;
+            }
+            const banner = document.getElementById('offline-banner');
+            if (banner) banner.style.display = _apiOnline ? 'none' : 'flex';
+
             try {
                 await Promise.all([
                     loadTasks(),
@@ -476,6 +503,7 @@
                     loadWorkStatus()
                 ]);
                 updateSummary();
+                buildPriorityPulse();
                 loadWeeklyBrief();
                 loadLifeOS();
                 loadObsSummary();
@@ -600,11 +628,13 @@
         async function loadCalendarEvents() {
             try {
                 const events = await apiRequest('/calendar/today');
+                _calendarEvents = Array.isArray(events) ? events : [];
                 renderAgenda(events);
             } catch (error) {
                 console.error('Error loading calendar:', error);
+                _calendarEvents = [];
                 document.getElementById('agenda-list').innerHTML = 
-                    '<div class="empty-state-styled error"><span class="empty-icon">⚠️</span><span>Não foi possível carregar a agenda</span></div>';
+                    '<div class="empty-state-styled error"><span class="empty-icon">⚠️</span><span>Nao foi possivel carregar a agenda</span></div>';
             }
         }
         
@@ -634,24 +664,87 @@
         
         async function loadMBAStats() {
             try {
-                const stats = await apiRequest('/mba/stats');
+                // Use same endpoint as MBA page, with fallback to static data
+                let mbaData;
+                try {
+                    mbaData = await MBAAPI.getData();
+                } catch {
+                    // API unavailable, try static data
+                    console.log('MBA API unavailable, using static fallback');
+                    mbaData = null;
+                }
                 
-                document.getElementById('mba-pendentes').textContent = stats.pendentes || 0;
-                document.getElementById('mba-andamento').textContent = stats.em_andamento || 0;
-                document.getElementById('mba-concluidas').textContent = stats.concluidas || 0;
+                if (!mbaData || !mbaData.turmas) {
+                    // Static fallback: basic counts from what we know
+                    document.getElementById('mba-pendentes').textContent = '-';
+                    document.getElementById('mba-andamento').textContent = '-';
+                    document.getElementById('mba-concluidas').textContent = '-';
+                    return;
+                }
+
+                // Calculate stats from turmas data (same logic as mba.html calculateResumo)
+                let pendentes = 0, andamento = 0, concluidas = 0;
+                const prazos = [];
                 
-                // Show upcoming deadlines
-                if (stats.proximos_prazos && stats.proximos_prazos.length > 0) {
-                    const deadlinesHtml = stats.proximos_prazos.slice(0, 2).map(d => `
-                        <div style="padding: 8px; background: rgba(234, 179, 8, 0.1); border-radius: 6px; margin-bottom: 4px; font-size: 0.875rem;">
-                            📅 ${escapeHtml(d.title)} - ${d.due_date}
-                        </div>
-                    `).join('');
+                (mbaData.turmas || []).forEach(turma => {
+                    (turma.semanas || []).forEach(semana => {
+                        const aFazer = semana.atividades?.a_fazer || [];
+                        const fazendo = semana.atividades?.fazendo || [];
+                        const feito = semana.atividades?.feito || [];
+                        pendentes += aFazer.length;
+                        andamento += fazendo.length;
+                        concluidas += feito.length;
+                        
+                        aFazer.forEach(atv => {
+                            if (atv.data) {
+                                prazos.push({
+                                    title: atv.titulo,
+                                    data: atv.data,
+                                    turma: turma.nome?.split(' - ')[0] || turma.tipo || ''
+                                });
+                            }
+                        });
+                    });
+                });
+
+                document.getElementById('mba-pendentes').textContent = pendentes;
+                document.getElementById('mba-andamento').textContent = andamento;
+                document.getElementById('mba-concluidas').textContent = concluidas;
+                
+                // Store deadlines for Priority Pulse
+                _mbaDeadlines = prazos;
+                
+                // Show upcoming deadlines on the card
+                if (prazos.length > 0) {
+                    const deadlinesHtml = prazos.slice(0, 2).map(d => {
+                        const isOverdue = parseMBADate(d.data) < new Date();
+                        return `
+                            <div style="padding: 8px; background: ${isOverdue ? 'rgba(239, 68, 68, 0.1)' : 'rgba(234, 179, 8, 0.1)'}; border-radius: 6px; margin-bottom: 4px; font-size: 0.875rem; border-left: 3px solid ${isOverdue ? '#ef4444' : 'transparent'};">
+                                ${isOverdue ? '⚠️' : '📅'} ${escapeHtml(d.title)} - ${d.data}${isOverdue ? ' <span style="color:#ef4444;font-weight:600;font-size:0.75rem;">ATRASADO</span>' : ''}
+                            </div>
+                        `;
+                    }).join('');
                     document.getElementById('mba-deadlines').innerHTML = deadlinesHtml;
                 }
             } catch (error) {
                 console.error('Error loading MBA stats:', error);
             }
+        }
+        
+        function parseMBADate(dateStr) {
+            // Parse "DD/MM/YYYY - HH:MMh" or "DD/MM/YYYY"
+            if (!dateStr) return new Date(0);
+            const parts = dateStr.split(' - ');
+            const dateParts = parts[0].split('/');
+            if (dateParts.length < 3) return new Date(0);
+            const day = parseInt(dateParts[0], 10);
+            const month = parseInt(dateParts[1], 10) - 1;
+            const year = parseInt(dateParts[2], 10);
+            if (parts[1]) {
+                const timeParts = parts[1].replace('h', '').split(':');
+                return new Date(year, month, day, parseInt(timeParts[0], 10), parseInt(timeParts[1], 10));
+            }
+            return new Date(year, month, day);
         }
         
         // ===========================================
@@ -662,6 +755,9 @@
             try {
                 const summary = await apiRequest('/confluence/summary');
                 
+                // Store for Priority Pulse
+                _workAlerts = summary;
+
                 // Update counts
                 document.getElementById('work-initiatives').textContent = summary.initiatives || 0;
                 document.getElementById('work-epics').textContent = summary.epics || 0;
@@ -703,11 +799,12 @@
                 
             } catch (error) {
                 console.log('Work status not available - Confluence sync needed');
+                _workAlerts = {};
                 document.getElementById('work-initiatives').textContent = '-';
                 document.getElementById('work-epics').textContent = '-';
                 document.getElementById('work-sprints').textContent = '-';
                 document.getElementById('work-alerts').innerHTML = 
-                    '<div class="sync-badge not-synced"><span>🔗</span> Não sincronizado</div>';
+                    '<div class="sync-badge not-synced"><span>🔗</span> Nao sincronizado</div>';
             }
         }
         
@@ -862,7 +959,7 @@
         function toggleBriefExpand() {
             briefExpanded = !briefExpanded;
             const toggle = document.getElementById('brief-toggle');
-            if (toggle) toggle.textContent = briefExpanded ? 'Recolher' : 'Expandir';
+            if (toggle) toggle.textContent = briefExpanded ? 'Recolher' : 'Ver mais';
             renderWeeklyBrief();
         }
         
@@ -955,7 +1052,7 @@
         function toggleLifeOsExpand() {
             lifeOsExpanded = !lifeOsExpanded;
             const toggle = document.getElementById('life-os-toggle');
-            if (toggle) toggle.textContent = lifeOsExpanded ? 'Recolher' : 'Expandir';
+            if (toggle) toggle.textContent = lifeOsExpanded ? 'Recolher' : 'Ver mais';
             renderLifeOS();
         }
         
@@ -1012,6 +1109,124 @@
             }
             
             chipsContainer.innerHTML = chipsHtml || '<span style="color: var(--text-muted);">Tudo organizado!</span>';
+        }
+        
+        // ===========================================
+        // PRIORITY PULSE
+        // ===========================================
+        
+        function buildPriorityPulse() {
+            const pulseEl = document.getElementById('priority-pulse');
+            const itemsEl = document.getElementById('pulse-items');
+            const countEl = document.getElementById('pulse-count');
+            if (!pulseEl || !itemsEl) return;
+            
+            const items = [];
+            const now = new Date();
+            
+            // 1. Overdue MBA items (red)
+            _mbaDeadlines.forEach(d => {
+                const dueDate = parseMBADate(d.data);
+                if (dueDate < now) {
+                    items.push({
+                        type: 'overdue',
+                        icon: '🎓',
+                        label: `MBA: "${d.title}" venceu ${d.data.split(' - ')[0]}`,
+                        link: 'mba',
+                        linkText: 'Ver MBA',
+                        priority: 1
+                    });
+                }
+            });
+            
+            // 2. Urgent tasks (orange)
+            tasks.filter(t => (t.priority === 'urgent' || t.priority === 'high') && t.status !== 'done').forEach(t => {
+                items.push({
+                    type: 'urgent',
+                    icon: '🔥',
+                    label: `Tarefa urgente: "${t.title}"`,
+                    link: '#',
+                    linkText: 'Abrir',
+                    onclick: `openTaskModal('${t.id}')`,
+                    priority: 2
+                });
+            });
+            
+            // 3. Next meeting (blue)
+            if (_calendarEvents.length > 0) {
+                const nextEvent = _calendarEvents[0];
+                const eventTime = nextEvent.time || '--:--';
+                // Calculate time until meeting
+                let timeLabel = eventTime;
+                if (eventTime && eventTime !== '--:--') {
+                    const [h, m] = eventTime.split(':').map(Number);
+                    const eventDate = new Date();
+                    eventDate.setHours(h, m, 0, 0);
+                    const diffMin = Math.round((eventDate - now) / 60000);
+                    if (diffMin > 0 && diffMin <= 60) {
+                        timeLabel = `em ${diffMin}min`;
+                    } else if (diffMin <= 0) {
+                        timeLabel = 'agora';
+                    }
+                }
+                items.push({
+                    type: 'meeting',
+                    icon: '📅',
+                    label: `Proxima reuniao: ${eventTime} ${nextEvent.summary || nextEvent.title}`,
+                    link: '#',
+                    linkText: timeLabel,
+                    priority: 3
+                });
+            }
+            
+            // 4. Work risks (purple)
+            if (_workAlerts.risks > 0) {
+                items.push({
+                    type: 'work',
+                    icon: '⚠️',
+                    label: `${_workAlerts.risks} risco${_workAlerts.risks > 1 ? 's' : ''} ativo${_workAlerts.risks > 1 ? 's' : ''} no trabalho`,
+                    link: 'work',
+                    linkText: 'Ver Work',
+                    priority: 4
+                });
+            }
+            if (_workAlerts.bugs > 0) {
+                items.push({
+                    type: 'work',
+                    icon: '🐛',
+                    label: `${_workAlerts.bugs} bug${_workAlerts.bugs > 1 ? 's' : ''} ativo${_workAlerts.bugs > 1 ? 's' : ''} no trabalho`,
+                    link: 'work',
+                    linkText: 'Ver Work',
+                    priority: 5
+                });
+            }
+            
+            // Sort by priority, limit to 5
+            items.sort((a, b) => a.priority - b.priority);
+            const display = items.slice(0, 5);
+            
+            if (display.length === 0) {
+                // All clear state
+                pulseEl.style.display = 'block';
+                pulseEl.classList.add('all-clear');
+                countEl.textContent = 'Tudo em dia';
+                itemsEl.innerHTML = '<div class="pulse-item pulse-clear"><span class="pulse-item-icon">✅</span><span class="pulse-item-label">Nenhum item urgente. Bom trabalho!</span></div>';
+                return;
+            }
+            
+            pulseEl.style.display = 'block';
+            pulseEl.classList.remove('all-clear');
+            countEl.textContent = `${display.length} item${display.length > 1 ? 's' : ''}`;
+            
+            itemsEl.innerHTML = display.map(item => `
+                <div class="pulse-item pulse-${item.type}">
+                    <span class="pulse-item-icon">${item.icon}</span>
+                    <span class="pulse-item-label">${escapeHtml(item.label)}</span>
+                    <a class="pulse-item-action" href="${item.link}" ${item.onclick ? `onclick="${item.onclick};return false;"` : ''}>
+                        ${item.linkText}
+                    </a>
+                </div>
+            `).join('');
         }
         
         // ===========================================
