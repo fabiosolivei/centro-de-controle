@@ -32,6 +32,7 @@
                 <a href="mba" class="nav-link" aria-label="MBA">MBA</a>
                 <a href="work" class="nav-link" aria-label="Work Status">Work</a>
                 <a href="files" class="nav-link" aria-label="Arquivos">Arquivos</a>
+                <a href="observability" class="nav-link" aria-label="Observability">Observability</a>
             </nav>
             <div class="header-actions">
                 <button class="btn-icon" onclick="openCommandPalette()" title="Buscar (Ctrl+K)" aria-label="Buscar">
@@ -266,6 +267,27 @@
                     <div id="life-os-messages" style="display:none;">
                     </div>
                 </section>
+
+                <!-- Observability Summary -->
+                <section class="card">
+                    <div class="section-header-row">
+                        <h2 class="section-title">📡 Observability</h2>
+                        <a href="observability" class="section-action" style="text-decoration:none;color:var(--accent-blue);">View Details</a>
+                    </div>
+                    <div id="obs-summary" style="font-size:0.85rem;color:var(--text-secondary);">
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                            <div style="background:var(--bg-card);padding:8px 12px;border-radius:8px;">
+                                <div style="font-size:0.7rem;color:var(--text-muted);">Tool Health</div>
+                                <div style="font-size:1.2rem;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;" id="obs-tool-health">--</div>
+                            </div>
+                            <div style="background:var(--bg-card);padding:8px 12px;border-radius:8px;">
+                                <div style="font-size:0.7rem;color:var(--text-muted);">Last Eval</div>
+                                <div style="font-size:1.2rem;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;" id="obs-last-eval">--</div>
+                            </div>
+                        </div>
+                        <div style="font-size:0.75rem;color:var(--text-muted);" id="obs-report-summary">Loading...</div>
+                    </div>
+                </section>
             </div>
         </div>
     </main>
@@ -456,6 +478,7 @@
                 updateSummary();
                 loadWeeklyBrief();
                 loadLifeOS();
+                loadObsSummary();
             } catch (error) {
                 console.error('Error loading data:', error);
             }
@@ -850,6 +873,32 @@
         let lifeOsMessages = [];
         let lifeOsExpanded = false;
         
+        async function loadObsSummary() {
+            try {
+                const [tools, reports] = await Promise.all([
+                    ObservabilityAPI.getToolMetrics(1),
+                    ObservabilityAPI.getDailyReports(1),
+                ]);
+                const rate = tools.overall?.success_rate;
+                const el = document.getElementById('obs-tool-health');
+                if (el) el.textContent = rate != null ? `${rate}%` : (tools.overall?.total > 0 ? '--' : 'N/A');
+                
+                const report = (reports.reports || [])[0];
+                const lastEvalEl = document.getElementById('obs-last-eval');
+                const summaryEl = document.getElementById('obs-report-summary');
+                if (report) {
+                    if (lastEvalEl) lastEvalEl.textContent = report.report_date || '--';
+                    if (summaryEl) summaryEl.textContent = report.summary || 'No summary';
+                } else {
+                    if (lastEvalEl) lastEvalEl.textContent = 'None';
+                    if (summaryEl) summaryEl.textContent = 'No reports yet';
+                }
+            } catch (e) {
+                const el = document.getElementById('obs-report-summary');
+                if (el) el.textContent = 'Failed to load';
+            }
+        }
+
         async function loadLifeOS() {
             try {
                 const response = await fetch(`${API_BASE}/scheduled-messages`);
