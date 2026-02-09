@@ -487,30 +487,36 @@
 
         // ============================================
         // SMART EMBED DETECTION
-        // Langfuse + Grafana accessible via Tailscale or localhost
+        // Langfuse + Grafana via VPS HTTPS proxy or localhost
         // ============================================
+        const VPS_BASE = 'https://srv1315519.hstgr.cloud';
         const TAILSCALE_IP = '100.126.23.80';
 
         function getServiceUrls() {
             const host = window.location.hostname;
-            // If on local PC or Tailscale network, use direct access
             if (['localhost', '127.0.0.1'].includes(host)) {
                 return {
                     langfuse: 'http://localhost:3100',
-                    grafana: 'http://localhost:3001'
+                    langfuseHealth: 'http://localhost:3100/api/public/health',
+                    grafana: 'http://localhost:3001',
+                    grafanaHealth: 'http://localhost:3001/api/health',
+                    grafanaEmbed: 'http://localhost:3001'
                 };
             }
-            // From any other device (GitHub Pages, mobile, etc), use Tailscale IP
+            // From GitHub Pages or any remote device: use VPS HTTPS proxy
             return {
                 langfuse: `http://${TAILSCALE_IP}:3100`,
-                grafana: `http://${TAILSCALE_IP}:3001`
+                langfuseHealth: `${VPS_BASE}/langfuse/api/public/health`,
+                grafana: `${VPS_BASE}/grafana/`,
+                grafanaHealth: `${VPS_BASE}/grafana/api/health`,
+                grafanaEmbed: `${VPS_BASE}/grafana`
             };
         }
 
-        async function checkService(url, name) {
+        async function checkService(url) {
             try {
-                const r = await fetch(url, { mode: 'no-cors', signal: AbortSignal.timeout(4000) });
-                return true;
+                const r = await fetch(url, { signal: AbortSignal.timeout(5000) });
+                return r.ok;
             } catch {
                 return false;
             }
@@ -520,7 +526,7 @@
             const urls = getServiceUrls();
 
             // Check Langfuse
-            const lfUp = await checkService(urls.langfuse + '/api/public/health', 'Langfuse');
+            const lfUp = await checkService(urls.langfuseHealth);
             if (lfUp) {
                 document.getElementById('langfuse-status').innerHTML = 
                     `Langfuse v3 <strong style="color: #10b981;">online</strong><br>
@@ -533,10 +539,10 @@
             }
 
             // Check Grafana
-            const gfUp = await checkService(urls.grafana + '/api/health', 'Grafana');
+            const gfUp = await checkService(urls.grafanaHealth);
             if (gfUp) {
                 document.getElementById('grafana-embed').innerHTML = 
-                    `<iframe src="${urls.grafana}/d/atlas-system-health/atlas-system-health?orgId=1&kiosk" 
+                    `<iframe src="${urls.grafanaEmbed}/d/atlas-system-health/atlas-system-health?orgId=1&kiosk" 
                              loading="lazy" title="Grafana System Health Dashboard"></iframe>`;
             } else {
                 document.getElementById('grafana-status').innerHTML = 
@@ -551,21 +557,25 @@
         // ============================================
         async function checkSystemHealth() {
             const svcUrls = getServiceUrls();
-            const apiBase = window.API_BASE || (window.location.hostname.includes('github.io')
-                ? 'https://srv1315519.hstgr.cloud' : '');
+            const apiBase = window.location.hostname.includes('github.io')
+                ? VPS_BASE : '';
 
             const checks = [
-                { id: 'health-api-status', url: `${apiBase}/api/health`, name: 'API' },
-                { id: 'health-langfuse-status', url: `${svcUrls.langfuse}/api/public/health`, name: 'Langfuse' },
-                { id: 'health-grafana-status', url: `${svcUrls.grafana}/api/health`, name: 'Grafana' },
-                { id: 'health-rag-status', url: 'http://100.126.23.80:8100/health', name: 'RAG' },
+                { id: 'health-api-status', url: `${apiBase}/api/health` },
+                { id: 'health-langfuse-status', url: svcUrls.langfuseHealth },
+                { id: 'health-grafana-status', url: svcUrls.grafanaHealth },
+                { id: 'health-rag-status', url: `${apiBase}/api/health` }, // RAG check via API proxy
             ];
 
             for (const check of checks) {
                 const el = document.getElementById(check.id);
                 try {
-                    const r = await fetch(check.url, { mode: 'no-cors', signal: AbortSignal.timeout(5000) });
-                    el.innerHTML = '<span style="color:#3fb950;">Online</span>';
+                    const r = await fetch(check.url, { signal: AbortSignal.timeout(5000) });
+                    if (r.ok) {
+                        el.innerHTML = '<span style="color:#3fb950;">Online</span>';
+                    } else {
+                        el.innerHTML = '<span style="color:#f85149;">Offline</span>';
+                    }
                 } catch {
                     el.innerHTML = '<span style="color:#f85149;">Offline</span>';
                 }
@@ -577,6 +587,8 @@
         const urls = getServiceUrls();
         document.getElementById('langfuse-link').href = urls.langfuse;
         document.getElementById('grafana-link').href = urls.grafana;
+        document.getElementById('langfuse-link').title = 'Open Langfuse (requires Tailscale or local access)';
+        document.getElementById('grafana-link').title = 'Open Grafana';
 
         // Initial load
         loadAllData();
