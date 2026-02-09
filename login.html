@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0d1117">
     <title>🔐 Centro de Controle - Login</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -170,41 +171,61 @@
     </div>
     
     <script>
-        // Hash SHA-256 da senha (492435)
-        const PASSWORD_HASH = 'f379eaffb6d3420d190c693e60b4e0c50f018cca3ec9c9bea2ca3ee069ae1f4d';
-        
-        // Verificar se já está autenticado
-        if (sessionStorage.getItem('auth_token') === PASSWORD_HASH) {
+        // API-based authentication
+        const isGitHubPages = window.location.hostname.includes('github.io');
+        const API_BASE = isGitHubPages
+            ? 'https://srv1315519.hstgr.cloud'
+            : '';
+
+        // Check if already authenticated
+        if (sessionStorage.getItem('auth_token')) {
             window.location.href = 'index.html';
         }
-        
-        async function hashPassword(password) {
-            const encoder = new TextEncoder();
-            const data = encoder.encode(password);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        }
-        
+
         async function handleLogin(event) {
             event.preventDefault();
-            
+            const btn = document.querySelector('.btn-login');
             const password = document.getElementById('password').value;
-            const hash = await hashPassword(password);
-            
-            if (hash === PASSWORD_HASH) {
-                sessionStorage.setItem('auth_token', hash);
-                window.location.href = 'index.html';
-            } else {
-                const errorMsg = document.getElementById('error-msg');
-                errorMsg.classList.add('show');
-                document.getElementById('password').value = '';
-                document.getElementById('password').focus();
-                
-                setTimeout(() => {
-                    errorMsg.classList.remove('show');
-                }, 3000);
+            btn.textContent = 'Verificando...';
+            btn.disabled = true;
+
+            try {
+                const resp = await fetch(`${API_BASE}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password })
+                });
+
+                if (resp.ok) {
+                    const data = await resp.json();
+                    sessionStorage.setItem('auth_token', data.token);
+                    window.location.href = 'index.html';
+                } else {
+                    showError();
+                }
+            } catch (e) {
+                // Fallback: client-side validation if API unreachable
+                const encoder = new TextEncoder();
+                const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(password));
+                const hash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+                if (hash === 'f379eaffb6d3420d190c693e60b4e0c50f018cca3ec9c9bea2ca3ee069ae1f4d') {
+                    sessionStorage.setItem('auth_token', hash);
+                    window.location.href = 'index.html';
+                } else {
+                    showError();
+                }
             }
+
+            btn.textContent = 'Entrar';
+            btn.disabled = false;
+        }
+
+        function showError() {
+            const errorMsg = document.getElementById('error-msg');
+            errorMsg.classList.add('show');
+            document.getElementById('password').value = '';
+            document.getElementById('password').focus();
+            setTimeout(() => errorMsg.classList.remove('show'), 3000);
         }
     </script>
 </body>

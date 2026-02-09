@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#0d1117">
     <meta name="description" content="Centro de Controle - Work Status">
     <title>Work Status | Centro de Controle</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="css/style.css?v=6">
     <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,8 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <!-- Auth Check -->
     <script>
-        const AUTH_HASH = 'f379eaffb6d3420d190c693e60b4e0c50f018cca3ec9c9bea2ca3ee069ae1f4d';
-        if (sessionStorage.getItem('auth_token') !== AUTH_HASH) {
+        if (!sessionStorage.getItem('auth_token')) {
             window.location.href = 'login';
         }
     </script>

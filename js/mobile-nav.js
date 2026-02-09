@@ -87,4 +87,59 @@
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') closeMobileMenu();
     });
+
+    // ============================================
+    // PULL-TO-REFRESH (mobile touch gesture)
+    // ============================================
+    let pullStartY = 0;
+    let pulling = false;
+    const PULL_THRESHOLD = 80;
+
+    // Create pull indicator
+    const pullIndicator = document.createElement('div');
+    pullIndicator.className = 'pull-indicator';
+    pullIndicator.innerHTML = '<span class="pull-arrow">↓</span> Pull to refresh';
+    pullIndicator.style.cssText = `
+        position: fixed; top: -50px; left: 50%; transform: translateX(-50%);
+        background: var(--bg-tertiary, #21262d); color: var(--text-secondary, #8b949e);
+        padding: 8px 20px; border-radius: 20px; font-size: 0.8rem;
+        transition: top 0.2s ease; z-index: 9999; pointer-events: none;
+        border: 1px solid var(--border-color, #30363d);
+    `;
+    document.body.appendChild(pullIndicator);
+
+    document.addEventListener('touchstart', function(e) {
+        if (window.scrollY === 0) {
+            pullStartY = e.touches[0].clientY;
+            pulling = true;
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchmove', function(e) {
+        if (!pulling) return;
+        const pullDist = e.touches[0].clientY - pullStartY;
+        if (pullDist > 20 && pullDist < 150) {
+            pullIndicator.style.top = Math.min(pullDist - 50, 20) + 'px';
+            if (pullDist > PULL_THRESHOLD) {
+                pullIndicator.innerHTML = '<span class="pull-arrow" style="transform:rotate(180deg);display:inline-block;">↓</span> Release to refresh';
+            }
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchend', function(e) {
+        if (!pulling) return;
+        pulling = false;
+        pullIndicator.style.top = '-50px';
+        pullIndicator.innerHTML = '<span class="pull-arrow">↓</span> Pull to refresh';
+
+        const pullDist = e.changedTouches[0].clientY - pullStartY;
+        if (pullDist > PULL_THRESHOLD && window.scrollY === 0) {
+            // Trigger refresh — call page-specific reload if available
+            if (typeof window.loadAllData === 'function') {
+                window.loadAllData();
+            } else {
+                window.location.reload();
+            }
+        }
+    }, { passive: true });
 })();
