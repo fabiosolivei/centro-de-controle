@@ -292,7 +292,45 @@
             </div>
         </div>
 
-        <!-- Stat Cards: Row 2 — Quality & Operations -->
+        <!-- Stat Cards: Row 2 — Token Cache -->
+        <div class="stat-cards-section">
+            <div class="stat-cards-label">Token Cache</div>
+            <div class="stat-cards">
+                <div class="stat-card">
+                    <div class="stat-icon" style="font-size:1.3rem;">⚡</div>
+                    <div class="stat-value" id="stat-cache-rate">--</div>
+                    <div class="stat-label">Cache Hit Rate</div>
+                    <div class="stat-trend neutral" id="stat-cache-rate-trend">loading...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="font-size:1.3rem;">📦</div>
+                    <div class="stat-value" id="stat-cached-tokens">--</div>
+                    <div class="stat-label">Cached vs Total Input</div>
+                    <div class="stat-trend neutral" id="stat-cached-tokens-trend">loading...</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="font-size:1.3rem;">💎</div>
+                    <div class="stat-value" id="stat-cache-savings">--</div>
+                    <div class="stat-label">Cache Savings</div>
+                    <div class="stat-trend neutral" id="stat-cache-savings-trend">loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Token breakdown bar -->
+        <div id="token-bar-container" style="display:none; margin-bottom: var(--spacing-lg); padding: 12px var(--spacing-lg); background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius-md);">
+            <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:8px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px;">Input Token Breakdown</div>
+            <div style="display:flex; height:24px; border-radius:6px; overflow:hidden; background:rgba(255,255,255,0.05);">
+                <div id="token-bar-cached" style="background:linear-gradient(135deg,#10b981,#059669); transition:width 0.6s ease;" title="Cached tokens"></div>
+                <div id="token-bar-noncached" style="background:linear-gradient(135deg,#6366f1,#4f46e5); transition:width 0.6s ease;" title="Non-cached tokens"></div>
+            </div>
+            <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:0.7rem; color:var(--text-muted);">
+                <span><span style="color:#10b981;">&#9632;</span> Cached (<span id="token-bar-cached-pct">0</span>%) &mdash; $0.10/1M</span>
+                <span><span style="color:#6366f1;">&#9632;</span> Non-cached (<span id="token-bar-noncached-pct">0</span>%) &mdash; $0.60/1M</span>
+            </div>
+        </div>
+
+        <!-- Stat Cards: Row 3 — Quality & Operations -->
         <div class="stat-cards-section">
             <div class="stat-cards-label">Quality & Operations</div>
             <div class="stat-cards">
@@ -411,15 +449,21 @@
         // OBSERVABILITY PAGE LOGIC
         // ============================================
 
+        function formatTokens(n) {
+            if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+            if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+            return n.toString();
+        }
+
         async function loadCostMetrics() {
             try {
-                // Fetch balance and cost data in parallel
-                const [balanceData, costData] = await Promise.all([
+                // Fetch balance, legacy cost data, and Langfuse stats in parallel
+                const [balanceData, langfuseData] = await Promise.all([
                     ObservabilityAPI.getCostBalance().catch(() => null),
-                    ObservabilityAPI.getCostMetrics(30).catch(() => null),
+                    ObservabilityAPI.getLangfuseStats(30).catch(() => null),
                 ]);
 
-                // Moonshot Balance
+                // Moonshot Balance (from cost-collector snapshots)
                 if (balanceData && balanceData.available_balance != null) {
                     const bal = balanceData.available_balance;
                     document.getElementById('stat-balance').textContent = `$${bal.toFixed(2)}`;
@@ -433,28 +477,73 @@
                     document.getElementById('stat-balance-trend').className = 'stat-trend neutral';
                 }
 
-                // Nova Spend (30d) and LLM Calls (30d)
-                if (costData) {
-                    const spend = costData.spend_from_balance || costData.totals?.total_cost_usd || 0;
-                    const totalCalls = costData.totals?.total_calls || 0;
-                    const models = costData.by_model?.length || 0;
+                // Nova Spend + LLM Calls (from Langfuse)
+                if (langfuseData) {
+                    const spend = langfuseData.total_cost || 0;
+                    const totalCalls = langfuseData.total_observations || 0;
+                    const models = Object.keys(langfuseData.model_breakdown || {}).length;
 
                     document.getElementById('stat-spend').textContent = `$${spend.toFixed(2)}`;
                     document.getElementById('stat-spend-trend').textContent = 
                         totalCalls > 0 ? `$${(spend / totalCalls).toFixed(4)}/call avg` : 'No calls yet';
                     document.getElementById('stat-spend-trend').className = 'stat-trend neutral';
 
-                    document.getElementById('stat-llm-calls').textContent = totalCalls.toString();
+                    document.getElementById('stat-llm-calls').textContent = totalCalls.toLocaleString();
                     document.getElementById('stat-llm-trend').textContent = 
-                        models > 0 ? `${models} model${models > 1 ? 's' : ''}` : 'No models';
+                        models > 0 ? `${models} model${models > 1 ? 's' : ''} via Langfuse` : 'No models';
                     document.getElementById('stat-llm-trend').className = 'stat-trend neutral';
+
+                    // Token Cache stats
+                    const tokens = langfuseData.tokens || {};
+                    const savings = langfuseData.cache_savings || {};
+
+                    // Cache Hit Rate card
+                    const hitRate = tokens.cache_hit_rate_pct || 0;
+                    document.getElementById('stat-cache-rate').textContent = `${hitRate}%`;
+                    document.getElementById('stat-cache-rate-trend').textContent = 
+                        hitRate > 50 ? 'Excellent cache utilization' : hitRate > 20 ? 'Moderate caching' : 'Low caching';
+                    document.getElementById('stat-cache-rate-trend').className = 
+                        'stat-trend ' + (hitRate > 50 ? 'positive' : hitRate > 20 ? 'neutral' : 'negative');
+
+                    // Cached vs Total Input card
+                    const cachedTk = tokens.cached_input || 0;
+                    const totalInput = tokens.total_input || 0;
+                    document.getElementById('stat-cached-tokens').textContent = 
+                        `${formatTokens(cachedTk)} / ${formatTokens(totalInput)}`;
+                    document.getElementById('stat-cached-tokens-trend').textContent = 
+                        `Output: ${formatTokens(tokens.total_output || 0)} tokens`;
+                    document.getElementById('stat-cached-tokens-trend').className = 'stat-trend neutral';
+
+                    // Cache Savings card
+                    const savedUsd = savings.savings_usd || 0;
+                    const savedPct = savings.savings_pct || 0;
+                    document.getElementById('stat-cache-savings').textContent = `$${savedUsd.toFixed(2)}`;
+                    document.getElementById('stat-cache-savings-trend').textContent = 
+                        `${savedPct}% saved vs no-cache ($${(savings.cost_without_cache || 0).toFixed(2)})`;
+                    document.getElementById('stat-cache-savings-trend').className = 
+                        'stat-trend ' + (savedPct > 30 ? 'positive' : savedPct > 10 ? 'neutral' : 'negative');
+
+                    // Token breakdown bar
+                    if (totalInput > 0) {
+                        const cachedPct = hitRate;
+                        const nonCachedPct = (100 - hitRate).toFixed(1);
+                        document.getElementById('token-bar-container').style.display = 'block';
+                        document.getElementById('token-bar-cached').style.width = `${cachedPct}%`;
+                        document.getElementById('token-bar-noncached').style.width = `${nonCachedPct}%`;
+                        document.getElementById('token-bar-cached-pct').textContent = cachedPct;
+                        document.getElementById('token-bar-noncached-pct').textContent = nonCachedPct;
+                    }
                 } else {
                     document.getElementById('stat-spend').textContent = 'N/A';
-                    document.getElementById('stat-spend-trend').textContent = 'Cost data unavailable';
+                    document.getElementById('stat-spend-trend').textContent = 'Langfuse unavailable';
                     document.getElementById('stat-spend-trend').className = 'stat-trend neutral';
                     document.getElementById('stat-llm-calls').textContent = 'N/A';
-                    document.getElementById('stat-llm-trend').textContent = 'Cost data unavailable';
+                    document.getElementById('stat-llm-trend').textContent = 'Langfuse unavailable';
                     document.getElementById('stat-llm-trend').className = 'stat-trend neutral';
+                    // Cache cards fallback
+                    ['stat-cache-rate', 'stat-cached-tokens', 'stat-cache-savings'].forEach(id => {
+                        document.getElementById(id).textContent = 'N/A';
+                    });
                 }
             } catch (e) {
                 document.getElementById('stat-balance').textContent = 'ERR';

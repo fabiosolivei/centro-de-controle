@@ -511,6 +511,15 @@ const ObservabilityAPI = {
     async getCostBalance() {
         return apiRequest(`/metrics/costs/balance`);
     },
+
+    /**
+     * Get Langfuse aggregated stats (cost, calls, cached tokens)
+     * Data is cached on the backend for 5 minutes
+     * @param {number} days - Period in days (default 30)
+     */
+    async getLangfuseStats(days = 30) {
+        return apiRequest(`/metrics/langfuse-stats?days=${days}`);
+    },
 };
 
 // ============================================
