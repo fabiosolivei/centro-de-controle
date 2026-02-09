@@ -669,13 +669,16 @@
                 try {
                     mbaData = await MBAAPI.getData();
                 } catch {
-                    // API unavailable, try static data
                     console.log('MBA API unavailable, using static fallback');
                     mbaData = null;
                 }
                 
                 if (!mbaData || !mbaData.turmas) {
-                    // Static fallback: basic counts from what we know
+                    // Static fallback with known MBA data (same as mba.html getStaticData)
+                    mbaData = getMBAStaticFallback();
+                }
+                
+                if (!mbaData || !mbaData.turmas) {
                     document.getElementById('mba-pendentes').textContent = '-';
                     document.getElementById('mba-andamento').textContent = '-';
                     document.getElementById('mba-concluidas').textContent = '-';
@@ -745,6 +748,55 @@
                 return new Date(year, month, day, parseInt(timeParts[0], 10), parseInt(timeParts[1], 10));
             }
             return new Date(year, month, day);
+        }
+        
+        function getMBAStaticFallback() {
+            return {
+                turmas: [
+                    {
+                        id: "2026-1A-T30-P",
+                        nome: "MBA IA - TURMA 1 - 2026.1A",
+                        tipo: "MBA",
+                        semanas: [{
+                            numero: 1,
+                            status: "em_andamento",
+                            atividades: {
+                                a_fazer: [
+                                    { titulo: "Material Encontro Orientacao 02/02", data: "02/02/2026 - 19:00h" },
+                                    { titulo: "Gravacao Encontro Orientacao 02/02", data: "03/02/2026 - 19:00h" }
+                                ],
+                                fazendo: [
+                                    { titulo: "Business Case - Modulo 1" }
+                                ],
+                                feito: [
+                                    { titulo: "Calendario Academico" },
+                                    { titulo: "Material Onboarding Alunos" },
+                                    { titulo: "Gravacao Aula Inaugural" }
+                                ]
+                            }
+                        }]
+                    },
+                    {
+                        id: "2026-1A-T33-P",
+                        nome: "Eletiva Data Engineering - 2026.1A",
+                        tipo: "Eletiva",
+                        semanas: [{
+                            numero: 1,
+                            status: "em_andamento",
+                            atividades: {
+                                a_fazer: [
+                                    { titulo: "Material Aula Inaugural", data: "06/02/2026 - 19:00h" },
+                                    { titulo: "Gravacao Aula Inaugural", data: "07/02/2026 - 19:00h" }
+                                ],
+                                fazendo: [],
+                                feito: [
+                                    { titulo: "Calendario Academico" }
+                                ]
+                            }
+                        }]
+                    }
+                ]
+            };
         }
         
         // ===========================================
