@@ -349,7 +349,7 @@
                 // Load work project details for each
                 await Promise.all(allProjects.map(async (project) => {
                     try {
-                        const slug = project.name.toLowerCase().replace(/\s+/g, '-');
+                        const slug = project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
                         const detailResponse = await fetch(`${API_BASE}/work-projects/${slug}`);
                         if (detailResponse.ok) {
                             workProjectsData[project.id] = await detailResponse.json();

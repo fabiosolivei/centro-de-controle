@@ -399,6 +399,33 @@
             border-radius: var(--radius-md);
             margin-bottom: var(--spacing-sm);
             border-left: 3px solid var(--status-todo);
+            transition: var(--transition-fast);
+        }
+        .prazo-item.prazo-vencido {
+            border-left: 3px solid #ef4444;
+            background: rgba(239, 68, 68, 0.08);
+        }
+        .prazo-item.prazo-urgente {
+            border-left: 3px solid #f59e0b;
+            background: rgba(245, 158, 11, 0.08);
+        }
+        .prazo-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-left: 8px;
+            letter-spacing: 0.5px;
+        }
+        .prazo-badge-vencido {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+        }
+        .prazo-badge-urgente {
+            background: rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
         }
         
         .prazo-data {
@@ -891,6 +918,21 @@
             `;
         }
         
+        function parsePrazoDate(dateStr) {
+            if (!dateStr) return new Date(0);
+            const parts = dateStr.split(' - ');
+            const dateParts = parts[0].split('/');
+            if (dateParts.length < 3) return new Date(0);
+            const day = parseInt(dateParts[0], 10);
+            const month = parseInt(dateParts[1], 10) - 1;
+            const year = parseInt(dateParts[2], 10);
+            if (parts[1]) {
+                const timeParts = parts[1].replace('h', '').split(':');
+                return new Date(year, month, day, parseInt(timeParts[0], 10), parseInt(timeParts[1], 10));
+            }
+            return new Date(year, month, day);
+        }
+
         function renderPrazos(prazos) {
             const container = document.getElementById('prazos-list');
             
@@ -899,15 +941,40 @@
                 return;
             }
             
-            container.innerHTML = prazos.map(prazo => `
-                <div class="prazo-item">
-                    <span class="prazo-data">${prazo.data}</span>
-                    <div class="prazo-info">
-                        <div class="prazo-titulo">${escapeHtml(prazo.atividade)}</div>
-                        <div class="prazo-turma">${escapeHtml(prazo.turma)}</div>
+            const now = new Date();
+            const in48h = new Date(now.getTime() + 48 * 60 * 60 * 1000);
+
+            // Sort: overdue first, then by date ascending
+            const sorted = [...prazos].sort((a, b) => {
+                const da = parsePrazoDate(a.data);
+                const db = parsePrazoDate(b.data);
+                const aOverdue = da < now;
+                const bOverdue = db < now;
+                if (aOverdue && !bOverdue) return -1;
+                if (!aOverdue && bOverdue) return 1;
+                return da - db;
+            });
+
+            container.innerHTML = sorted.map(prazo => {
+                const dueDate = parsePrazoDate(prazo.data);
+                const isOverdue = dueDate < now;
+                const isUrgent = !isOverdue && dueDate <= in48h;
+                const statusClass = isOverdue ? 'prazo-vencido' : (isUrgent ? 'prazo-urgente' : '');
+                
+                return `
+                    <div class="prazo-item ${statusClass}">
+                        <span class="prazo-data">${prazo.data}</span>
+                        <div class="prazo-info">
+                            <div class="prazo-titulo">
+                                ${escapeHtml(prazo.atividade)}
+                                ${isOverdue ? '<span class="prazo-badge prazo-badge-vencido">ATRASADO</span>' : ''}
+                                ${isUrgent ? '<span class="prazo-badge prazo-badge-urgente">URGENTE</span>' : ''}
+                            </div>
+                            <div class="prazo-turma">${escapeHtml(prazo.turma)}</div>
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
         
         function toggleSemana(header) {
