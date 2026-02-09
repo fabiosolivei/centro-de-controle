@@ -6,6 +6,7 @@
     <meta name="theme-color" content="#0d1117">
     <meta name="description" content="Centro de Controle - Observability">
     <title>Observability | Centro de Controle</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="css/style.css?v=6">
     <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,8 +14,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <!-- Auth Check -->
     <script>
-        const AUTH_HASH = 'f379eaffb6d3420d190c693e60b4e0c50f018cca3ec9c9bea2ca3ee069ae1f4d';
-        if (sessionStorage.getItem('auth_token') !== AUTH_HASH) {
+        if (!sessionStorage.getItem('auth_token')) {
             window.location.href = 'login';
         }
     </script>
@@ -274,6 +274,33 @@
             </div>
         </div>
 
+        <!-- System Health Section -->
+        <div class="embed-section">
+            <h2>System Health</h2>
+            <div id="health-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
+                <div class="stat-card" id="health-api" style="text-align:center;">
+                    <div class="stat-icon">🖥️</div>
+                    <div class="stat-value" id="health-api-status" style="font-size:1rem;">checking...</div>
+                    <div class="stat-label">Centro de Controle API</div>
+                </div>
+                <div class="stat-card" id="health-langfuse" style="text-align:center;">
+                    <div class="stat-icon">🔍</div>
+                    <div class="stat-value" id="health-langfuse-status" style="font-size:1rem;">checking...</div>
+                    <div class="stat-label">Langfuse</div>
+                </div>
+                <div class="stat-card" id="health-grafana" style="text-align:center;">
+                    <div class="stat-icon">📈</div>
+                    <div class="stat-value" id="health-grafana-status" style="font-size:1rem;">checking...</div>
+                    <div class="stat-label">Grafana</div>
+                </div>
+                <div class="stat-card" id="health-rag" style="text-align:center;">
+                    <div class="stat-icon">🧠</div>
+                    <div class="stat-value" id="health-rag-status" style="font-size:1rem;">checking...</div>
+                    <div class="stat-label">RAG Server</div>
+                </div>
+            </div>
+        </div>
+
         <!-- Embed Section: Langfuse + Grafana -->
         <div class="embed-section">
             <h2>Live Dashboards</h2>
@@ -282,7 +309,7 @@
                 <div class="embed-card">
                     <div class="embed-card-header">
                         <h3>Langfuse — Traces & Agent Graphs</h3>
-                        <a id="langfuse-link" href="http://localhost:3100" target="_blank">Open Full UI</a>
+                        <a id="langfuse-link" href="#" target="_blank">Open Full UI</a>
                     </div>
                     <div id="langfuse-embed">
                         <div class="embed-placeholder" id="langfuse-placeholder">
@@ -299,7 +326,7 @@
                 <div class="embed-card">
                     <div class="embed-card-header">
                         <h3>Grafana — System Health & Analytics</h3>
-                        <a id="grafana-link" href="http://localhost:3001" target="_blank">Open Full UI</a>
+                        <a id="grafana-link" href="#" target="_blank">Open Full UI</a>
                     </div>
                     <div id="grafana-embed">
                         <div class="embed-placeholder" id="grafana-placeholder">
@@ -460,56 +487,96 @@
 
         // ============================================
         // SMART EMBED DETECTION
-        // Langfuse + Grafana run on localhost only
+        // Langfuse + Grafana accessible via Tailscale or localhost
         // ============================================
-        const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+        const TAILSCALE_IP = '100.126.23.80';
 
-        async function checkLocalService(url, name) {
-            if (!isLocal) return false;
+        function getServiceUrls() {
+            const host = window.location.hostname;
+            // If on local PC or Tailscale network, use direct access
+            if (['localhost', '127.0.0.1'].includes(host)) {
+                return {
+                    langfuse: 'http://localhost:3100',
+                    grafana: 'http://localhost:3001'
+                };
+            }
+            // From any other device (GitHub Pages, mobile, etc), use Tailscale IP
+            return {
+                langfuse: `http://${TAILSCALE_IP}:3100`,
+                grafana: `http://${TAILSCALE_IP}:3001`
+            };
+        }
+
+        async function checkService(url, name) {
             try {
-                const r = await fetch(url, { mode: 'no-cors', signal: AbortSignal.timeout(3000) });
-                return true; // no-cors always resolves if server is up
+                const r = await fetch(url, { mode: 'no-cors', signal: AbortSignal.timeout(4000) });
+                return true;
             } catch {
                 return false;
             }
         }
 
         async function setupEmbeds() {
-            const langfuseUrl = 'http://localhost:3100';
-            const grafanaUrl = 'http://localhost:3001';
-
-            if (!isLocal) {
-                document.getElementById('langfuse-status').innerHTML = 
-                    `<strong>Local access only</strong><br><span style="font-size:0.8rem">Langfuse runs on localhost:3100 — open from your PC</span>`;
-                document.getElementById('grafana-status').innerHTML = 
-                    `<strong>Local access only</strong><br><span style="font-size:0.8rem">Grafana runs on localhost:3001 — open from your PC</span>`;
-                return;
-            }
+            const urls = getServiceUrls();
 
             // Check Langfuse
-            const lfUp = await checkLocalService(langfuseUrl + '/api/public/health', 'Langfuse');
+            const lfUp = await checkService(urls.langfuse + '/api/public/health', 'Langfuse');
             if (lfUp) {
                 document.getElementById('langfuse-status').innerHTML = 
                     `Langfuse v3 <strong style="color: #10b981;">online</strong><br>
-                     <a href="${langfuseUrl}" target="_blank">Open Langfuse Dashboard</a>`;
+                     <a href="${urls.langfuse}" target="_blank">Open Langfuse Dashboard</a>`;
             } else {
                 document.getElementById('langfuse-status').innerHTML = 
                     `<span style="color: #ef4444;">Langfuse offline</span><br>
-                     <span style="font-size:0.8rem">Start with: cd ~/Documents/langfuse-server && docker compose up -d</span>`;
+                     <span style="font-size:0.8rem">Ensure PC is on and Docker is running.<br>
+                     Start: cd ~/Documents/langfuse-server && docker compose up -d</span>`;
             }
 
             // Check Grafana
-            const gfUp = await checkLocalService(grafanaUrl + '/api/health', 'Grafana');
+            const gfUp = await checkService(urls.grafana + '/api/health', 'Grafana');
             if (gfUp) {
                 document.getElementById('grafana-embed').innerHTML = 
-                    `<iframe src="${grafanaUrl}/d/atlas-system-health/atlas-system-health?orgId=1&kiosk" 
+                    `<iframe src="${urls.grafana}/d/atlas-system-health/atlas-system-health?orgId=1&kiosk" 
                              loading="lazy" title="Grafana System Health Dashboard"></iframe>`;
             } else {
                 document.getElementById('grafana-status').innerHTML = 
                     `<span style="color: #ef4444;">Grafana offline</span><br>
-                     <span style="font-size:0.8rem">Start with: cd ~/Documents/langfuse-server && docker compose up -d</span>`;
+                     <span style="font-size:0.8rem">Ensure PC is on and Docker is running.<br>
+                     Start: cd ~/Documents/langfuse-server && docker compose up -d</span>`;
             }
         }
+
+        // ============================================
+        // SYSTEM HEALTH CHECKS
+        // ============================================
+        async function checkSystemHealth() {
+            const svcUrls = getServiceUrls();
+            const apiBase = window.API_BASE || (window.location.hostname.includes('github.io')
+                ? 'https://srv1315519.hstgr.cloud' : '');
+
+            const checks = [
+                { id: 'health-api-status', url: `${apiBase}/api/health`, name: 'API' },
+                { id: 'health-langfuse-status', url: `${svcUrls.langfuse}/api/public/health`, name: 'Langfuse' },
+                { id: 'health-grafana-status', url: `${svcUrls.grafana}/api/health`, name: 'Grafana' },
+                { id: 'health-rag-status', url: 'http://100.126.23.80:8100/health', name: 'RAG' },
+            ];
+
+            for (const check of checks) {
+                const el = document.getElementById(check.id);
+                try {
+                    const r = await fetch(check.url, { mode: 'no-cors', signal: AbortSignal.timeout(5000) });
+                    el.innerHTML = '<span style="color:#3fb950;">Online</span>';
+                } catch {
+                    el.innerHTML = '<span style="color:#f85149;">Offline</span>';
+                }
+            }
+        }
+        checkSystemHealth();
+
+        // Set dynamic links
+        const urls = getServiceUrls();
+        document.getElementById('langfuse-link').href = urls.langfuse;
+        document.getElementById('grafana-link').href = urls.grafana;
 
         // Initial load
         loadAllData();

@@ -2827,3 +2827,91 @@ form {
     font-size: 0.9rem;
     line-height: 1.5;
 }
+
+/* ============================================
+   SKELETON LOADING
+   ============================================ */
+
+@keyframes skeleton-pulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.8; }
+}
+
+.skeleton {
+    background: var(--bg-tertiary);
+    border-radius: var(--radius-sm);
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-text {
+    height: 14px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+}
+
+.skeleton-text.short { width: 40%; }
+.skeleton-text.medium { width: 65%; }
+.skeleton-text.long { width: 90%; }
+
+.skeleton-card {
+    height: 120px;
+    border-radius: var(--radius-md);
+}
+
+.skeleton-stat {
+    height: 80px;
+    border-radius: var(--radius-md);
+}
+
+.loading-state {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-muted);
+}
+
+/* ============================================
+   MOBILE OVERFLOW FIXES
+   ============================================ */
+
+/* Ensure tables don't break layout on mobile */
+table {
+    width: 100%;
+    overflow-x: auto;
+    display: block;
+}
+
+@media (max-width: 768px) {
+    /* Wrap tables in scrollable container */
+    .table-wrapper,
+    .report-card,
+    .embed-card {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Prevent fixed-width cards from overflowing */
+    .portfolio-card,
+    .project-card {
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    /* Ensure stat grids don't overflow */
+    .stats-grid,
+    .work-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--spacing-sm);
+    }
+
+    /* Responsive embed iframes */
+    .embed-card iframe {
+        width: 100%;
+        min-height: 300px;
+    }
+
+    /* Prevent code/pre blocks from overflowing */
+    pre, code {
+        overflow-x: auto;
+        word-break: break-word;
+    }
+}

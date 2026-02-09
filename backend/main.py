@@ -7,6 +7,7 @@ Dashboard pessoal do Fábio
 import os
 import json
 import re
+import hashlib
 from datetime import datetime, date
 from typing import Optional, List
 from contextlib import asynccontextmanager
@@ -34,8 +35,41 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 import shutil
 import uuid
+import logging
+import sys
 
 import sqlite3
+
+# ============================================
+# STRUCTURED LOGGING
+# ============================================
+class JSONFormatter(logging.Formatter):
+    """Structured JSON log formatter for observability."""
+    def format(self, record):
+        log_data = {
+            "timestamp": datetime.now().isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        if record.exc_info and record.exc_info[0]:
+            log_data["exception"] = self.formatException(record.exc_info)
+        if hasattr(record, 'endpoint'):
+            log_data["endpoint"] = record.endpoint
+        if hasattr(record, 'status_code'):
+            log_data["status_code"] = record.status_code
+        if hasattr(record, 'duration_ms'):
+            log_data["duration_ms"] = record.duration_ms
+        return json.dumps(log_data)
+
+# Configure root logger
+handler = logging.StreamHandler(sys.stdout)
+handler.setFormatter(JSONFormatter())
+logging.basicConfig(level=logging.INFO, handlers=[handler])
+logger = logging.getLogger("centro-de-controle")
+
+# Quiet down noisy uvicorn access logs (we log requests ourselves)
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
 # Calendar integration
 from calendar_integration import (
@@ -460,7 +494,7 @@ def init_db():
 
     conn.commit()
     conn.close()
-    print("✅ Database initialized")
+    logger.info("Database initialized")
 
 
 # ============================================
@@ -476,6 +510,18 @@ def verify_atlas_key(request: Request):
     key = request.headers.get("X-Atlas-Key", "")
     if key != ATLAS_PUSH_KEY:
         raise HTTPException(401, "Invalid or missing Atlas key")
+
+
+# ============================================
+# AUTHENTICATION CONFIG
+# ============================================
+DASHBOARD_PASSWORD_HASH = os.environ.get(
+    "DASHBOARD_PASSWORD_HASH",
+    "f379eaffb6d3420d190c693e60b4e0c50f018cca3ec9c9bea2ca3ee069ae1f4d"
+)
+
+class LoginRequest(BaseModel):
+    password: str
 
 
 def log_sync(source: str, status: str, items_count: int = 0, error_message: str = None):
@@ -724,6 +770,53 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# ============================================
+# REQUEST LOGGING MIDDLEWARE
+# ============================================
+import time as _time
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log all API requests with structured JSON."""
+    start = _time.time()
+    response = await call_next(request)
+    duration_ms = round((_time.time() - start) * 1000, 1)
+
+    # Only log API calls, skip static files
+    path = request.url.path
+    if path.startswith("/api/"):
+        extra = {
+            "endpoint": path,
+            "status_code": response.status_code,
+            "duration_ms": duration_ms,
+        }
+        record = logging.LogRecord(
+            name="centro-de-controle",
+            level=logging.INFO,
+            pathname="",
+            lineno=0,
+            msg=f"{request.method} {path} -> {response.status_code} ({duration_ms}ms)",
+            args=(),
+            exc_info=None,
+        )
+        for k, v in extra.items():
+            setattr(record, k, v)
+        logger.handle(record)
+
+    return response
+
+# ============================================
+# AUTHENTICATION ROUTE
+# ============================================
+
+@app.post("/api/auth/login")
+async def auth_login(req: LoginRequest):
+    """Validate dashboard password server-side"""
+    pw_hash = hashlib.sha256(req.password.encode()).hexdigest()
+    if pw_hash == DASHBOARD_PASSWORD_HASH:
+        return {"authenticated": True, "token": pw_hash}
+    raise HTTPException(401, "Invalid password")
 
 # ============================================
 # TASKS ROUTES (KANBAN)
@@ -1858,7 +1951,7 @@ async def get_mba_stats():
         
         return stats
     except Exception as e:
-        print(f"Error loading MBA stats: {e}")
+        logger.error(f"Error loading MBA stats: {e}")
         return stats
 
 @app.post("/api/mba/sync")
@@ -2529,7 +2622,7 @@ async def get_recent_updates(limit: int = 20):
             })
         conn.close()
     except Exception as e:
-        print(f"Error fetching task updates: {e}")
+        logger.error(f"Error fetching task updates: {e}")
     
     # 2. Projetos atualizados recentemente
     try:
@@ -2554,7 +2647,7 @@ async def get_recent_updates(limit: int = 20):
             })
         conn.close()
     except Exception as e:
-        print(f"Error fetching project updates: {e}")
+        logger.error(f"Error fetching project updates: {e}")
     
     # 3. Notas de reunião recentes (de work projects)
     try:
@@ -2584,7 +2677,7 @@ async def get_recent_updates(limit: int = 20):
                                 except:
                                     pass
     except Exception as e:
-        print(f"Error fetching meeting updates: {e}")
+        logger.error(f"Error fetching meeting updates: {e}")
     
     # 4. Lembretes criados/completados
     try:
@@ -2611,7 +2704,7 @@ async def get_recent_updates(limit: int = 20):
             })
         conn.close()
     except Exception as e:
-        print(f"Error fetching reminder updates: {e}")
+        logger.error(f"Error fetching reminder updates: {e}")
     
     # 5. Meeting notes from database (synced from Notion)
     try:
@@ -2645,7 +2738,7 @@ async def get_recent_updates(limit: int = 20):
                 })
         conn.close()
     except Exception as e:
-        print(f"Error fetching meeting_notes from DB: {e}")
+        logger.error(f"Error fetching meeting_notes from DB: {e}")
     
     # Ordenar por timestamp (mais recente primeiro)
     updates.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
@@ -3445,7 +3538,7 @@ async def push_meetings(request: Request):
             ))
             synced += 1
         except Exception as e:
-            print(f"Error pushing meeting: {e}")
+            logger.error(f"Error pushing meeting: {e}")
     
     conn.commit()
     log_sync("notion", "completed", synced)
