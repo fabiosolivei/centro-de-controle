@@ -492,6 +492,30 @@ def init_db():
         )
     """)
 
+    # Cost tracking tables
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS cost_snapshots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            moonshot_balance REAL,
+            voucher_balance REAL,
+            cash_balance REAL,
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS llm_calls (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            model TEXT NOT NULL,
+            input_tokens INTEGER DEFAULT 0,
+            output_tokens INTEGER DEFAULT 0,
+            cost_usd REAL DEFAULT 0,
+            session_id TEXT,
+            source TEXT DEFAULT 'openclaw',
+            timestamp TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
     conn.commit()
     conn.close()
     logger.info("Database initialized")
@@ -4297,6 +4321,375 @@ async def get_quality_metrics(days: int = Query(30, ge=1, le=365)):
     overall = dict(cursor.fetchone())
     conn.close()
     return {"dimensions": dimensions, "overall": overall, "days": days}
+
+
+# ============================================
+# COST TRACKING ENDPOINTS
+# ============================================
+
+MOONSHOT_API_KEY = os.environ.get("MOONSHOT_API_KEY", "")
+
+
+class CostSnapshotIn(BaseModel):
+    moonshot_balance: float
+    voucher_balance: float = 0
+    cash_balance: float = 0
+
+
+class LLMCallIn(BaseModel):
+    model: str
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cost_usd: float = 0
+    session_id: Optional[str] = None
+    source: str = "openclaw"
+    timestamp: Optional[str] = None
+
+
+class CostBatchIn(BaseModel):
+    snapshot: Optional[CostSnapshotIn] = None
+    calls: List[LLMCallIn] = []
+
+
+@app.post("/api/metrics/costs")
+async def push_cost_data(data: CostBatchIn, request: Request):
+    """Receive cost data from the cost collector script. Requires Atlas key."""
+    verify_atlas_key(request)
+    conn = get_db()
+    cursor = conn.cursor()
+
+    if data.snapshot:
+        cursor.execute("""
+            INSERT INTO cost_snapshots (moonshot_balance, voucher_balance, cash_balance, timestamp)
+            VALUES (?, ?, ?, ?)
+        """, (data.snapshot.moonshot_balance, data.snapshot.voucher_balance,
+              data.snapshot.cash_balance, datetime.now().isoformat()))
+
+    for call in data.calls:
+        ts = call.timestamp or datetime.now().isoformat()
+        cursor.execute("""
+            INSERT INTO llm_calls (model, input_tokens, output_tokens, cost_usd, session_id, source, timestamp)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        """, (call.model, call.input_tokens, call.output_tokens,
+              call.cost_usd, call.session_id, call.source, ts))
+
+    conn.commit()
+    inserted_calls = len(data.calls)
+    inserted_snapshot = 1 if data.snapshot else 0
+    conn.close()
+    logger.info(f"Cost data pushed: {inserted_snapshot} snapshot, {inserted_calls} calls")
+    return {"status": "ok", "snapshot_inserted": inserted_snapshot, "calls_inserted": inserted_calls}
+
+
+@app.get("/api/metrics/costs")
+async def get_cost_metrics(days: int = Query(30, ge=1, le=365)):
+    """Cost snapshots and aggregated spend for last N days."""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Latest balance snapshot
+    cursor.execute("""
+        SELECT moonshot_balance, voucher_balance, cash_balance, timestamp
+        FROM cost_snapshots
+        ORDER BY timestamp DESC LIMIT 1
+    """)
+    row = cursor.fetchone()
+    latest_balance = dict(row) if row else None
+
+    # Balance history (for charting)
+    cursor.execute("""
+        SELECT moonshot_balance, voucher_balance, cash_balance, timestamp
+        FROM cost_snapshots
+        WHERE timestamp >= datetime('now', ? || ' days')
+        ORDER BY timestamp ASC
+    """, (f"-{days}",))
+    balance_history = [dict(r) for r in cursor.fetchall()]
+
+    # Calculate spend from balance deltas
+    spend_total = 0.0
+    if len(balance_history) >= 2:
+        spend_total = balance_history[0]["moonshot_balance"] - balance_history[-1]["moonshot_balance"]
+        if spend_total < 0:
+            spend_total = 0.0
+
+    # Aggregated LLM call stats
+    cursor.execute("""
+        SELECT
+            model,
+            COUNT(*) as call_count,
+            SUM(input_tokens) as total_input_tokens,
+            SUM(output_tokens) as total_output_tokens,
+            ROUND(SUM(cost_usd), 4) as total_cost_usd
+        FROM llm_calls
+        WHERE timestamp >= datetime('now', ? || ' days')
+        GROUP BY model
+        ORDER BY total_cost_usd DESC
+    """, (f"-{days}",))
+    by_model = [dict(r) for r in cursor.fetchall()]
+
+    # Daily breakdown
+    cursor.execute("""
+        SELECT
+            DATE(timestamp) as day,
+            COUNT(*) as call_count,
+            SUM(input_tokens) as input_tokens,
+            SUM(output_tokens) as output_tokens,
+            ROUND(SUM(cost_usd), 4) as cost_usd
+        FROM llm_calls
+        WHERE timestamp >= datetime('now', ? || ' days')
+        GROUP BY DATE(timestamp)
+        ORDER BY day ASC
+    """, (f"-{days}",))
+    daily = [dict(r) for r in cursor.fetchall()]
+
+    # Totals
+    cursor.execute("""
+        SELECT
+            COUNT(*) as total_calls,
+            SUM(input_tokens) as total_input_tokens,
+            SUM(output_tokens) as total_output_tokens,
+            ROUND(SUM(cost_usd), 4) as total_cost_usd
+        FROM llm_calls
+        WHERE timestamp >= datetime('now', ? || ' days')
+    """, (f"-{days}",))
+    totals = dict(cursor.fetchone())
+
+    conn.close()
+    return {
+        "latest_balance": latest_balance,
+        "balance_history": balance_history,
+        "spend_from_balance": round(spend_total, 4),
+        "by_model": by_model,
+        "daily": daily,
+        "totals": totals,
+        "days": days,
+    }
+
+
+@app.get("/api/metrics/costs/balance")
+async def get_cost_balance_live():
+    """Real-time balance from Moonshot API (proxied)."""
+    if not MOONSHOT_API_KEY:
+        raise HTTPException(503, "MOONSHOT_API_KEY not configured")
+    try:
+        import urllib.request
+        req = urllib.request.Request(
+            "https://api.moonshot.ai/v1/users/me/balance",
+            headers={"Authorization": f"Bearer {MOONSHOT_API_KEY}"}
+        )
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read())
+        balance_data = data.get("data", data)
+        return {
+            "available_balance": balance_data.get("available_balance"),
+            "voucher_balance": balance_data.get("voucher_balance"),
+            "cash_balance": balance_data.get("cash_balance"),
+            "timestamp": datetime.now().isoformat(),
+            "source": "moonshot_api_live",
+        }
+    except Exception as e:
+        logger.error(f"Failed to fetch Moonshot balance: {e}")
+        raise HTTPException(502, f"Failed to fetch Moonshot balance: {str(e)}")
+
+
+@app.get("/api/metrics/costs/timeseries")
+async def get_cost_timeseries(days: int = Query(30, ge=1, le=365)):
+    """Time-series cost data for Grafana panels."""
+    conn = get_db()
+    cursor = conn.cursor()
+
+    # Balance time series
+    cursor.execute("""
+        SELECT moonshot_balance, timestamp
+        FROM cost_snapshots
+        WHERE timestamp >= datetime('now', ? || ' days')
+        ORDER BY timestamp ASC
+    """, (f"-{days}",))
+    balance_ts = [{"value": r["moonshot_balance"], "timestamp": r["timestamp"]} for r in cursor.fetchall()]
+
+    # Daily cost time series
+    cursor.execute("""
+        SELECT
+            DATE(timestamp) as time,
+            SUM(input_tokens) as input_tokens,
+            SUM(output_tokens) as output_tokens,
+            ROUND(SUM(cost_usd), 4) as cost_usd,
+            COUNT(*) as calls
+        FROM llm_calls
+        WHERE timestamp >= datetime('now', ? || ' days')
+        GROUP BY DATE(timestamp)
+        ORDER BY time ASC
+    """, (f"-{days}",))
+    cost_ts = [dict(r) for r in cursor.fetchall()]
+
+    conn.close()
+    return {
+        "balance": balance_ts,
+        "daily_costs": cost_ts,
+        "days": days,
+    }
+
+
+# ============================================
+# LANGFUSE STATS PROXY
+# ============================================
+
+# In-memory cache for Langfuse stats (avoid hammering the API)
+_langfuse_cache = {"data": None, "expires": 0}
+
+LANGFUSE_HOST = "http://100.126.23.80:3100"
+LANGFUSE_PUBLIC_KEY = "pk-atlas-local-observability"
+LANGFUSE_SECRET_KEY = "sk-atlas-local-observability"
+
+
+@app.get("/api/metrics/langfuse-stats")
+async def get_langfuse_stats(days: int = Query(30, ge=1, le=365)):
+    """
+    Proxy endpoint that queries Langfuse for LLM usage stats.
+    Returns: total cost, calls, tokens, cached vs non-cached breakdown.
+    Results cached for 5 minutes.
+    """
+    import httpx
+    import time as _time
+
+    cache_ttl = 300  # 5 minutes
+    now = _time.time()
+
+    # Return cached data if fresh
+    if _langfuse_cache["data"] and _langfuse_cache["expires"] > now:
+        cached = _langfuse_cache["data"]
+        if cached.get("days") == days:
+            cached["from_cache"] = True
+            return cached
+
+    auth = (LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY)
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            # 1. Daily metrics (fast, pre-aggregated by Langfuse)
+            daily_resp = await client.get(
+                f"{LANGFUSE_HOST}/api/public/metrics/daily",
+                auth=auth,
+            )
+            daily_data = daily_resp.json() if daily_resp.status_code == 200 else {"data": []}
+
+            # Filter to requested day range
+            from datetime import datetime, timedelta
+            cutoff = (datetime.utcnow() - timedelta(days=days)).strftime("%Y-%m-%d")
+            daily_entries = [d for d in daily_data.get("data", []) if d["date"] >= cutoff]
+
+            total_cost = sum(d.get("totalCost", 0) for d in daily_entries)
+            total_traces = sum(d.get("countTraces", 0) for d in daily_entries)
+            total_observations = sum(d.get("countObservations", 0) for d in daily_entries)
+
+            # Per-model breakdown from daily metrics
+            model_stats = {}
+            for day in daily_entries:
+                for usage in day.get("usage", []):
+                    model = usage.get("model", "unknown")
+                    if model not in model_stats:
+                        model_stats[model] = {"input_tokens": 0, "output_tokens": 0, "total_cost": 0, "calls": 0}
+                    model_stats[model]["input_tokens"] += usage.get("inputUsage", 0)
+                    model_stats[model]["output_tokens"] += usage.get("outputUsage", 0)
+                    model_stats[model]["total_cost"] += usage.get("totalCost", 0)
+                    model_stats[model]["calls"] += usage.get("countObservations", 0)
+
+            # 2. Paginate observations for cached token stats (up to 500 most recent)
+            total_input = 0
+            total_output = 0
+            total_cached = 0
+            total_cache_creation = 0
+            sampled = 0
+            page = 1
+            max_pages = 20  # 500 observations max (25 per page * 20)
+
+            while page <= max_pages:
+                obs_resp = await client.get(
+                    f"{LANGFUSE_HOST}/api/public/observations",
+                    params={"type": "GENERATION", "limit": 100, "page": page},
+                    auth=auth,
+                )
+                if obs_resp.status_code != 200:
+                    break
+                obs_data = obs_resp.json()
+                observations = obs_data.get("data", [])
+                if not observations:
+                    break
+
+                for obs in observations:
+                    ud = obs.get("usageDetails") or {}
+                    total_input += ud.get("input", 0)
+                    total_output += ud.get("output", 0)
+                    total_cached += ud.get("cache_read_input_tokens", 0)
+                    total_cache_creation += ud.get("cache_creation_input_tokens", 0)
+                    sampled += 1
+
+                # Check if we've reached the end
+                meta = obs_data.get("meta", {})
+                total_items = meta.get("totalItems", 0)
+                if sampled >= total_items or len(observations) < 100:
+                    break
+                page += 1
+
+            # Calculate cache stats
+            non_cached_input = max(0, total_input - total_cached)
+            cache_hit_rate = (total_cached / total_input * 100) if total_input > 0 else 0
+
+            # Calculate cost savings from caching
+            # Without cache: all input at $0.60/1M
+            # With cache: non-cached at $0.60/1M + cached at $0.10/1M
+            cost_without_cache = total_input * 0.60 / 1_000_000 + total_output * 3.00 / 1_000_000
+            cost_with_cache = (
+                non_cached_input * 0.60 / 1_000_000
+                + total_cached * 0.10 / 1_000_000
+                + total_output * 3.00 / 1_000_000
+            )
+            cache_savings = max(0, cost_without_cache - cost_with_cache)
+
+            result = {
+                "total_cost": round(total_cost, 4),
+                "total_traces": total_traces,
+                "total_observations": total_observations,
+                "model_breakdown": model_stats,
+                "tokens": {
+                    "total_input": total_input,
+                    "total_output": total_output,
+                    "cached_input": total_cached,
+                    "non_cached_input": non_cached_input,
+                    "cache_creation_input": total_cache_creation,
+                    "cache_hit_rate_pct": round(cache_hit_rate, 1),
+                },
+                "cache_savings": {
+                    "cost_without_cache": round(cost_without_cache, 4),
+                    "cost_with_cache": round(cost_with_cache, 4),
+                    "savings_usd": round(cache_savings, 4),
+                    "savings_pct": round((cache_savings / cost_without_cache * 100) if cost_without_cache > 0 else 0, 1),
+                },
+                "daily": [
+                    {
+                        "date": d["date"],
+                        "cost": round(d.get("totalCost", 0), 4),
+                        "traces": d.get("countTraces", 0),
+                        "observations": d.get("countObservations", 0),
+                    }
+                    for d in sorted(daily_entries, key=lambda x: x["date"])
+                ],
+                "observations_sampled": sampled,
+                "days": days,
+                "from_cache": False,
+            }
+
+            # Cache it
+            _langfuse_cache["data"] = result
+            _langfuse_cache["expires"] = now + cache_ttl
+
+            return result
+
+    except httpx.ConnectError:
+        raise HTTPException(503, "Cannot reach Langfuse (is local PC online?)")
+    except Exception as e:
+        logger.error(f"Langfuse stats error: {e}")
+        raise HTTPException(502, f"Langfuse query failed: {str(e)}")
 
 
 # ============================================
