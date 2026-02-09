@@ -2873,6 +2873,11 @@ form {
    MOBILE OVERFLOW FIXES
    ============================================ */
 
+/* Prevent horizontal scroll on mobile */
+html, body {
+    overflow-x: hidden;
+}
+
 /* Ensure tables don't break layout on mobile */
 table {
     width: 100%;
@@ -2913,5 +2918,10 @@ table {
     pre, code {
         overflow-x: auto;
         word-break: break-word;
+    }
+
+    /* Bottom nav: constrain to viewport */
+    .bottom-nav {
+        max-width: calc(100vw - var(--spacing-lg) * 2);
     }
 }
