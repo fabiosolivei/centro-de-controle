@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0d1117">
     <title>Projeto - Centro de Controle</title>
-    <link rel="stylesheet" href="css/style.css?v=5">
+    <link rel="stylesheet" href="css/style.css?v=6">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -608,7 +608,49 @@
             background: var(--bg-card-hover);
         }
         
-        /* Responsive improvements for project page */
+        /* Mobile-first improvements for project page */
+        @media (max-width: 767px) {
+            .project-header {
+                gap: var(--spacing-md);
+            }
+            
+            .project-title-section h1 {
+                font-size: 1.25rem;
+            }
+            
+            .project-progress-large {
+                padding: var(--spacing-md);
+            }
+            
+            .project-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .project-sections {
+                gap: var(--spacing-md);
+            }
+            
+            .task-item-project {
+                flex-wrap: wrap;
+                gap: var(--spacing-sm);
+            }
+            
+            .task-item-project .task-info {
+                min-width: 0;
+                flex: 1;
+            }
+            
+            .doc-item, .note-item, .file-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .section-header h2 {
+                font-size: 1rem;
+            }
+        }
+        
+        /* Tablet+ improvements for project page */
         @media (min-width: 768px) {
             .project-sections {
                 grid-template-columns: repeat(2, 1fr);
@@ -1648,5 +1690,6 @@
         loadProjectWithWorkCheck();
         loadProjectFiles();
     </script>
+    <script src="js/mobile-nav.js?v=6"></script>
 </body>
 </html>

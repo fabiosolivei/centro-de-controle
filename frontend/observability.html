@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0d1117">
     <meta name="description" content="Centro de Controle - Observability">
     <title>Observability | Centro de Controle</title>
-    <link rel="stylesheet" href="css/style.css?v=5">
+    <link rel="stylesheet" href="css/style.css?v=6">
     <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -51,8 +51,8 @@
         }
 
         .stat-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: var(--radius-lg);
             padding: var(--spacing-lg);
             text-align: center;
@@ -101,7 +101,7 @@
             color: var(--text-primary);
             margin-bottom: var(--spacing-md);
             padding-bottom: var(--spacing-sm);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
         }
 
         .embed-grid {
@@ -115,8 +115,8 @@
         }
 
         .embed-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: var(--radius-lg);
             overflow: hidden;
         }
@@ -124,7 +124,7 @@
         .embed-card-header {
             padding: var(--spacing-md) var(--spacing-lg);
             background: rgba(255, 255, 255, 0.02);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -137,7 +137,7 @@
 
         .embed-card-header a {
             font-size: 0.75rem;
-            color: var(--accent-blue);
+            color: var(--accent-primary);
             text-decoration: none;
         }
 
@@ -161,7 +161,7 @@
         }
 
         .embed-placeholder .placeholder-icon { font-size: 3rem; opacity: 0.5; }
-        .embed-placeholder a { color: var(--accent-blue); text-decoration: none; }
+        .embed-placeholder a { color: var(--accent-primary); text-decoration: none; }
         .embed-placeholder a:hover { text-decoration: underline; }
 
         /* Reports Section */
@@ -170,8 +170,8 @@
         }
 
         .report-card {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: var(--radius-lg);
             padding: var(--spacing-lg);
             margin-bottom: var(--spacing-md);
@@ -277,20 +277,17 @@
         <!-- Embed Section: Langfuse + Grafana -->
         <div class="embed-section">
             <h2>Live Dashboards</h2>
-            <div class="embed-grid">
+            <div class="embed-grid" id="dashboards-grid">
                 <!-- Langfuse -->
                 <div class="embed-card">
                     <div class="embed-card-header">
                         <h3>Langfuse — Traces & Agent Graphs</h3>
-                        <a href="http://localhost:3100" target="_blank">Open Full UI</a>
+                        <a id="langfuse-link" href="http://localhost:3100" target="_blank">Open Full UI</a>
                     </div>
                     <div id="langfuse-embed">
-                        <div class="embed-placeholder">
+                        <div class="embed-placeholder" id="langfuse-placeholder">
                             <div class="placeholder-icon">🔍</div>
-                            <div>Langfuse v3 running at <strong>localhost:3100</strong></div>
-                            <div>
-                                <a href="http://localhost:3100" target="_blank">Open Langfuse Dashboard</a>
-                            </div>
+                            <div id="langfuse-status">Checking connection...</div>
                             <div style="font-size: 0.75rem; color: var(--text-muted);">
                                 Traces, spans, agent graphs, LLM-as-judge scores
                             </div>
@@ -302,14 +299,16 @@
                 <div class="embed-card">
                     <div class="embed-card-header">
                         <h3>Grafana — System Health & Analytics</h3>
-                        <a href="http://localhost:3001" target="_blank">Open Full UI</a>
+                        <a id="grafana-link" href="http://localhost:3001" target="_blank">Open Full UI</a>
                     </div>
                     <div id="grafana-embed">
-                        <iframe 
-                            src="http://localhost:3001/d/atlas-system-health/atlas-system-health?orgId=1&kiosk"
-                            loading="lazy"
-                            title="Grafana System Health Dashboard">
-                        </iframe>
+                        <div class="embed-placeholder" id="grafana-placeholder">
+                            <div class="placeholder-icon">📈</div>
+                            <div id="grafana-status">Checking connection...</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">
+                                System health, routing analytics, weekly quality trends
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -330,7 +329,7 @@
         Atlas Observability Layer — Langfuse v3 + Grafana + Centro de Controle
     </footer>
 
-    <script src="js/api.js?v=5"></script>
+    <script src="js/api.js?v=6"></script>
     <script>
         // ============================================
         // OBSERVABILITY PAGE LOGIC
@@ -459,11 +458,66 @@
             ]);
         }
 
+        // ============================================
+        // SMART EMBED DETECTION
+        // Langfuse + Grafana run on localhost only
+        // ============================================
+        const isLocal = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+
+        async function checkLocalService(url, name) {
+            if (!isLocal) return false;
+            try {
+                const r = await fetch(url, { mode: 'no-cors', signal: AbortSignal.timeout(3000) });
+                return true; // no-cors always resolves if server is up
+            } catch {
+                return false;
+            }
+        }
+
+        async function setupEmbeds() {
+            const langfuseUrl = 'http://localhost:3100';
+            const grafanaUrl = 'http://localhost:3001';
+
+            if (!isLocal) {
+                document.getElementById('langfuse-status').innerHTML = 
+                    `<strong>Local access only</strong><br><span style="font-size:0.8rem">Langfuse runs on localhost:3100 — open from your PC</span>`;
+                document.getElementById('grafana-status').innerHTML = 
+                    `<strong>Local access only</strong><br><span style="font-size:0.8rem">Grafana runs on localhost:3001 — open from your PC</span>`;
+                return;
+            }
+
+            // Check Langfuse
+            const lfUp = await checkLocalService(langfuseUrl + '/api/public/health', 'Langfuse');
+            if (lfUp) {
+                document.getElementById('langfuse-status').innerHTML = 
+                    `Langfuse v3 <strong style="color: #10b981;">online</strong><br>
+                     <a href="${langfuseUrl}" target="_blank">Open Langfuse Dashboard</a>`;
+            } else {
+                document.getElementById('langfuse-status').innerHTML = 
+                    `<span style="color: #ef4444;">Langfuse offline</span><br>
+                     <span style="font-size:0.8rem">Start with: cd ~/Documents/langfuse-server && docker compose up -d</span>`;
+            }
+
+            // Check Grafana
+            const gfUp = await checkLocalService(grafanaUrl + '/api/health', 'Grafana');
+            if (gfUp) {
+                document.getElementById('grafana-embed').innerHTML = 
+                    `<iframe src="${grafanaUrl}/d/atlas-system-health/atlas-system-health?orgId=1&kiosk" 
+                             loading="lazy" title="Grafana System Health Dashboard"></iframe>`;
+            } else {
+                document.getElementById('grafana-status').innerHTML = 
+                    `<span style="color: #ef4444;">Grafana offline</span><br>
+                     <span style="font-size:0.8rem">Start with: cd ~/Documents/langfuse-server && docker compose up -d</span>`;
+            }
+        }
+
         // Initial load
         loadAllData();
+        setupEmbeds();
 
         // Auto-refresh every 60 seconds
         setInterval(loadAllData, 60000);
     </script>
+    <script src="js/mobile-nav.js?v=6"></script>
 </body>
 </html>
