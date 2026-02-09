@@ -204,16 +204,11 @@
                     showError();
                 }
             } catch (e) {
-                // Fallback: client-side validation if API unreachable
-                const encoder = new TextEncoder();
-                const hashBuffer = await crypto.subtle.digest('SHA-256', encoder.encode(password));
-                const hash = Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-                if (hash === 'f379eaffb6d3420d190c693e60b4e0c50f018cca3ec9c9bea2ca3ee069ae1f4d') {
-                    sessionStorage.setItem('auth_token', hash);
-                    window.location.href = 'index.html';
-                } else {
-                    showError();
-                }
+                // API unreachable - show connection error
+                const errorMsg = document.getElementById('error-msg');
+                errorMsg.textContent = 'Servidor indisponível. Tente novamente em instantes.';
+                errorMsg.classList.add('show');
+                setTimeout(() => errorMsg.classList.remove('show'), 4000);
             }
 
             btn.textContent = 'Entrar';
