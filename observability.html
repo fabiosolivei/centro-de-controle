@@ -232,6 +232,7 @@
     </style>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Pular para o conteudo</a>
     <!-- HEADER -->
     <header class="header">
         <div class="header-content">
@@ -253,7 +254,7 @@
     </header>
 
     <!-- MAIN CONTENT -->
-    <main class="main-content" style="max-width: 1200px; display: block;">
+    <main class="main-content" id="main-content" style="max-width: 1200px; display: block;">
 
         <!-- Header -->
         <div class="obs-header">
@@ -274,19 +275,19 @@
                 <div class="stat-card">
                     <div class="stat-icon">💰</div>
                     <div class="stat-value" id="stat-balance">--</div>
-                    <div class="stat-label">Moonshot Balance</div>
+                    <div class="stat-label" title="Saldo atual da conta Moonshot AI">Moonshot Balance</div>
                     <div class="stat-trend neutral" id="stat-balance-trend">loading...</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">💸</div>
                     <div class="stat-value" id="stat-spend">--</div>
-                    <div class="stat-label">Nova Spend (30d)</div>
+                    <div class="stat-label" title="Custo total da Nova nos ultimos 30 dias via Langfuse">Nova Spend (30d)</div>
                     <div class="stat-trend neutral" id="stat-spend-trend">loading...</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">🤖</div>
                     <div class="stat-value" id="stat-llm-calls">--</div>
-                    <div class="stat-label">LLM Calls (30d)</div>
+                    <div class="stat-label" title="Total de chamadas LLM (traces) nos ultimos 30 dias">LLM Calls (30d)</div>
                     <div class="stat-trend neutral" id="stat-llm-trend">loading...</div>
                 </div>
             </div>
@@ -299,19 +300,19 @@
                 <div class="stat-card">
                     <div class="stat-icon" style="font-size:1.3rem;">⚡</div>
                     <div class="stat-value" id="stat-cache-rate">--</div>
-                    <div class="stat-label">Cache Hit Rate</div>
+                    <div class="stat-label" title="Porcentagem dos tokens de input servidos pelo cache de contexto do Moonshot">Cache Hit Rate</div>
                     <div class="stat-trend neutral" id="stat-cache-rate-trend">loading...</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon" style="font-size:1.3rem;">📦</div>
                     <div class="stat-value" id="stat-cached-tokens">--</div>
-                    <div class="stat-label">Cached vs Total Input</div>
+                    <div class="stat-label" title="Tokens de input cacheados vs total de tokens de input consumidos">Cached vs Total Input</div>
                     <div class="stat-trend neutral" id="stat-cached-tokens-trend">loading...</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon" style="font-size:1.3rem;">💎</div>
                     <div class="stat-value" id="stat-cache-savings">--</div>
-                    <div class="stat-label">Cache Savings</div>
+                    <div class="stat-label" title="Economia estimada usando tokens cacheados ($0.10/1M) vs preco cheio ($0.60/1M)">Cache Savings</div>
                     <div class="stat-trend neutral" id="stat-cache-savings-trend">loading...</div>
                 </div>
             </div>
@@ -337,19 +338,19 @@
                 <div class="stat-card">
                     <div class="stat-icon">⭐</div>
                     <div class="stat-value" id="stat-quality">--</div>
-                    <div class="stat-label">Quality Score (30d)</div>
+                    <div class="stat-label" title="Nota media de qualidade das respostas da Nova nos ultimos 30 dias (escala 1-5)">Quality Score (30d)</div>
                     <div class="stat-trend neutral" id="stat-quality-trend">loading...</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">🔧</div>
                     <div class="stat-value" id="stat-tool-health">--</div>
-                    <div class="stat-label">Tool Health (24h)</div>
+                    <div class="stat-label" title="Porcentagem de chamadas MCP que funcionaram nas ultimas 24 horas">Tool Health (24h)</div>
                     <div class="stat-trend neutral" id="stat-tool-trend">loading...</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon">🧭</div>
                     <div class="stat-value" id="stat-routing">--</div>
-                    <div class="stat-label">Routing Accuracy (7d)</div>
+                    <div class="stat-label" title="Frequencia com que o router de contexto selecionou as ferramentas corretas nos ultimos 7 dias">Routing Accuracy (7d)</div>
                     <div class="stat-trend neutral" id="stat-routing-trend">loading...</div>
                 </div>
             </div>

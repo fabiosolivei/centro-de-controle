@@ -362,6 +362,7 @@
     </style>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Pular para o conteudo</a>
     <header class="header">
         <div class="header-content">
             <h1 class="logo">Centro de Controle</h1>
@@ -377,7 +378,7 @@
         </div>
     </header>
 
-    <main class="files-page">
+    <main class="files-page" id="main-content">
         <div class="files-header">
             <div class="files-title">
                 <h1>📁 Arquivos Compartilhados</h1>
@@ -385,8 +386,8 @@
             </div>
             <div class="files-actions">
                 <div class="view-toggle">
-                    <button id="btn-grid" class="active" onclick="setView('grid')">⊞</button>
-                    <button id="btn-list" onclick="setView('list')">☰</button>
+                    <button id="btn-grid" class="active" onclick="setView('grid')" aria-label="Visualizacao em grade">⊞</button>
+                    <button id="btn-list" onclick="setView('list')" aria-label="Visualizacao em lista">☰</button>
                 </div>
                 <button class="btn-primary" onclick="document.getElementById('file-input').click()">
                     📤 Upload
@@ -486,7 +487,7 @@
                 return `
                     <div class="file-card" onclick="handleFileClick('${file.name}', '${file.type}')">
                         <div class="file-menu">
-                            <button onclick="event.stopPropagation(); deleteFile('${encodeURIComponent(file.name)}')">🗑️</button>
+                            <button onclick="event.stopPropagation(); deleteFile('${encodeURIComponent(file.name)}')" aria-label="Excluir arquivo">🗑️</button>
                         </div>
                         <span class="file-icon">${icon}</span>
                         <div class="file-name">${escapeHtml(file.name)}</div>
@@ -691,6 +692,7 @@
         // Load on start
         loadFiles();
     </script>
+    <footer class="site-footer">Centro de Controle &mdash; Nova &amp; Atlas</footer>
     <script src="js/mobile-nav.js?v=6"></script>
 </body>
 </html>

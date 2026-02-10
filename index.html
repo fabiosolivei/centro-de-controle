@@ -22,6 +22,7 @@
     <!-- GPM Dashboard Styles moved to style.css -->
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Pular para o conteudo</a>
     <!-- HEADER -->
     <header class="header">
         <div class="header-content">
@@ -93,12 +94,12 @@
     </header>
 
     <!-- MAIN CONTENT -->
-    <main class="main-content dashboard-page">
+    <main class="main-content dashboard-page" id="main-content">
         <!-- HERO BAR (compact) -->
         <div class="hero-bar">
             <div class="hero-bar-left">
-                <h1 id="greeting-message" class="hero-title">Bom dia, Fabio</h1>
-                <p id="greeting-summary" class="hero-summary">Carregando seu resumo...</p>
+                <h2 id="greeting-message" class="hero-title">Bom dia, Fabio</h2>
+                <p id="greeting-summary" class="hero-summary"><span class="skeleton skeleton-text" style="height:14px;width:50%;display:inline-block;"></span></p>
             </div>
             <div class="hero-bar-right">
                 <div class="summary-chips" id="summary-chips">
@@ -154,7 +155,7 @@
                 <section class="card">
                     <div class="section-header-row">
                         <h2 class="section-title">📋 Tarefas</h2>
-                        <a class="section-action" href="#" onclick="showKanban()">Ver Kanban</a>
+                        <button class="section-action" onclick="showKanban()" type="button">Ver Kanban</button>
                     </div>
                     <div class="kanban-mini">
                         <div class="kanban-mini-col todo">
@@ -240,42 +241,48 @@
                 </section>
                 
                 <!-- Weekly Brief -->
-                <section class="card">
-                    <div class="section-header-row">
+                <section class="card" data-collapsible="weekly-brief">
+                    <div class="section-header-row" onclick="toggleCardCollapse(this.parentElement)">
                         <h2 class="section-title">📋 Weekly Brief</h2>
-                        <span class="section-action" onclick="toggleBriefExpand()" id="brief-toggle">Ver mais</span>
+                        <span class="section-action" onclick="event.stopPropagation();toggleBriefExpand()" id="brief-toggle">Ver mais</span>
                     </div>
-                    <div id="brief-summary" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">
-                        <div class="skeleton skeleton-text" style="height:14px;width:70%;"></div>
+                    <div class="card-body">
+                        <div id="brief-summary" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">
+                            <div class="skeleton skeleton-text" style="height:14px;width:70%;"></div>
+                        </div>
+                        <div id="brief-glance" style="font-size:0.82rem;line-height:1.6;"></div>
+                        <div id="brief-detail" style="display:none;margin-top:0.5rem;"></div>
                     </div>
-                    <div id="brief-glance" style="font-size:0.82rem;line-height:1.6;"></div>
-                    <div id="brief-detail" style="display:none;margin-top:0.5rem;"></div>
                 </section>
                 
                 <!-- Reminders -->
-                <section class="card">
-                    <div class="section-header-row">
+                <section class="card" data-collapsible="reminders">
+                    <div class="section-header-row" onclick="toggleCardCollapse(this.parentElement)">
                         <h2 class="section-title">⏰ Lembretes</h2>
-                        <span class="section-action" onclick="openReminderModal()">+ Novo</span>
+                        <span class="section-action" onclick="event.stopPropagation();openReminderModal()">+ Novo</span>
                     </div>
-                    <div id="reminders-list">
-                        <div class="empty-state-styled">
-                            <span class="empty-icon">✅</span>
-                            <span>Nenhum lembrete ativo</span>
+                    <div class="card-body">
+                        <div id="reminders-list">
+                            <div class="empty-state-styled">
+                                <span class="empty-icon">✅</span>
+                                <span>Nenhum lembrete ativo</span>
+                            </div>
                         </div>
                     </div>
                 </section>
                 
                 <!-- Life Operating System -->
-                <section class="card">
-                    <div class="section-header-row">
+                <section class="card" data-collapsible="life-os">
+                    <div class="section-header-row" onclick="toggleCardCollapse(this.parentElement)">
                         <h2 class="section-title">🧠 Life OS</h2>
-                        <span class="section-action" onclick="toggleLifeOsExpand()" id="life-os-toggle">Ver mais</span>
+                        <span class="section-action" onclick="event.stopPropagation();toggleLifeOsExpand()" id="life-os-toggle">Ver mais</span>
                     </div>
-                    <div id="life-os-summary" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">
-                        <div class="skeleton skeleton-text" style="height:14px;width:60%;"></div>
-                    </div>
-                    <div id="life-os-messages" style="display:none;">
+                    <div class="card-body">
+                        <div id="life-os-summary" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">
+                            <div class="skeleton skeleton-text" style="height:14px;width:60%;"></div>
+                        </div>
+                        <div id="life-os-messages" style="display:none;">
+                        </div>
                     </div>
                 </section>
 
@@ -288,11 +295,11 @@
                     <div id="obs-summary" style="font-size:0.85rem;color:var(--text-secondary);">
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
                             <div style="background:var(--bg-card);padding:8px 12px;border-radius:8px;">
-                                <div style="font-size:0.7rem;color:var(--text-muted);">Tool Health</div>
+                                <div style="font-size:0.7rem;color:var(--text-muted);" title="Porcentagem de chamadas MCP que funcionaram nas ultimas 24h">Tool Health</div>
                                 <div style="font-size:1.2rem;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;" id="obs-tool-health">--</div>
                             </div>
                             <div style="background:var(--bg-card);padding:8px 12px;border-radius:8px;">
-                                <div style="font-size:0.7rem;color:var(--text-muted);">Last Eval</div>
+                                <div style="font-size:0.7rem;color:var(--text-muted);" title="Ultima avaliacao de qualidade do routing da Nova">Last Eval</div>
                                 <div style="font-size:1.2rem;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;" id="obs-last-eval">--</div>
                             </div>
                         </div>
@@ -308,13 +315,19 @@
         <div class="command-input-wrapper">
             <input type="text" class="command-input" id="command-input" 
                    placeholder="Buscar projetos, tarefas, notas... (Esc para fechar)"
+                   aria-label="Buscar projetos, tarefas, notas"
                    oninput="handleCommandInput(this.value)">
             <div class="command-results" id="command-results"></div>
         </div>
     </div>
 
     <!-- KEYBOARD HINT -->
-    <!-- Keyboard hints removed - discoverable via Ctrl+K -->
+    <div class="keyboard-hint-float" onclick="document.dispatchEvent(new KeyboardEvent('keydown',{key:'?'}))">
+        Pressione <kbd>?</kbd> para atalhos
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">Centro de Controle &mdash; Nova &amp; Atlas</footer>
 
     <!-- TASK MODAL -->
     <div class="modal" id="task-modal">
@@ -467,6 +480,7 @@
             updateGreeting();
             loadAllData();
             setupKeyboardShortcuts();
+            initCollapsibleCards();
         });
         
         function updateGreeting() {
@@ -634,7 +648,7 @@
                 console.error('Error loading calendar:', error);
                 _calendarEvents = [];
                 document.getElementById('agenda-list').innerHTML = 
-                    '<div class="empty-state-styled error"><span class="empty-icon">⚠️</span><span>Nao foi possivel carregar a agenda</span></div>';
+                    '<div class="empty-state-styled error"><span class="empty-icon">⚠️</span><span>Nao foi possivel carregar a agenda</span><span class="section-action" onclick="loadCalendarEvents()" style="margin-left:8px;cursor:pointer;">Tentar novamente</span></div>';
             }
         }
         
@@ -856,7 +870,7 @@
                 document.getElementById('work-epics').textContent = '-';
                 document.getElementById('work-sprints').textContent = '-';
                 document.getElementById('work-alerts').innerHTML = 
-                    '<div class="sync-badge not-synced"><span>🔗</span> Nao sincronizado</div>';
+                    '<div class="sync-badge not-synced"><span>🔗</span> Nao sincronizado <span class="section-action" onclick="loadWorkStatus()" style="margin-left:8px;cursor:pointer;">Tentar novamente</span></div>';
             }
         }
         
@@ -1225,8 +1239,9 @@
                     type: 'meeting',
                     icon: '📅',
                     label: `Proxima reuniao: ${eventTime} ${nextEvent.summary || nextEvent.title}`,
-                    link: '#',
+                    link: null,
                     linkText: timeLabel,
+                    isInfo: true,
                     priority: 3
                 });
             }
@@ -1270,17 +1285,44 @@
             pulseEl.classList.remove('all-clear');
             countEl.textContent = `${display.length} item${display.length > 1 ? 's' : ''}`;
             
-            itemsEl.innerHTML = display.map(item => `
-                <div class="pulse-item pulse-${item.type}">
+            itemsEl.innerHTML = display.map(item => {
+                let actionHtml;
+                if (item.onclick) {
+                    actionHtml = `<button class="pulse-item-action" type="button" onclick="${item.onclick}">${item.linkText}</button>`;
+                } else if (item.isInfo || !item.link) {
+                    actionHtml = `<span class="pulse-item-action">${item.linkText}</span>`;
+                } else {
+                    actionHtml = `<a class="pulse-item-action" href="${item.link}">${item.linkText}</a>`;
+                }
+                return `<div class="pulse-item pulse-${item.type}">
                     <span class="pulse-item-icon">${item.icon}</span>
                     <span class="pulse-item-label">${escapeHtml(item.label)}</span>
-                    <a class="pulse-item-action" href="${item.link}" ${item.onclick ? `onclick="${item.onclick};return false;"` : ''}>
-                        ${item.linkText}
-                    </a>
-                </div>
-            `).join('');
+                    ${actionHtml}
+                </div>`;
+            }).join('');
         }
         
+        // ===========================================
+        // COLLAPSIBLE CARDS
+        // ===========================================
+        
+        function initCollapsibleCards() {
+            document.querySelectorAll('[data-collapsible]').forEach(card => {
+                const key = card.getAttribute('data-collapsible');
+                const saved = localStorage.getItem(`card-collapsed-${key}`);
+                if (saved === 'true') {
+                    card.classList.add('collapsed');
+                }
+            });
+        }
+        
+        function toggleCardCollapse(card) {
+            if (!card || !card.hasAttribute('data-collapsible')) return;
+            card.classList.toggle('collapsed');
+            const key = card.getAttribute('data-collapsible');
+            localStorage.setItem(`card-collapsed-${key}`, card.classList.contains('collapsed'));
+        }
+
         // ===========================================
         // MODALS
         // ===========================================
@@ -1936,6 +1978,9 @@
         }
         
         async function syncSource(source) {
+            // Confirm heavy operations
+            if (source === 'mba' && !confirm('Sincronizar MBA pode levar 1-2 minutos. Continuar?')) return;
+            
             document.getElementById('sync-dropdown')?.classList.remove('open');
             const syncBtn = document.getElementById('sync-btn');
             syncBtn?.classList.add('syncing');
