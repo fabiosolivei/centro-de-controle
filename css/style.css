@@ -545,6 +545,8 @@ body {
 
 /* Dashboard page: hero, quick-actions, and dashboard-grid must span all columns */
 .dashboard-page .hero-bar,
+.dashboard-page .priority-pulse,
+.dashboard-page .offline-banner,
 .dashboard-page .dashboard-grid {
     grid-column: 1 / -1;
 }
@@ -2983,7 +2985,6 @@ table {
     border: 1px solid rgba(99, 102, 241, 0.2);
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
-    margin-bottom: var(--spacing-lg);
     animation: pulse-fade-in 0.4s ease-out;
 }
 
