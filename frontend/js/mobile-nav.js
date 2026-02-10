@@ -44,7 +44,7 @@
     </div>
 
     <nav class="bottom-nav" aria-label="Mobile navigation">
-        ${PAGES.slice(0, 5).map(p => 
+        ${PAGES.slice(0, 6).map(p => 
             `<a href="${p.href}" class="nav-item${p.key === currentKey ? ' active' : ''}" aria-label="${p.label}">
                 <span class="nav-icon">${p.icon}</span>
                 <span class="nav-label">${p.label}</span>

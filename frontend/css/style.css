@@ -2593,6 +2593,10 @@ form {
     color: var(--accent-primary);
     text-decoration: none;
     cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
 }
 
 .section-action:hover {
@@ -3075,6 +3079,9 @@ table {
     padding: 3px 10px;
     border-radius: var(--radius-sm);
     border: 1px solid rgba(99, 102, 241, 0.2);
+    background: none;
+    font-family: inherit;
+    cursor: pointer;
     transition: var(--transition-fast);
     white-space: nowrap;
 }
@@ -3117,5 +3124,175 @@ table {
     .pulse-item-action {
         font-size: 0.7rem;
         padding: 2px 8px;
+    }
+}
+
+/* ============================================
+   SKIP LINK (Accessibility)
+   ============================================ */
+
+.skip-link {
+    position: absolute;
+    top: -50px;
+    left: 0;
+    padding: 8px 16px;
+    background: var(--accent-primary);
+    color: white;
+    z-index: 10000;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 0 0 var(--radius-md) 0;
+    transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+    top: 0;
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+/* ============================================
+   KEYBOARD HINT (discoverable shortcuts)
+   ============================================ */
+
+.keyboard-hint-float {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(18, 18, 26, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-md);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    z-index: 50;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.keyboard-hint-float:hover {
+    color: var(--text-secondary);
+    border-color: rgba(99, 102, 241, 0.3);
+}
+
+.keyboard-hint-float kbd {
+    background: rgba(99, 102, 241, 0.2);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent-primary);
+}
+
+@media (min-width: 768px) {
+    .keyboard-hint-float {
+        display: flex;
+    }
+}
+
+/* ============================================
+   TOOLTIP (title-based, enhanced)
+   ============================================ */
+
+[data-tooltip] {
+    position: relative;
+    cursor: help;
+}
+
+[data-tooltip]::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 6px 10px;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    font-size: 0.7rem;
+    line-height: 1.4;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    white-space: normal;
+    max-width: 220px;
+    width: max-content;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s, visibility 0.15s;
+    z-index: 100;
+    pointer-events: none;
+}
+
+[data-tooltip]:hover::after,
+[data-tooltip]:focus::after {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ============================================
+   COLLAPSIBLE CARDS
+   ============================================ */
+
+.card[data-collapsible] .section-header-row {
+    cursor: pointer;
+    user-select: none;
+}
+
+.card[data-collapsible] .section-header-row::after {
+    content: '▾';
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    margin-left: auto;
+    padding-left: 8px;
+    transition: transform 0.2s ease;
+}
+
+.card[data-collapsible].collapsed .section-header-row::after {
+    transform: rotate(-90deg);
+}
+
+.card[data-collapsible] .card-body {
+    transition: max-height 0.25s ease, opacity 0.2s ease;
+    overflow: hidden;
+}
+
+.card[data-collapsible].collapsed .card-body {
+    max-height: 0 !important;
+    opacity: 0;
+    margin: 0;
+    padding: 0;
+}
+
+/* ============================================
+   GLOBAL FOOTER
+   ============================================ */
+
+.site-footer {
+    text-align: center;
+    padding: 20px;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+}
+
+.site-footer kbd {
+    background: rgba(255, 255, 255, 0.06);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+}
+
+/* Bottom nav on mobile -- support 6 items */
+@media (max-width: 767px) {
+    .bottom-nav .nav-item {
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+    
+    .nav-label {
+        font-size: 0.55rem;
     }
 }

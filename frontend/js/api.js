@@ -109,7 +109,13 @@ async function apiRequest(endpoint, options = {}) {
         
         return data;
     } catch (error) {
-        console.error(`API Error [${endpoint}]:`, error);
+        // Suppress expected 404s for endpoints with known fallbacks
+        const SILENT_404_ENDPOINTS = ['/mba/data', '/mba/stats', '/work-projects/'];
+        const isSilent = SILENT_404_ENDPOINTS.some(e => endpoint.startsWith(e)) 
+            && error.message && error.message.includes('404');
+        if (!isSilent) {
+            console.error(`API Error [${endpoint}]:`, error);
+        }
         throw error;
     }
 }
