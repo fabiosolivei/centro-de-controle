@@ -635,20 +635,26 @@
         }
         
         async function loadAdaloveData() {
+            let usingCache = false;
             try {
                 const response = await fetch(`${API_BASE}/mba/data`);
                 if (response.ok) {
                     adaloveData = await response.json();
                 } else {
-                    // Fallback: tentar carregar dados locais
                     console.log('API indisponivel, usando dados estaticos');
                     adaloveData = getStaticData();
+                    usingCache = true;
                 }
                 renderPage();
             } catch (error) {
                 console.error('Erro ao carregar dados:', error);
                 adaloveData = getStaticData();
+                usingCache = true;
                 renderPage();
+            }
+            if (usingCache) {
+                const syncEl = document.getElementById('last-sync');
+                if (syncEl) syncEl.innerHTML = '<span style="color:#eab308;">Dados em cache</span> — sincronize para atualizar';
             }
         }
         
@@ -714,16 +720,8 @@
                             }
                         ]
                     }
-                ],
-                resumo: {
-                    total_pendentes: 8,
-                    total_em_andamento: 1,
-                    total_concluidas: 5,
-                    proximos_prazos: [
-                        { atividade: "Material Encontro Orientacao 02/02", data: "02/02/2026 - 19:00h", turma: "MBA IA" },
-                        { atividade: "Gravacao Encontro Orientacao 02/02", data: "03/02/2026 - 19:00h", turma: "MBA IA" }
-                    ]
-                }
+                ]
+                // No hardcoded resumo — always derive from turmas via calculateResumo()
             };
         }
         

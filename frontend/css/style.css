@@ -2056,6 +2056,16 @@ form {
     border-color: var(--accent-primary);
 }
 
+.quick-action-icon {
+    padding: 8px 10px;
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+.quick-action-icon:hover {
+    opacity: 1;
+}
+
 /* Update "Ver mais" link */
 .update-more {
     text-align: center;

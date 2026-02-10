@@ -109,11 +109,11 @@
                     <button class="quick-action" onclick="openTaskModal()" aria-label="Nova Tarefa">
                         <span>➕</span> Tarefa
                     </button>
-                    <button class="quick-action" onclick="openNoteModal()" aria-label="Nova Nota">
-                        <span>📝</span> Nota
+                    <button class="quick-action quick-action-icon" onclick="openNoteModal()" aria-label="Nova Nota" title="Nova Nota">
+                        <span>📝</span>
                     </button>
-                    <button class="quick-action" onclick="openReminderModal()" aria-label="Novo Lembrete">
-                        <span>🔔</span> Lembrete
+                    <button class="quick-action quick-action-icon" onclick="openReminderModal()" aria-label="Novo Lembrete" title="Novo Lembrete">
+                        <span>🔔</span>
                     </button>
                 </div>
             </div>
@@ -184,15 +184,15 @@
                     </div>
                     <div class="kanban-mini">
                         <div class="kanban-mini-col todo">
-                            <div class="kanban-mini-count" id="mba-pendentes">-</div>
+                            <div class="kanban-mini-count" id="mba-pendentes"><span class="skeleton skeleton-text" style="height:20px;width:24px;display:inline-block;"></span></div>
                             <div class="kanban-mini-label">Pendentes</div>
                         </div>
                         <div class="kanban-mini-col doing">
-                            <div class="kanban-mini-count" id="mba-andamento">-</div>
+                            <div class="kanban-mini-count" id="mba-andamento"><span class="skeleton skeleton-text" style="height:20px;width:24px;display:inline-block;"></span></div>
                             <div class="kanban-mini-label">Em Andamento</div>
                         </div>
                         <div class="kanban-mini-col done">
-                            <div class="kanban-mini-count" id="mba-concluidas">-</div>
+                            <div class="kanban-mini-count" id="mba-concluidas"><span class="skeleton skeleton-text" style="height:20px;width:24px;display:inline-block;"></span></div>
                             <div class="kanban-mini-label">Concluídas</div>
                         </div>
                     </div>
@@ -287,23 +287,25 @@
                 </section>
 
                 <!-- Observability Summary -->
-                <section class="card">
-                    <div class="section-header-row">
+                <section class="card" data-collapsible="observability">
+                    <div class="section-header-row" onclick="toggleCardCollapse(this.parentElement)">
                         <h2 class="section-title">📡 Observability</h2>
-                        <a href="observability" class="section-action" style="text-decoration:none;color:var(--accent-blue);">Ver detalhes</a>
+                        <a href="observability" class="section-action" style="text-decoration:none;color:var(--accent-blue);" onclick="event.stopPropagation();">Ver detalhes</a>
                     </div>
-                    <div id="obs-summary" style="font-size:0.85rem;color:var(--text-secondary);">
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
-                            <div style="background:var(--bg-card);padding:8px 12px;border-radius:8px;">
-                                <div style="font-size:0.7rem;color:var(--text-muted);" title="Porcentagem de chamadas MCP que funcionaram nas ultimas 24h">Tool Health</div>
-                                <div style="font-size:1.2rem;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;" id="obs-tool-health">--</div>
+                    <div class="card-body">
+                        <div id="obs-summary" style="font-size:0.85rem;color:var(--text-secondary);">
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                                <div style="background:var(--bg-card);padding:8px 12px;border-radius:8px;">
+                                    <div style="font-size:0.7rem;color:var(--text-muted);" title="Porcentagem de chamadas MCP que funcionaram nas ultimas 24h">Tool Health</div>
+                                    <div style="font-size:1.2rem;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;" id="obs-tool-health">--</div>
+                                </div>
+                                <div style="background:var(--bg-card);padding:8px 12px;border-radius:8px;">
+                                    <div style="font-size:0.7rem;color:var(--text-muted);" title="Ultima avaliacao de qualidade do routing da Nova">Last Eval</div>
+                                    <div style="font-size:1.2rem;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;" id="obs-last-eval">--</div>
+                                </div>
                             </div>
-                            <div style="background:var(--bg-card);padding:8px 12px;border-radius:8px;">
-                                <div style="font-size:0.7rem;color:var(--text-muted);" title="Ultima avaliacao de qualidade do routing da Nova">Last Eval</div>
-                                <div style="font-size:1.2rem;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;" id="obs-last-eval">--</div>
-                            </div>
+                            <div style="font-size:0.75rem;color:var(--text-muted);" id="obs-report-summary"><div class="skeleton skeleton-text" style="height:12px;width:50%;"></div></div>
                         </div>
-                        <div style="font-size:0.75rem;color:var(--text-muted);" id="obs-report-summary"><div class="skeleton skeleton-text" style="height:12px;width:50%;"></div></div>
                     </div>
                 </section>
             </div>
@@ -687,9 +689,11 @@
                     mbaData = null;
                 }
                 
+                let _mbaUsingCache = false;
                 if (!mbaData || !mbaData.turmas) {
                     // Static fallback with known MBA data (same as mba.html getStaticData)
                     mbaData = getMBAStaticFallback();
+                    _mbaUsingCache = true;
                 }
                 
                 if (!mbaData || !mbaData.turmas) {
@@ -743,6 +747,18 @@
                     }).join('');
                     document.getElementById('mba-deadlines').innerHTML = deadlinesHtml;
                 }
+                
+                // Show cache badge if using fallback
+                if (_mbaUsingCache) {
+                    const headerRow = document.querySelector('.card:has(#mba-pendentes) .section-header-row');
+                    if (headerRow && !headerRow.querySelector('.cache-badge')) {
+                        const badge = document.createElement('span');
+                        badge.className = 'cache-badge';
+                        badge.textContent = 'Dados em cache';
+                        badge.style.cssText = 'font-size:0.65rem;background:rgba(234,179,8,0.15);color:#eab308;padding:2px 6px;border-radius:4px;margin-left:auto;';
+                        headerRow.insertBefore(badge, headerRow.querySelector('.section-action'));
+                    }
+                }
             } catch (error) {
                 console.error('Error loading MBA stats:', error);
             }
@@ -765,12 +781,17 @@
         }
         
         function getMBAStaticFallback() {
+            // MUST match mba.html getStaticData() turmas exactly
             return {
                 turmas: [
                     {
                         id: "2026-1A-T30-P",
                         nome: "MBA IA - TURMA 1 - 2026.1A",
                         tipo: "MBA",
+                        orientador: "Victor Machado da Silva",
+                        inicio: "2026-02-02",
+                        nota_acumulada: 0.0,
+                        grupo: "G08",
                         semanas: [{
                             numero: 1,
                             status: "em_andamento",
@@ -783,9 +804,9 @@
                                     { titulo: "Business Case - Modulo 1" }
                                 ],
                                 feito: [
-                                    { titulo: "Calendario Academico" },
-                                    { titulo: "Material Onboarding Alunos" },
-                                    { titulo: "Gravacao Aula Inaugural" }
+                                    { titulo: "Calendario Academico", data: "30/01/2026" },
+                                    { titulo: "Material Onboarding Alunos", data: "30/01/2026" },
+                                    { titulo: "Gravacao Aula Inaugural", data: "31/01/2026" }
                                 ]
                             }
                         }]
@@ -794,18 +815,19 @@
                         id: "2026-1A-T33-P",
                         nome: "Eletiva Data Engineering - 2026.1A",
                         tipo: "Eletiva",
+                        orientador: "Afonso Cesar Lelis Brandao",
+                        inicio: "2026-02-02",
                         semanas: [{
                             numero: 1,
+                            nome: "Data Engineering",
                             status: "em_andamento",
                             atividades: {
                                 a_fazer: [
-                                    { titulo: "Material Aula Inaugural", data: "06/02/2026 - 19:00h" },
-                                    { titulo: "Gravacao Aula Inaugural", data: "07/02/2026 - 19:00h" }
+                                    { titulo: "Videoaulas - Eletiva Data Engineering", data: "06/02/2026 - 19:00h" },
+                                    { titulo: "Material Professor - Eletiva Data Engineering", data: "07/02/2026 - 19:00h" }
                                 ],
                                 fazendo: [],
-                                feito: [
-                                    { titulo: "Calendario Academico" }
-                                ]
+                                feito: []
                             }
                         }]
                     }
@@ -1310,9 +1332,13 @@
             document.querySelectorAll('[data-collapsible]').forEach(card => {
                 const key = card.getAttribute('data-collapsible');
                 const saved = localStorage.getItem(`card-collapsed-${key}`);
-                if (saved === 'true') {
+                if (saved === null) {
+                    // First visit: default to collapsed for secondary cards
+                    card.classList.add('collapsed');
+                } else if (saved === 'true') {
                     card.classList.add('collapsed');
                 }
+                // saved === 'false' → user explicitly expanded, leave open
             });
         }
         

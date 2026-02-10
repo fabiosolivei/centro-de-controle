@@ -320,7 +320,18 @@
         </div>
         
         <div class="projects-grid" id="projects-grid">
-            <p class="empty-state">Carregando projetos...</p>
+            <div class="project-card" style="pointer-events:none;opacity:0.5;">
+                <div class="project-card-header"><div class="skeleton skeleton-text" style="height:20px;width:60%;"></div></div>
+                <div style="padding:16px;"><div class="skeleton skeleton-text" style="height:12px;width:80%;margin-bottom:8px;"></div><div class="skeleton skeleton-text" style="height:8px;width:40%;"></div></div>
+            </div>
+            <div class="project-card" style="pointer-events:none;opacity:0.5;">
+                <div class="project-card-header"><div class="skeleton skeleton-text" style="height:20px;width:50%;"></div></div>
+                <div style="padding:16px;"><div class="skeleton skeleton-text" style="height:12px;width:70%;margin-bottom:8px;"></div><div class="skeleton skeleton-text" style="height:8px;width:45%;"></div></div>
+            </div>
+            <div class="project-card" style="pointer-events:none;opacity:0.5;">
+                <div class="project-card-header"><div class="skeleton skeleton-text" style="height:20px;width:55%;"></div></div>
+                <div style="padding:16px;"><div class="skeleton skeleton-text" style="height:12px;width:75%;margin-bottom:8px;"></div><div class="skeleton skeleton-text" style="height:8px;width:35%;"></div></div>
+            </div>
         </div>
     </main>
 
@@ -333,6 +344,11 @@
         let allProjects = [];
         let workProjectsData = {};
         let currentFilter = 'all';
+        
+        // Only fetch enrichment for slugs that exist in the backend WORK_PROJECTS_MAP
+        const KNOWN_WORK_SLUGS = new Set([
+            '3tpm', 'catalog-admin', 'company-store', 'cms-dam', 'pocs-ia', 'autonomy'
+        ]);
         
         document.addEventListener('DOMContentLoaded', () => {
             loadPortfolio();
@@ -347,10 +363,11 @@
                 // Filter work projects
                 allProjects = projects.filter(p => p.category === 'trabalho');
                 
-                // Load work project details for each
+                // Load work project details only for known slugs (avoids 404s)
                 await Promise.all(allProjects.map(async (project) => {
                     try {
                         const slug = project.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+                        if (!KNOWN_WORK_SLUGS.has(slug)) return; // skip unknown slugs
                         const detailResponse = await fetch(`${API_BASE}/work-projects/${slug}`);
                         if (detailResponse.ok) {
                             workProjectsData[project.id] = await detailResponse.json();
