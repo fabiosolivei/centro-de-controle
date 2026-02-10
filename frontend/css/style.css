@@ -546,10 +546,15 @@ body {
 /* Dashboard page: hero, quick-actions, and dashboard-grid must span all columns */
 .dashboard-page .hero-bar,
 .dashboard-page .top-context-row,
-.dashboard-page .priority-pulse,
 .dashboard-page .offline-banner,
 .dashboard-page .dashboard-grid {
     grid-column: 1 / -1;
+}
+
+/* Inside top-context-row, Pulse and Brief each take one column (don't span) */
+.top-context-row > .priority-pulse,
+.top-context-row > .weekly-brief-panel {
+    grid-column: auto;
 }
 
 @media (min-width: 768px) {
