@@ -543,18 +543,12 @@ body {
     gap: var(--spacing-lg);
 }
 
-/* Dashboard page: hero, quick-actions, and dashboard-grid must span all columns */
+/* Dashboard page: hero, offline, sidebar-layout must span all columns of .main-content */
 .dashboard-page .hero-bar,
-.dashboard-page .top-context-row,
 .dashboard-page .offline-banner,
-.dashboard-page .dashboard-grid {
+.dashboard-page .dashboard-with-sidebar,
+.dashboard-page .life-os-mobile {
     grid-column: 1 / -1;
-}
-
-/* Inside top-context-row, Pulse and Brief each take one column (don't span) */
-.top-context-row > .priority-pulse,
-.top-context-row > .weekly-brief-panel {
-    grid-column: auto;
 }
 
 @media (min-width: 768px) {
@@ -2983,6 +2977,162 @@ table {
 }
 
 /* ============================================
+   DASHBOARD WITH SIDEBAR LAYOUT
+   ============================================ */
+
+.dashboard-with-sidebar {
+    display: flex;
+    gap: var(--spacing-lg);
+}
+
+.dashboard-main-area {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-lg);
+}
+
+/* ---- Life OS Sidebar (desktop only) ---- */
+.life-os-sidebar {
+    display: none; /* hidden on mobile, shown via media query */
+}
+
+@media (min-width: 1200px) {
+    .life-os-sidebar {
+        display: flex;
+        flex-direction: column;
+        width: 260px;
+        min-width: 260px;
+        background: var(--bg-card);
+        border: 1px solid rgba(139, 92, 246, 0.15);
+        border-radius: var(--radius-lg);
+        padding: var(--spacing-md);
+        align-self: flex-start;
+        position: sticky;
+        top: calc(var(--spacing-lg) + 64px); /* below header */
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+        transition: width var(--transition-base), min-width var(--transition-base), padding var(--transition-base), opacity var(--transition-base);
+        order: -1; /* ensure it's on the left */
+    }
+
+    .life-os-sidebar.collapsed {
+        width: 48px;
+        min-width: 48px;
+        padding: var(--spacing-sm);
+        overflow: hidden;
+    }
+
+    .life-os-sidebar.collapsed .sidebar-body {
+        opacity: 0;
+        visibility: hidden;
+        height: 0;
+        overflow: hidden;
+    }
+
+    .life-os-sidebar.collapsed .sidebar-title {
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        font-size: 0.7rem;
+        white-space: nowrap;
+    }
+
+    .life-os-sidebar.collapsed .sidebar-header {
+        flex-direction: column;
+        align-items: center;
+        gap: var(--spacing-sm);
+    }
+}
+
+/* Mobile: show the inline Life OS card */
+.life-os-mobile {
+    display: block;
+}
+
+@media (min-width: 1200px) {
+    .life-os-mobile {
+        display: none;
+    }
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    margin-bottom: var(--spacing-sm);
+    user-select: none;
+}
+
+.sidebar-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--accent-secondary);
+    letter-spacing: 0.5px;
+}
+
+.sidebar-toggle {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    transition: var(--transition-fast);
+}
+
+.sidebar-header:hover .sidebar-toggle {
+    color: var(--accent-primary);
+}
+
+.sidebar-body {
+    transition: opacity var(--transition-base);
+}
+
+/* ---- Life OS Message Items (sidebar & mobile) ---- */
+.life-os-msg-item {
+    display: flex;
+    gap: var(--spacing-sm);
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    align-items: flex-start;
+}
+
+.life-os-msg-item:last-child {
+    border-bottom: none;
+}
+
+.life-os-msg-item.sent {
+    opacity: 0.45;
+}
+
+.life-os-msg-time {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent-secondary);
+    min-width: 38px;
+    text-align: center;
+    padding-top: 1px;
+    font-family: var(--font-mono);
+}
+
+.life-os-msg-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.life-os-msg-text {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.life-os-msg-meta {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* ============================================
    TOP CONTEXT ROW (Priority Pulse + Weekly Brief)
    ============================================ */
 
@@ -2992,7 +3142,7 @@ table {
     gap: var(--spacing-lg);
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
     .top-context-row {
         grid-template-columns: 1fr 1fr;
     }
@@ -3078,7 +3228,7 @@ table {
     left: 0;
     right: 0;
     height: 30px;
-    background: linear-gradient(transparent, var(--bg-card));
+    background: linear-gradient(transparent, #1a1a25);
     pointer-events: none;
 }
 

@@ -125,37 +125,57 @@
             <button onclick="loadAllData()">Tentar novamente</button>
         </div>
 
-        <!-- TOP ROW: Priority Pulse + Weekly Brief side by side -->
-        <div class="top-context-row">
-            <!-- PRIORITY PULSE -->
-            <div class="priority-pulse" id="priority-pulse" style="display:none;">
-                <div class="pulse-header">
-                    <div class="pulse-title">PRIORITY PULSE</div>
-                    <div class="pulse-count" id="pulse-count">0 items</div>
-                </div>
-                <div class="pulse-items" id="pulse-items">
-                    <!-- Populated by JS -->
-                </div>
-            </div>
+        <!-- DASHBOARD WITH SIDEBAR LAYOUT -->
+        <div class="dashboard-with-sidebar">
 
-            <!-- WEEKLY BRIEF -->
-            <div class="weekly-brief-panel" id="weekly-brief-panel">
-                <div class="pulse-header">
-                    <div class="pulse-title">WEEKLY BRIEF</div>
-                    <span class="brief-expand-btn" onclick="toggleBriefExpand()" id="brief-toggle">Ver mais</span>
+            <!-- LIFE OS SIDEBAR (desktop only, collapsible) -->
+            <aside class="life-os-sidebar" id="life-os-sidebar">
+                <div class="sidebar-header" onclick="toggleLifeOsSidebar()">
+                    <span class="sidebar-title">🧠 Life OS</span>
+                    <span class="sidebar-toggle" id="sidebar-toggle-icon">◀</span>
                 </div>
-                <div id="brief-summary" class="brief-summary">
-                    <div class="skeleton skeleton-text" style="height:14px;width:70%;"></div>
+                <div class="sidebar-body" id="life-os-sidebar-body">
+                    <div id="life-os-summary" style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:0.75rem;">
+                        <div class="skeleton skeleton-text" style="height:14px;width:80%;"></div>
+                    </div>
+                    <div id="life-os-messages"></div>
                 </div>
-                <div id="brief-glance" class="brief-glance"></div>
-                <div id="brief-detail" class="brief-detail" style="display:none;"></div>
-            </div>
-        </div>
+            </aside>
 
-        <!-- MAIN DASHBOARD GRID -->
-        <div class="dashboard-grid">
-            <!-- LEFT COLUMN: Today + Tasks -->
-            <div class="today-column">
+            <!-- MAIN DASHBOARD AREA -->
+            <div class="dashboard-main-area">
+
+                <!-- CONTEXT ROW: Priority Pulse + Weekly Brief side by side -->
+                <div class="top-context-row">
+                    <!-- PRIORITY PULSE -->
+                    <div class="priority-pulse" id="priority-pulse" style="display:none;">
+                        <div class="pulse-header">
+                            <div class="pulse-title">PRIORITY PULSE</div>
+                            <div class="pulse-count" id="pulse-count">0 items</div>
+                        </div>
+                        <div class="pulse-items" id="pulse-items">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- WEEKLY BRIEF -->
+                    <div class="weekly-brief-panel" id="weekly-brief-panel">
+                        <div class="pulse-header">
+                            <div class="pulse-title">WEEKLY BRIEF</div>
+                            <span class="brief-expand-btn" onclick="toggleBriefExpand()" id="brief-toggle">Ver mais</span>
+                        </div>
+                        <div id="brief-summary" class="brief-summary">
+                            <div class="skeleton skeleton-text" style="height:14px;width:70%;"></div>
+                        </div>
+                        <div id="brief-glance" class="brief-glance"></div>
+                        <div id="brief-detail" class="brief-detail" style="display:none;"></div>
+                    </div>
+                </div>
+
+                <!-- MAIN DASHBOARD GRID -->
+                <div class="dashboard-grid">
+                    <!-- LEFT COLUMN: Today + Tasks -->
+                    <div class="today-column">
                 <!-- Agenda -->
                 <section class="card">
                     <div class="section-header-row">
@@ -274,21 +294,6 @@
                     </div>
                 </section>
                 
-                <!-- Life Operating System -->
-                <section class="card" data-collapsible="life-os">
-                    <div class="section-header-row" onclick="toggleCardCollapse(this.parentElement)">
-                        <h2 class="section-title">🧠 Life OS</h2>
-                        <span class="section-action" onclick="event.stopPropagation();toggleLifeOsExpand()" id="life-os-toggle">Ver mais</span>
-                    </div>
-                    <div class="card-body">
-                        <div id="life-os-summary" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">
-                            <div class="skeleton skeleton-text" style="height:14px;width:60%;"></div>
-                        </div>
-                        <div id="life-os-messages" style="display:none;">
-                        </div>
-                    </div>
-                </section>
-
                 <!-- Observability Summary -->
                 <section class="card" data-collapsible="observability">
                     <div class="section-header-row" onclick="toggleCardCollapse(this.parentElement)">
@@ -312,7 +317,27 @@
                     </div>
                 </section>
             </div>
+        </div><!-- end dashboard-grid -->
+
+            </div><!-- end dashboard-main-area -->
+        </div><!-- end dashboard-with-sidebar -->
+
+        <!-- LIFE OS INLINE (mobile only, hidden on desktop) -->
+        <div class="life-os-mobile" id="life-os-mobile">
+            <section class="card" data-collapsible="life-os">
+                <div class="section-header-row" onclick="toggleCardCollapse(this.parentElement)">
+                    <h2 class="section-title">🧠 Life OS</h2>
+                    <span class="section-action" onclick="event.stopPropagation();toggleLifeOsExpand()" id="life-os-toggle">Ver mais</span>
+                </div>
+                <div class="card-body">
+                    <div id="life-os-summary-mobile" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">
+                        <div class="skeleton skeleton-text" style="height:14px;width:60%;"></div>
+                    </div>
+                    <div id="life-os-messages-mobile" style="display:none;"></div>
+                </div>
+            </section>
         </div>
+
     </main>
 
     <!-- COMMAND PALETTE -->
@@ -1106,10 +1131,6 @@
         }
         
         function renderLifeOS() {
-            const summaryEl = document.getElementById('life-os-summary');
-            const messagesEl = document.getElementById('life-os-messages');
-            if (!summaryEl || !messagesEl) return;
-            
             const active = lifeOsMessages.filter(m => m.is_active);
             const today = new Date().getDay();
             const todayISO = today === 0 ? '7' : String(today);
@@ -1118,30 +1139,42 @@
             const now = new Date();
             const currentTime = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
             const nextMsg = todayMsgs.filter(m => m.time > currentTime).sort((a,b) => a.time.localeCompare(b.time))[0];
-            
-            summaryEl.innerHTML = `
+            const dayNames = {'1':'Seg','2':'Ter','3':'Qua','4':'Qui','5':'Sex','6':'Sab','7':'Dom'};
+
+            const summaryHTML = `
                 <span style="color:var(--text-primary);font-weight:500">${active.length} mensagens ativas</span> · 
                 ${todayMsgs.length} hoje · 
                 ${nextMsg ? 'Proxima: <strong>' + nextMsg.time + '</strong> (' + nextMsg.name.replace(/_/g, ' ') + ')' : 'Todas enviadas hoje'}
             `;
-            
-            if (lifeOsExpanded) {
-                const dayNames = {'1':'Seg','2':'Ter','3':'Qua','4':'Qui','5':'Sex','6':'Sab','7':'Dom'};
-                messagesEl.innerHTML = todayMsgs.sort((a,b) => a.time.localeCompare(b.time)).map(m => {
-                    const sent = m.last_sent_at && m.last_sent_at.startsWith(now.toISOString().slice(0,10));
-                    return `
-                        <div class="reminder-item" style="opacity:${sent ? '0.5' : '1'}" data-priority="${m.priority}">
-                            <div style="width:2rem;text-align:center;font-size:0.8rem;font-weight:600;color:var(--accent)">${m.time}</div>
-                            <div class="reminder-content">
-                                <div class="reminder-title">${escapeHtml(m.message).substring(0, 80)}${m.message.length > 80 ? '...' : ''}</div>
-                                <div class="reminder-time">${m.days.split(',').map(d => dayNames[d] || d).join(', ')} · ${m.name.replace(/_/g, ' ')}${sent ? ' · Enviada' : ''}</div>
-                            </div>
+
+            const messagesHTML = todayMsgs.sort((a,b) => a.time.localeCompare(b.time)).map(m => {
+                const sent = m.last_sent_at && m.last_sent_at.startsWith(now.toISOString().slice(0,10));
+                return `
+                    <div class="life-os-msg-item ${sent ? 'sent' : ''}">
+                        <div class="life-os-msg-time">${m.time}</div>
+                        <div class="life-os-msg-content">
+                            <div class="life-os-msg-text">${escapeHtml(m.message).substring(0, 80)}${m.message.length > 80 ? '...' : ''}</div>
+                            <div class="life-os-msg-meta">${m.days.split(',').map(d => dayNames[d] || d).join(', ')} · ${m.name.replace(/_/g, ' ')}${sent ? ' · ✓ Enviada' : ''}</div>
                         </div>
-                    `;
-                }).join('');
-                messagesEl.style.display = 'block';
-            } else {
-                messagesEl.style.display = 'none';
+                    </div>
+                `;
+            }).join('');
+
+            // SIDEBAR (desktop) — always show messages (sidebar is the expanded view)
+            const sidebarSummary = document.getElementById('life-os-summary');
+            const sidebarMessages = document.getElementById('life-os-messages');
+            if (sidebarSummary) sidebarSummary.innerHTML = summaryHTML;
+            if (sidebarMessages) sidebarMessages.innerHTML = messagesHTML;
+
+            // MOBILE — uses collapsible card with toggle
+            const mobileSummary = document.getElementById('life-os-summary-mobile');
+            const mobileMessages = document.getElementById('life-os-messages-mobile');
+            if (mobileSummary) mobileSummary.innerHTML = summaryHTML;
+            if (lifeOsExpanded && mobileMessages) {
+                mobileMessages.innerHTML = messagesHTML;
+                mobileMessages.style.display = 'block';
+            } else if (mobileMessages) {
+                mobileMessages.style.display = 'none';
             }
         }
         
@@ -1151,6 +1184,26 @@
             if (toggle) toggle.textContent = lifeOsExpanded ? 'Recolher' : 'Ver mais';
             renderLifeOS();
         }
+
+        function toggleLifeOsSidebar() {
+            const sidebar = document.getElementById('life-os-sidebar');
+            if (!sidebar) return;
+            sidebar.classList.toggle('collapsed');
+            const icon = document.getElementById('sidebar-toggle-icon');
+            if (icon) icon.textContent = sidebar.classList.contains('collapsed') ? '▶' : '◀';
+            localStorage.setItem('life-os-sidebar-collapsed', sidebar.classList.contains('collapsed'));
+        }
+
+        // Restore sidebar state from localStorage
+        (function initLifeOsSidebar() {
+            const collapsed = localStorage.getItem('life-os-sidebar-collapsed');
+            if (collapsed === 'true') {
+                const sidebar = document.getElementById('life-os-sidebar');
+                if (sidebar) sidebar.classList.add('collapsed');
+                const icon = document.getElementById('sidebar-toggle-icon');
+                if (icon) icon.textContent = '▶';
+            }
+        })();
         
         // ===========================================
         // SUMMARY
