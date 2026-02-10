@@ -125,14 +125,30 @@
             <button onclick="loadAllData()">Tentar novamente</button>
         </div>
 
-        <!-- PRIORITY PULSE -->
-        <div class="priority-pulse" id="priority-pulse" style="display:none;">
-            <div class="pulse-header">
-                <div class="pulse-title">PRIORITY PULSE</div>
-                <div class="pulse-count" id="pulse-count">0 items</div>
+        <!-- TOP ROW: Priority Pulse + Weekly Brief side by side -->
+        <div class="top-context-row">
+            <!-- PRIORITY PULSE -->
+            <div class="priority-pulse" id="priority-pulse" style="display:none;">
+                <div class="pulse-header">
+                    <div class="pulse-title">PRIORITY PULSE</div>
+                    <div class="pulse-count" id="pulse-count">0 items</div>
+                </div>
+                <div class="pulse-items" id="pulse-items">
+                    <!-- Populated by JS -->
+                </div>
             </div>
-            <div class="pulse-items" id="pulse-items">
-                <!-- Populated by JS -->
+
+            <!-- WEEKLY BRIEF -->
+            <div class="weekly-brief-panel" id="weekly-brief-panel">
+                <div class="pulse-header">
+                    <div class="pulse-title">WEEKLY BRIEF</div>
+                    <span class="brief-expand-btn" onclick="toggleBriefExpand()" id="brief-toggle">Ver mais</span>
+                </div>
+                <div id="brief-summary" class="brief-summary">
+                    <div class="skeleton skeleton-text" style="height:14px;width:70%;"></div>
+                </div>
+                <div id="brief-glance" class="brief-glance"></div>
+                <div id="brief-detail" class="brief-detail" style="display:none;"></div>
             </div>
         </div>
 
@@ -240,20 +256,7 @@
                     </div>
                 </section>
                 
-                <!-- Weekly Brief -->
-                <section class="card" data-collapsible="weekly-brief">
-                    <div class="section-header-row" onclick="toggleCardCollapse(this.parentElement)">
-                        <h2 class="section-title">📋 Weekly Brief</h2>
-                        <span class="section-action" onclick="event.stopPropagation();toggleBriefExpand()" id="brief-toggle">Ver mais</span>
-                    </div>
-                    <div class="card-body">
-                        <div id="brief-summary" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.5rem;">
-                            <div class="skeleton skeleton-text" style="height:14px;width:70%;"></div>
-                        </div>
-                        <div id="brief-glance" style="font-size:0.82rem;line-height:1.6;"></div>
-                        <div id="brief-detail" style="display:none;margin-top:0.5rem;"></div>
-                    </div>
-                </section>
+                <!-- Weekly Brief moved to top-context-row -->
                 
                 <!-- Reminders -->
                 <section class="card" data-collapsible="reminders">
@@ -965,19 +968,22 @@
             const importantCount = (b.action_items_important || []).length;
             const decisionCount = (b.decisions || []).length;
             
+            // Summary chips
             summaryEl.innerHTML = `
-                <span style="color:var(--text-primary);font-weight:500">${escapeHtml(b.title || 'Weekly Brief')}</span> · 
-                ${urgentCount} urgente${urgentCount !== 1 ? 's' : ''} · 
-                ${importantCount} importante${importantCount !== 1 ? 's' : ''} · 
-                ${decisionCount} decisao${decisionCount !== 1 ? 'es' : ''}
+                <div class="brief-chips">
+                    ${urgentCount > 0 ? `<span class="brief-chip chip-urgent">${urgentCount} urgente${urgentCount !== 1 ? 's' : ''}</span>` : ''}
+                    ${importantCount > 0 ? `<span class="brief-chip chip-important">${importantCount} importante${importantCount !== 1 ? 's' : ''}</span>` : ''}
+                    ${decisionCount > 0 ? `<span class="brief-chip chip-decision">${decisionCount} decisao${decisionCount !== 1 ? 'es' : ''}</span>` : ''}
+                    ${urgentCount === 0 && importantCount === 0 ? '<span class="brief-chip chip-clear">Semana tranquila</span>' : ''}
+                </div>
             `;
             
             // Week at a glance (always visible)
             if (b.week_glance) {
                 const lines = b.week_glance.split('\n').filter(l => l.trim());
                 glanceEl.innerHTML = lines.map(line => {
-                    const today = line.includes('Today') || line.includes('HOJE');
-                    return `<div style="padding:2px 0;${today ? 'color:var(--accent);font-weight:600;' : ''}">${escapeHtml(line)}</div>`;
+                    const isToday = line.includes('Today') || line.includes('HOJE');
+                    return `<div class="brief-day-row${isToday ? ' brief-today' : ''}">${escapeHtml(line)}</div>`;
                 }).join('');
             }
             
@@ -1048,6 +1054,8 @@
             briefExpanded = !briefExpanded;
             const toggle = document.getElementById('brief-toggle');
             if (toggle) toggle.textContent = briefExpanded ? 'Recolher' : 'Ver mais';
+            const panel = document.getElementById('weekly-brief-panel');
+            if (panel) panel.classList.toggle('expanded', briefExpanded);
             renderWeeklyBrief();
         }
         

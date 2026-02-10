@@ -545,6 +545,7 @@ body {
 
 /* Dashboard page: hero, quick-actions, and dashboard-grid must span all columns */
 .dashboard-page .hero-bar,
+.dashboard-page .top-context-row,
 .dashboard-page .priority-pulse,
 .dashboard-page .offline-banner,
 .dashboard-page .dashboard-grid {
@@ -2977,6 +2978,27 @@ table {
 }
 
 /* ============================================
+   TOP CONTEXT ROW (Priority Pulse + Weekly Brief)
+   ============================================ */
+
+.top-context-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+}
+
+@media (min-width: 1024px) {
+    .top-context-row {
+        grid-template-columns: 1fr 1fr;
+    }
+    /* When Priority Pulse is hidden, Weekly Brief spans full width */
+    .top-context-row > .priority-pulse[style*="display: none"] ~ .weekly-brief-panel,
+    .top-context-row > .priority-pulse[style*="display:none"] ~ .weekly-brief-panel {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ============================================
    PRIORITY PULSE
    ============================================ */
 
@@ -2986,6 +3008,151 @@ table {
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
     animation: pulse-fade-in 0.4s ease-out;
+}
+
+/* ============================================
+   WEEKLY BRIEF PANEL (stylized, matches Pulse)
+   ============================================ */
+
+.weekly-brief-panel {
+    background: var(--bg-card);
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    animation: pulse-fade-in 0.4s ease-out 0.1s both;
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.weekly-brief-panel .pulse-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.weekly-brief-panel .pulse-title {
+    color: #10b981;
+}
+
+.brief-expand-btn {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--accent-primary);
+    cursor: pointer;
+    padding: 3px 10px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    background: none;
+    transition: var(--transition-fast);
+}
+
+.brief-expand-btn:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+.brief-summary {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.brief-glance {
+    font-size: 0.8rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    max-height: 120px;
+    overflow: hidden;
+    position: relative;
+}
+
+.brief-glance::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 30px;
+    background: linear-gradient(transparent, var(--bg-card));
+    pointer-events: none;
+}
+
+.brief-detail {
+    margin-top: var(--spacing-sm);
+    font-size: 0.82rem;
+}
+
+/* When brief is expanded, remove the fade mask */
+.weekly-brief-panel.expanded .brief-glance {
+    max-height: none;
+    overflow: visible;
+}
+
+.weekly-brief-panel.expanded .brief-glance::after {
+    display: none;
+}
+
+/* Brief chips (urgentes, importantes, decisoes) */
+.brief-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.brief-chip {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+}
+
+.chip-urgent {
+    background: rgba(239, 68, 68, 0.12);
+    color: #ef4444;
+    border: 1px solid rgba(239, 68, 68, 0.25);
+}
+
+.chip-important {
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.chip-decision {
+    background: rgba(99, 102, 241, 0.12);
+    color: var(--accent-primary);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.chip-clear {
+    background: rgba(16, 185, 129, 0.12);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+/* Glance day rows */
+.brief-day-row {
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+}
+
+.brief-day-row:last-child {
+    border-bottom: none;
+}
+
+.brief-today {
+    color: var(--accent-primary);
+    font-weight: 600;
+    background: rgba(99, 102, 241, 0.06);
+    border-radius: var(--radius-sm);
+    padding: 3px 6px;
+    margin: 0 -6px;
 }
 
 .priority-pulse.all-clear {
