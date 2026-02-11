@@ -1519,20 +1519,46 @@
             }
         }
         
-        // Unified collapsible toggle
+        // Unified collapsible toggle with ARIA support
         function toggleCollapsible(toggleEl) {
             const section = toggleEl.closest('.collapsible-section');
             const body = section.querySelector('.collapsible-body');
             const indicator = section.querySelector('.collapse-indicator');
+            const isOpen = body.classList.contains('open');
             
-            if (body.classList.contains('open')) {
+            if (isOpen) {
                 body.classList.remove('open');
                 indicator.classList.remove('open');
+                toggleEl.setAttribute('aria-expanded', 'false');
             } else {
                 body.classList.add('open');
                 indicator.classList.add('open');
+                toggleEl.setAttribute('aria-expanded', 'true');
             }
         }
+        
+        // Initialize ARIA attributes and keyboard support for collapsibles
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.collapsible-toggle').forEach(toggle => {
+                const body = toggle.nextElementSibling;
+                const isOpen = body && body.classList.contains('open');
+                
+                toggle.setAttribute('role', 'button');
+                toggle.setAttribute('tabindex', '0');
+                toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                if (body && body.id) {
+                    toggle.setAttribute('aria-controls', body.id);
+                }
+                
+                // Keyboard support: Enter and Space
+                toggle.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleCollapsible(toggle);
+                    }
+                });
+            });
+        });
         
         async function loadReportCard(slug) {
             try {
