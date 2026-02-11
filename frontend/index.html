@@ -7,7 +7,7 @@
     <meta name="description" content="Centro de Controle - Dashboard do Fábio">
     <title>Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=8">
+    <link rel="stylesheet" href="css/style.css?v=10">
     <link rel="manifest" href="manifest.json">
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,7 +29,6 @@
             <h1 class="logo">Centro de Controle</h1>
             <nav class="header-nav">
                 <a href="./" class="nav-link active" aria-label="Dashboard">Dashboard</a>
-                <a href="portfolio" class="nav-link" aria-label="Portfolio">Portfolio</a>
                 <a href="mba" class="nav-link" aria-label="MBA">MBA</a>
                 <a href="work" class="nav-link" aria-label="Work Status">Work</a>
                 <a href="files" class="nav-link" aria-label="Arquivos">Arquivos</a>
@@ -244,7 +243,7 @@
                 <section class="card">
                     <div class="section-header-row">
                         <h2 class="section-title">💼 Projetos Trabalho</h2>
-                        <a class="section-action" href="portfolio">Ver detalhes</a>
+                        <span class="section-action" style="visibility:hidden;">Ver detalhes</span>
                     </div>
                     <div class="portfolio-grid" id="portfolio-grid">
                         <div class="skeleton skeleton-list" style="height:100px;"></div>
@@ -1822,12 +1821,7 @@
                     return;
                 }
                 
-                // P = Portfolio
-                if (e.key === 'p' || e.key === 'P') {
-                    e.preventDefault();
-                    window.location.href = 'portfolio.html';
-                    return;
-                }
+                // P = (Portfolio removed)
                 
                 // M = MBA
                 if (e.key === 'm' || e.key === 'M') {
@@ -1890,7 +1884,6 @@
                 { key: 'N', desc: 'Nova nota' },
                 { key: 'R', desc: 'Novo lembrete' },
                 { key: 'B', desc: 'Ver Kanban board' },
-                { key: 'P', desc: 'Portfolio' },
                 { key: 'M', desc: 'MBA' },
                 { key: 'S', desc: 'Sincronizar dados' },
                 { key: '1/2/3', desc: 'Filtrar tarefas (todo/doing/done)' },
@@ -2155,6 +2148,6 @@
             }
         }
     </script>
-    <script src="js/mobile-nav.js?v=6"></script>
+    <script src="js/mobile-nav.js?v=7"></script>
 </body>
 </html>

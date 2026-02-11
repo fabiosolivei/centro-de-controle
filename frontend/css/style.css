@@ -2943,6 +2943,73 @@ table {
 }
 
 /* ============================================
+   MOBILE TOUCH TARGETS — WCAG 2.5.5 (min 44x44px)
+   ============================================ */
+
+@media (max-width: 767px) {
+    /* Quick action buttons in hero bar */
+    .quick-action {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .quick-action-icon {
+        min-width: 44px;
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Priority Pulse action links (Ver MBA, Abrir) */
+    .pulse-item-action {
+        min-height: 44px;
+        min-width: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
+    /* Section action links (Ver detalhes, Atualizar, Ver Kanban, + Novo) */
+    .section-action {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+
+    /* Weekly brief expand button */
+    .brief-expand-btn {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 14px;
+    }
+
+    /* Hamburger menu button */
+    .hamburger-btn {
+        min-width: 44px;
+        min-height: 44px;
+    }
+
+    /* Back button on project page */
+    .project-header .back-btn {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    /* Main content padding to avoid bottom nav overlap */
+    .main-content {
+        padding-bottom: 100px !important;
+    }
+}
+
+/* ============================================
    OFFLINE BANNER
    ============================================ */
 
@@ -3727,9 +3794,20 @@ table {
     letter-spacing: 0.02em;
 }
 
-/* Report Card section styling */
+/* Report Card section styling — primary visual emphasis */
 .report-card-section {
     border-left: 3px solid var(--accent-primary);
+    background: linear-gradient(135deg, rgba(99, 102, 241, 0.04), rgba(139, 92, 246, 0.02));
+}
+
+/* Intelligence section — secondary emphasis */
+.intel-section {
+    border-left: 3px solid rgba(16, 185, 129, 0.5);
+}
+
+/* Reference sections divider (visual grouping) */
+.collapsible-section.reference-section {
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .rc-block {

@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0d1117">
     <title>Projeto - Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=9">
+    <link rel="stylesheet" href="css/style.css?v=10">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -716,7 +716,6 @@
             <h1 class="logo">Centro de Controle</h1>
             <nav class="header-nav">
                 <a href="./" class="nav-link" aria-label="Dashboard">Dashboard</a>
-                <a href="portfolio" class="nav-link active" aria-label="Portfolio">Portfolio</a>
                 <a href="mba" class="nav-link" aria-label="MBA">MBA</a>
                 <a href="work" class="nav-link" aria-label="Work Status">Work</a>
                 <a href="files" class="nav-link" aria-label="Arquivos">Arquivos</a>
@@ -741,7 +740,7 @@
         
         <p id="project-description" style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);"></p>
         
-        <div class="project-progress-large">
+        <div class="project-progress-large" style="display: none;">
             <div class="progress-bar-large">
                 <div class="progress-fill-large" id="progress-fill" style="width: 0%"></div>
             </div>
@@ -751,7 +750,7 @@
             </div>
         </div>
         
-        <div class="project-stats" id="project-stats">
+        <div class="project-stats" id="project-stats" style="display: none;">
             <div class="stat-card">
                 <div class="number" id="stat-tasks-todo">0</div>
                 <div class="label">A Fazer</div>
@@ -774,7 +773,7 @@
             </div>
         </div>
         
-        <!-- WORK PROJECT VIEW (Hidden by default, shown for work projects) -->
+        <!-- WORK PROJECT VIEW (shown for work projects by JS) -->
         <div id="work-project-view" style="display:none;">
             
             <!-- Header Stats (inline chips: health + counts) -->
@@ -820,7 +819,7 @@
             </section>
             
             <!-- Project Info (collapsible, CLOSED by default) -->
-            <section class="card collapsible-section" id="work-overview-section" style="margin-bottom: var(--spacing-lg);">
+            <section class="card collapsible-section reference-section" id="work-overview-section" style="margin-bottom: var(--spacing-lg);">
                 <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
                     <h2>Informacoes do Projeto</h2>
                     <span class="collapse-indicator"></span>
@@ -844,7 +843,7 @@
             </section>
             
             <!-- Documentation (collapsible, CLOSED by default) -->
-            <section class="card collapsible-section" id="work-sections-card" style="margin-bottom: var(--spacing-lg);">
+            <section class="card collapsible-section reference-section" id="work-sections-card" style="margin-bottom: var(--spacing-lg);">
                 <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
                     <h2>Documentacao</h2>
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -860,7 +859,7 @@
             </section>
             
             <!-- Meetings (collapsible, CLOSED by default) -->
-            <section class="card collapsible-section" id="work-meetings-section" style="margin-bottom: var(--spacing-lg);">
+            <section class="card collapsible-section reference-section" id="work-meetings-section" style="margin-bottom: var(--spacing-lg);">
                 <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
                     <h2>Reunioes Recentes</h2>
                     <div style="display: flex; align-items: center; gap: 8px;">
@@ -876,7 +875,7 @@
             </section>
             
             <!-- Cases (collapsible, CLOSED, only if data exists) -->
-            <section class="card collapsible-section" id="work-cases-section" style="margin-bottom: var(--spacing-lg); display:none;">
+            <section class="card collapsible-section reference-section" id="work-cases-section" style="margin-bottom: var(--spacing-lg); display:none;">
                 <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
                     <h2>Cases</h2>
                     <span class="collapse-indicator"></span>
@@ -901,7 +900,7 @@
             </section>
         </div>
         
-        <div class="project-sections" id="regular-project-view">
+        <div class="project-sections" id="regular-project-view" style="display:none;">
             <!-- TASKS -->
             <section class="card">
                 <div class="section-header">
@@ -1048,8 +1047,7 @@
         function renderProject() {
             const { project, tasks, notes, docs, stats } = projectData;
             
-            // Header já foi renderizado por renderProjectHeader()
-            // Garantir que a view regular está visível
+            // Show regular view (non-work projects)
             document.getElementById('work-project-view').style.display = 'none';
             document.getElementById('regular-project-view').style.display = 'grid';
             
@@ -1475,11 +1473,44 @@
             document.getElementById('work-project-view').style.display = 'block';
             document.getElementById('regular-project-view').style.display = 'none';
             
-            // Overview (collapsible Project Info section)
+            // Overview (collapsible Project Info section) — hide empty sub-cards
             const overview = data.overview || {};
-            document.getElementById('work-definition').textContent = overview.definition || 'Sem definicao disponivel';
-            document.getElementById('work-context').textContent = overview.context || 'Sem contexto disponivel';
-            document.getElementById('work-current-status').textContent = overview.current_status || 'Status nao disponivel';
+            const defText = overview.definition || '';
+            const ctxText = overview.context || '';
+            const statusText = overview.current_status || '';
+            
+            const defCard = document.getElementById('work-definition').closest('.overview-card');
+            const ctxCard = document.getElementById('work-context').closest('.overview-card');
+            const statusCard = document.getElementById('work-current-status').closest('.overview-card');
+            
+            if (defText) {
+                document.getElementById('work-definition').textContent = defText;
+                defCard.style.display = '';
+            } else {
+                defCard.style.display = 'none';
+            }
+            
+            if (ctxText) {
+                document.getElementById('work-context').textContent = ctxText;
+                ctxCard.style.display = '';
+            } else {
+                ctxCard.style.display = 'none';
+            }
+            
+            if (statusText) {
+                document.getElementById('work-current-status').textContent = statusText;
+                statusCard.style.display = '';
+            } else {
+                statusCard.style.display = 'none';
+            }
+            
+            // Hide entire "Informacoes do Projeto" section if ALL sub-cards are empty
+            const overviewSection = document.getElementById('work-overview-section');
+            if (!defText && !ctxText && !statusText) {
+                overviewSection.style.display = 'none';
+            } else {
+                overviewSection.style.display = '';
+            }
             
             // Header stats chips (inline counts)
             const sectionsCount = data.sections ? data.sections.length : 0;
@@ -1487,20 +1518,26 @@
             const casesCount = data.cases ? data.cases.length : 0;
             
             const chips = [];
-            if (sectionsCount > 0) chips.push(`<span class="header-chip">${sectionsCount} docs</span>`);
-            if (meetingsCount > 0) chips.push(`<span class="header-chip">${meetingsCount} reunioes</span>`);
-            if (casesCount > 0) chips.push(`<span class="header-chip">${casesCount} cases</span>`);
+            if (sectionsCount > 0) chips.push(`<span class="header-chip">📄 ${sectionsCount} docs</span>`);
+            if (meetingsCount > 0) chips.push(`<span class="header-chip">📅 ${meetingsCount} reunioes</span>`);
+            if (casesCount > 0) chips.push(`<span class="header-chip">📋 ${casesCount} cases</span>`);
             
             // Last activity
             if (data.meeting_notes && data.meeting_notes.length > 0) {
                 const lastMeeting = data.meeting_notes[0];
                 const lastDate = lastMeeting.date || extractDateFromFilename(lastMeeting.file);
                 if (lastDate) {
-                    chips.push(`<span class="header-chip header-chip-muted">Ultima: ${formatMeetingDate(lastDate)}</span>`);
+                    chips.push(`<span class="header-chip header-chip-muted">🕐 Ultima: ${formatMeetingDate(lastDate)}</span>`);
                 }
             }
             
-            document.getElementById('work-header-stats').innerHTML = chips.join('');
+            const statsEl = document.getElementById('work-header-stats');
+            if (chips.length > 0) {
+                statsEl.innerHTML = chips.join('');
+                statsEl.style.display = '';
+            } else {
+                statsEl.style.display = 'none';
+            }
             
             // Sections
             renderWorkSections(data.sections || []);
@@ -1609,7 +1646,7 @@
                     confEl.innerHTML = '<span class="text-muted">Sem dados do Confluence</span>';
                 }
                 
-                // Intelligence section
+                // Intelligence section — hide entirely when no data
                 const intelSection = document.getElementById('intel-section');
                 const intelBody = document.getElementById('intel-body');
                 if (rc.intelligence_summary) {
@@ -1625,8 +1662,17 @@
                         <p class="text-muted">Resumo nao disponivel.</p>
                     `;
                 } else {
-                    intelSection.style.display = '';
-                    intelBody.innerHTML = '<p class="text-muted">Nenhum documento de inteligencia disponivel para este projeto.</p>';
+                    // No intelligence at all — hide entire section
+                    intelSection.style.display = 'none';
+                }
+                
+                // Hide "Reunioes Recentes" if empty AND Report Card already shows meetings
+                const reunioesSection = document.getElementById('work-meetings-section');
+                const reunioesList = document.getElementById('work-meetings-list');
+                const hasReunioesData = reunioesList && reunioesList.querySelector('.meeting-item');
+                const rcHasMeetings = rc.meetings_this_week && rc.meetings_this_week.length > 0;
+                if (!hasReunioesData && rcHasMeetings) {
+                    reunioesSection.style.display = 'none';
                 }
                 
             } catch (error) {
@@ -1784,12 +1830,11 @@
                 priorityEl.style.display = 'none';
             }
             
-            // Hide progress bar + generic stat cards for work projects (perennial, no %)
+            // Show progress bar + stat cards ONLY for non-work projects (work projects are perennial, no %)
             const isWork = isWorkProject(project.name, project.category);
-            document.querySelector('.project-progress-large').style.display = isWork ? 'none' : '';
-            document.getElementById('project-stats').style.display = isWork ? 'none' : '';
-            
             if (!isWork) {
+                document.querySelector('.project-progress-large').style.display = '';
+                document.getElementById('project-stats').style.display = '';
                 document.getElementById('progress-fill').style.width = project.progress + '%';
                 document.getElementById('progress-text').textContent = project.progress + '%';
             }
@@ -1799,6 +1844,6 @@
         loadProjectWithWorkCheck();
         loadProjectFiles();
     </script>
-    <script src="js/mobile-nav.js?v=6"></script>
+    <script src="js/mobile-nav.js?v=7"></script>
 </body>
 </html>
