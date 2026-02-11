@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0d1117">
     <title>Projeto - Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=6">
+    <link rel="stylesheet" href="css/style.css?v=8">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -806,6 +806,47 @@
                 </div>
             </section>
             
+            <!-- Weekly Report Card -->
+            <section class="card report-card-section" id="report-card-section" style="margin-bottom: var(--spacing-xl); display: none;">
+                <div class="section-header" style="cursor: pointer;" onclick="toggleSection('report-card-content')">
+                    <h2>📋 Weekly Report Card</h2>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="health-badge" id="rc-health-badge"></span>
+                        <span id="rc-week-label" style="font-size: 0.75rem; color: var(--text-muted);"></span>
+                        <span style="font-size: 0.875rem; color: var(--text-muted);">▼</span>
+                    </div>
+                </div>
+                <div id="report-card-content">
+                    <!-- Meetings -->
+                    <div class="rc-block">
+                        <h3 class="rc-block-title">Reunioes desta semana</h3>
+                        <div id="rc-meetings-list" class="rc-meetings-list">
+                            <span class="text-muted">Carregando...</span>
+                        </div>
+                    </div>
+                    <!-- Confluence -->
+                    <div class="rc-block">
+                        <h3 class="rc-block-title">Confluence</h3>
+                        <div id="rc-confluence-row" class="rc-confluence-row">
+                            <span class="text-muted">Carregando...</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Intelligence Artifacts -->
+            <section class="card intel-section" id="intel-section" style="margin-bottom: var(--spacing-xl); display: none;">
+                <div class="section-header" style="cursor: pointer;" onclick="toggleSection('intel-content')">
+                    <h2>🧠 Intelligence</h2>
+                    <span style="font-size: 0.875rem; color: var(--text-muted);">▼</span>
+                </div>
+                <div id="intel-content">
+                    <div id="intel-body">
+                        <span class="text-muted">Carregando...</span>
+                    </div>
+                </div>
+            </section>
+            
             <!-- Quick Stats Row -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-xl);">
                 <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
@@ -814,7 +855,7 @@
                 </div>
                 <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
                     <div class="number" id="work-meetings-count-stat" style="font-size: 1.5rem; color: #22c55e;">-</div>
-                    <div class="label" style="font-size: 0.75rem;">Reuniões</div>
+                    <div class="label" style="font-size: 0.75rem;">Reunioes</div>
                 </div>
                 <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
                     <div class="number" id="work-cases-count" style="font-size: 1.5rem; color: #f59e0b;">-</div>
@@ -822,7 +863,7 @@
                 </div>
                 <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
                     <div class="number" id="work-last-activity" style="font-size: 0.9rem; color: var(--text-secondary);">-</div>
-                    <div class="label" style="font-size: 0.75rem;">Última Atividade</div>
+                    <div class="label" style="font-size: 0.75rem;">Ultima Atividade</div>
                 </div>
             </div>
             
@@ -1477,6 +1518,85 @@
             // Cases
             if (data.cases && data.cases.length > 0) {
                 renderWorkCases(data.cases);
+            }
+            
+            // Load report card + intelligence (async, non-blocking)
+            if (currentWorkSlug) {
+                loadReportCard(currentWorkSlug);
+            }
+        }
+        
+        async function loadReportCard(slug) {
+            try {
+                const rc = await fetch(`${API_BASE}/work-projects/${slug}/report-card`).then(r => r.ok ? r.json() : null);
+                if (!rc) return;
+                
+                // Show report card section
+                document.getElementById('report-card-section').style.display = '';
+                
+                // Health badge
+                const badge = document.getElementById('rc-health-badge');
+                const healthColors = { green: '#22c55e', yellow: '#eab308', red: '#ef4444' };
+                const healthLabels = { green: 'On Track', yellow: 'Atencao', red: 'Critico' };
+                badge.style.background = `${healthColors[rc.health] || healthColors.green}22`;
+                badge.style.color = healthColors[rc.health] || healthColors.green;
+                badge.style.border = `1px solid ${healthColors[rc.health] || healthColors.green}44`;
+                badge.textContent = healthLabels[rc.health] || rc.health;
+                
+                // Week label
+                document.getElementById('rc-week-label').textContent = rc.week ? `Semana de ${rc.week}` : '';
+                
+                // Meetings list
+                const meetingsEl = document.getElementById('rc-meetings-list');
+                if (rc.meetings_this_week && rc.meetings_this_week.length > 0) {
+                    meetingsEl.innerHTML = rc.meetings_this_week.map(m => `
+                        <div class="rc-meeting-item">
+                            <span class="rc-meeting-date">${m.date || ''}</span>
+                            <span class="rc-meeting-title">${escapeHtml(m.title)}</span>
+                            ${m.summary ? `<span class="rc-meeting-summary">${escapeHtml(m.summary)}</span>` : ''}
+                        </div>
+                    `).join('');
+                } else {
+                    meetingsEl.innerHTML = '<span class="text-muted">Nenhuma reuniao encontrada nos ultimos 7 dias</span>';
+                }
+                
+                // Confluence row
+                const confEl = document.getElementById('rc-confluence-row');
+                const c = rc.confluence || {};
+                if (c.current_sprint || c.epics_open || c.risks || c.bugs) {
+                    const chips = [];
+                    if (c.current_sprint) chips.push(`<span class="rc-chip">${escapeHtml(c.current_sprint)}</span>`);
+                    if (c.epics_open) chips.push(`<span class="rc-chip">${c.epics_open} open epics</span>`);
+                    if (c.epics_closed) chips.push(`<span class="rc-chip rc-chip-done">${c.epics_closed} closed</span>`);
+                    if (c.risks) chips.push(`<span class="rc-chip rc-chip-risk">${c.risks} risk${c.risks > 1 ? 's' : ''}</span>`);
+                    if (c.bugs) chips.push(`<span class="rc-chip rc-chip-bug">${c.bugs} bug${c.bugs > 1 ? 's' : ''}</span>`);
+                    confEl.innerHTML = chips.join('');
+                } else {
+                    confEl.innerHTML = '<span class="text-muted">Sem dados do Confluence</span>';
+                }
+                
+                // Intelligence section
+                const intelSection = document.getElementById('intel-section');
+                const intelBody = document.getElementById('intel-body');
+                if (rc.intelligence_summary) {
+                    intelSection.style.display = '';
+                    intelBody.innerHTML = `
+                        <div class="intel-source">Fonte: ${escapeHtml(rc.intelligence_file || 'Deep Dive')}</div>
+                        <p class="intel-summary">${escapeHtml(rc.intelligence_summary)}</p>
+                    `;
+                } else if (rc.intelligence_file) {
+                    intelSection.style.display = '';
+                    intelBody.innerHTML = `
+                        <div class="intel-source">Fonte: ${escapeHtml(rc.intelligence_file)}</div>
+                        <p class="text-muted">Resumo nao disponivel.</p>
+                    `;
+                } else {
+                    intelSection.style.display = '';
+                    intelBody.innerHTML = '<p class="text-muted">Nenhum documento de inteligencia disponivel para este projeto.</p>';
+                }
+                
+            } catch (error) {
+                console.error('Error loading report card:', error);
             }
         }
         
