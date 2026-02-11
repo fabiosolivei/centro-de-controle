@@ -28,6 +28,7 @@ const APICache = {
         '/notes': 60000,           // 1 minuto
         '/mba/stats': 300000,      // 5 minutos
         '/confluence/summary': 300000, // 5 minutos
+        '/work-projects/report-cards': 300000, // 5 minutos
     },
     
     get(key) {
@@ -529,6 +530,35 @@ const ObservabilityAPI = {
 };
 
 // ============================================
+// WORK PROJECTS API (Report Cards)
+// ============================================
+
+const WorkProjectsAPI = {
+    /**
+     * Get report cards for all work projects (batch, cached 30min on backend)
+     */
+    async getReportCards() {
+        return apiRequest('/work-projects/report-cards');
+    },
+
+    /**
+     * Get report card for a single work project
+     * @param {string} slug - Project slug (e.g. "3tpm", "cms-dam")
+     */
+    async getReportCard(slug) {
+        return apiRequest(`/work-projects/${slug}/report-card`);
+    },
+
+    /**
+     * Get work project details
+     * @param {string} slug - Project slug
+     */
+    async getProject(slug) {
+        return apiRequest(`/work-projects/${slug}`);
+    },
+};
+
+// ============================================
 // UI HELPERS - Error & Loading States
 // ============================================
 
@@ -608,6 +638,7 @@ window.ProjectsAPI = ProjectsAPI;
 window.CalendarAPI = CalendarAPI;
 window.MBAAPI = MBAAPI;
 window.ObservabilityAPI = ObservabilityAPI;
+window.WorkProjectsAPI = WorkProjectsAPI;
 window.showLoadingState = showLoadingState;
 window.showErrorState = showErrorState;
 window.showEmptyState = showEmptyState;

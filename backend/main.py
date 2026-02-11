@@ -2533,6 +2533,35 @@ async def list_work_projects():
     
     return {"projects": projects}
 
+@app.get("/api/work-projects/report-cards")
+async def get_all_report_cards():
+    """Batch endpoint: report cards for all work projects. Cached 30 min."""
+    import time
+    
+    now = time.time()
+    if _report_cards_cache["data"] and now < _report_cards_cache["expires"]:
+        return _report_cards_cache["data"]
+    
+    cards = {}
+    for slug in PROJECT_KEYWORDS:
+        try:
+            cards[slug] = _generate_report_card(slug)
+        except Exception as e:
+            cards[slug] = {"slug": slug, "error": str(e)}
+    
+    result = {"report_cards": cards, "generated_at": datetime.utcnow().isoformat()}
+    _report_cards_cache["data"] = result
+    _report_cards_cache["expires"] = now + 1800  # 30 min
+    return result
+
+@app.get("/api/work-projects/{slug}/report-card")
+async def get_project_report_card(slug: str):
+    """Per-project report card with meetings, Confluence, intelligence, health."""
+    slug_lower = slug.lower()
+    if slug_lower not in PROJECT_KEYWORDS:
+        raise HTTPException(status_code=404, detail=f"No report card config for '{slug}'")
+    return _generate_report_card(slug_lower)
+
 @app.get("/api/work-projects/{slug}")
 async def get_work_project(slug: str):
     """Retorna dados interpretados de um projeto de trabalho"""
@@ -2553,6 +2582,210 @@ async def get_work_project(slug: str):
         raise HTTPException(status_code=404, detail=data["error"])
     
     return data
+
+# ============================================
+# WORK PROJECT REPORT CARDS
+# ============================================
+
+# Keyword mapping for cross-referencing Notion meetings, Confluence, etc.
+PROJECT_KEYWORDS = {
+    "3tpm": ["3tpm", "3TPM", "marketplace", "skunk", "korea", "coreia"],
+    "catalog-admin": ["catalog", "Catalog Admin", "Book AI", "Payment Method"],
+    "cms-dam": ["CMS", "DAM", "content", "braze", "banner", "Acquia", "DeepLink"],
+    "company-store": ["Company", "Store Management", "company-store"],
+    "autonomy": ["autonomy", "automation", "Visagio", "CoE", "autonomia"],
+    "pocs-ia": ["POC", "IA", "MultiPOC", "AI"],
+}
+
+# Intelligence deep-dive file mapping
+INTELLIGENCE_FILES = {
+    "3tpm": "3TPM-DEEP-DIVE.md",
+    "catalog-admin": None,
+    "cms-dam": "CMS-DAM-CONTENT-DEEP-DIVE.md",
+    "company-store": None,
+    "autonomy": "AUTONOMY-AUTOMATION-DEEP-DIVE.md",
+    "pocs-ia": None,
+}
+
+# Project display names
+PROJECT_DISPLAY_NAMES = {
+    "3tpm": "3TPM",
+    "catalog-admin": "Catalog Admin",
+    "cms-dam": "CMS / DAM",
+    "company-store": "Company & Store",
+    "autonomy": "Autonomy",
+    "pocs-ia": "POCs IA",
+}
+
+# Cache for report cards (30 min TTL)
+_report_cards_cache = {"data": None, "expires": 0}
+
+def _matches_keywords(text: str, keywords: list) -> bool:
+    """Check if text contains any of the keywords (case-insensitive)."""
+    text_lower = text.lower()
+    return any(kw.lower() in text_lower for kw in keywords)
+
+def _get_intelligence_summary(slug: str) -> dict:
+    """Read intelligence deep-dive file and extract executive summary."""
+    intel_file = INTELLIGENCE_FILES.get(slug)
+    if not intel_file:
+        return {"summary": None, "file": None}
+    
+    _LOCAL_INTEL_PATH = '/home/fabio/Documents/Nova/openclaw-workspace/docs/intelligence'
+    _SERVER_INTEL_PATH = '/root/Nova/openclaw-workspace/docs/intelligence'
+    intel_path = _LOCAL_INTEL_PATH if os.path.exists(_LOCAL_INTEL_PATH) else _SERVER_INTEL_PATH
+    
+    file_path = os.path.join(intel_path, intel_file)
+    if not os.path.exists(file_path):
+        return {"summary": None, "file": intel_file}
+    
+    parsed = parse_markdown_file(file_path)
+    summary = parsed.get("summary", "")
+    if len(summary) > 200:
+        summary = summary[:200] + "..."
+    
+    return {"summary": summary, "file": intel_file}
+
+def _generate_report_card(slug: str) -> dict:
+    """Generate a weekly report card for a single project."""
+    import sqlite3
+    from datetime import datetime, timedelta
+    
+    keywords = PROJECT_KEYWORDS.get(slug, [])
+    display_name = PROJECT_DISPLAY_NAMES.get(slug, slug)
+    now = datetime.utcnow()
+    week_start = (now - timedelta(days=now.weekday())).strftime("%Y-%m-%d")
+    seven_days_ago = (now - timedelta(days=7)).strftime("%Y-%m-%d")
+    fourteen_days_ago = (now - timedelta(days=14)).strftime("%Y-%m-%d")
+    
+    # --- Notion meetings ---
+    meetings_this_week = []
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT id, title, date, summary FROM meeting_notes WHERE date >= ? ORDER BY date DESC",
+            (seven_days_ago,)
+        )
+        for row in cursor.fetchall():
+            title = row["title"] or ""
+            summary = row["summary"] or ""
+            if _matches_keywords(title + " " + summary, keywords):
+                meetings_this_week.append({
+                    "title": title,
+                    "date": row["date"],
+                    "summary": (summary[:150] + "...") if len(summary) > 150 else summary
+                })
+        conn.close()
+    except Exception:
+        pass
+    
+    # --- Confluence metrics ---
+    confluence = {
+        "initiatives": 0,
+        "epics_open": 0,
+        "epics_closed": 0,
+        "risks": 0,
+        "bugs": 0,
+        "current_sprint": None
+    }
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        
+        # Current sprint
+        cursor.execute("SELECT sprint_name FROM confluence_sprints WHERE is_current = 1 LIMIT 1")
+        sprint_row = cursor.fetchone()
+        if sprint_row:
+            confluence["current_sprint"] = sprint_row["sprint_name"]
+        
+        # Initiatives matching keywords
+        cursor.execute("SELECT title, team FROM confluence_initiatives")
+        for row in cursor.fetchall():
+            text = (row["title"] or "") + " " + (row["team"] or "")
+            if _matches_keywords(text, keywords):
+                confluence["initiatives"] += 1
+        
+        # Epics matching keywords
+        cursor.execute("SELECT title, status, sprint FROM confluence_epics")
+        for row in cursor.fetchall():
+            text = (row["title"] or "") + " " + (row["sprint"] or "")
+            if _matches_keywords(text, keywords):
+                status = (row["status"] or "").lower()
+                if status in ("done", "closed", "resolved"):
+                    confluence["epics_closed"] += 1
+                else:
+                    confluence["epics_open"] += 1
+        
+        # Risks matching keywords
+        cursor.execute("SELECT title, status FROM confluence_risks WHERE status != 'Resolved'")
+        for row in cursor.fetchall():
+            if _matches_keywords(row["title"] or "", keywords):
+                confluence["risks"] += 1
+        
+        # Bugs matching keywords
+        cursor.execute("SELECT title, team, status FROM confluence_bugs WHERE status != 'Done'")
+        for row in cursor.fetchall():
+            text = (row["title"] or "") + " " + (row["team"] or "")
+            if _matches_keywords(text, keywords):
+                confluence["bugs"] += 1
+        
+        conn.close()
+    except Exception:
+        pass
+    
+    # --- Intelligence summary ---
+    intel = _get_intelligence_summary(slug)
+    
+    # --- Recent notes from work project folder ---
+    recent_notes = 0
+    config = WORK_PROJECTS_MAP.get(slug)
+    if config and config["type"] == "multi":
+        notes_path = os.path.join(WORK_PROJECTS_PATH, config["folder"], "notes")
+        if os.path.exists(notes_path):
+            cutoff = (now - timedelta(days=7)).timestamp()
+            for f in os.listdir(notes_path):
+                if f.endswith('.md'):
+                    fpath = os.path.join(notes_path, f)
+                    if os.stat(fpath).st_mtime >= cutoff:
+                        recent_notes += 1
+    
+    # --- Health score ---
+    has_meetings = len(meetings_this_week) > 0
+    risk_count = confluence["risks"]
+    bug_count = confluence["bugs"]
+    
+    if risk_count >= 3 or bug_count >= 3:
+        health = "red"
+        health_reason = f"{risk_count} risks, {bug_count} bugs"
+    elif risk_count >= 1 or not has_meetings:
+        health = "yellow"
+        reasons = []
+        if risk_count >= 1:
+            reasons.append(f"{risk_count} risk{'s' if risk_count > 1 else ''} active")
+        if not has_meetings:
+            reasons.append("no meetings in 7 days")
+        health_reason = ", ".join(reasons)
+    else:
+        health = "green"
+        health_reason = "on track"
+    
+    return {
+        "slug": slug,
+        "name": display_name,
+        "week": week_start,
+        "meetings_this_week": meetings_this_week,
+        "meetings_count": len(meetings_this_week),
+        "confluence": confluence,
+        "intelligence_summary": intel["summary"],
+        "intelligence_file": intel["file"],
+        "recent_notes": recent_notes,
+        "health": health,
+        "health_reason": health_reason
+    }
+
 
 @app.get("/api/work-projects/{slug}/file/{file_path:path}")
 async def get_work_project_file(slug: str, file_path: str):
