@@ -7,7 +7,6 @@
 
     const PAGES = [
         { href: './',           icon: '🏠', label: 'Dashboard',     key: 'index' },
-        { href: 'portfolio',    icon: '💼', label: 'Portfolio',      key: 'portfolio' },
         { href: 'mba',          icon: '🎓', label: 'MBA',           key: 'mba' },
         { href: 'work',         icon: '🏢', label: 'Work',          key: 'work' },
         { href: 'files',        icon: '📁', label: 'Arquivos',      key: 'files' },
@@ -17,8 +16,7 @@
     // Detect current page
     const path = window.location.pathname;
     let currentKey = 'index';
-    if (path.includes('portfolio')) currentKey = 'portfolio';
-    else if (path.includes('mba')) currentKey = 'mba';
+    if (path.includes('mba')) currentKey = 'mba';
     else if (path.includes('work')) currentKey = 'work';
     else if (path.includes('files')) currentKey = 'files';
     else if (path.includes('observability')) currentKey = 'observability';
