@@ -3601,6 +3601,98 @@ table {
 }
 
 /* ============================================
+   COLLAPSIBLE SECTIONS (Project Page)
+   ============================================ */
+
+.collapsible-section {
+    overflow: hidden;
+}
+
+.collapsible-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-lg);
+    cursor: pointer;
+    user-select: none;
+    transition: background var(--transition-fast);
+}
+
+.collapsible-toggle:hover {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.collapsible-toggle h2 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.collapse-indicator {
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.collapse-indicator::before {
+    content: '';
+    border: solid var(--text-muted);
+    border-width: 0 2px 2px 0;
+    display: inline-block;
+    padding: 3px;
+    transform: rotate(-45deg);
+    transition: transform 0.2s ease;
+}
+
+.collapse-indicator.open::before {
+    transform: rotate(45deg);
+}
+
+.collapsible-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+    padding: 0 var(--spacing-lg);
+}
+
+.collapsible-body.open {
+    max-height: 3000px;
+    padding: 0 var(--spacing-lg) var(--spacing-lg);
+    overflow: visible;
+}
+
+/* Work project header stats (inline chips) */
+.work-header-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: var(--spacing-lg);
+}
+
+.header-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: rgba(99, 102, 241, 0.1);
+    color: #a5b4fc;
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.header-chip-muted {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--text-muted);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* ============================================
    HEALTH DOT & REPORT CARD COMPONENTS
    ============================================ */
 
@@ -3641,7 +3733,7 @@ table {
 }
 
 .rc-block {
-    padding: var(--spacing-md) var(--spacing-lg);
+    padding: var(--spacing-md) 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.04);
 }
 
@@ -3754,14 +3846,12 @@ table {
     color: var(--text-muted);
     font-family: 'JetBrains Mono', monospace;
     margin-bottom: var(--spacing-sm);
-    padding: 0 var(--spacing-lg);
 }
 
 .intel-summary {
     font-size: 0.9rem;
     color: var(--text-secondary);
     line-height: 1.7;
-    padding: 0 var(--spacing-lg) var(--spacing-md);
 }
 
 /* ============================================

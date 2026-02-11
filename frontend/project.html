@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0d1117">
     <title>Projeto - Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=8">
+    <link rel="stylesheet" href="css/style.css?v=9">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -728,7 +728,7 @@
 
     <main class="main-content" style="display: block;">
         <div class="project-header">
-            <a href="portfolio" class="back-btn">← Voltar ao Portfolio</a>
+            <a href="./" class="back-btn">← Dashboard</a>
             <div class="project-title-section">
                 <h1 id="project-name">Carregando...</h1>
                 <div class="project-meta">
@@ -774,57 +774,29 @@
             </div>
         </div>
         
-        <!-- WORK PROJECT OVERVIEW (Hidden by default, shown for work projects) -->
+        <!-- WORK PROJECT VIEW (Hidden by default, shown for work projects) -->
         <div id="work-project-view" style="display:none;">
-            <!-- Executive Summary Card -->
-            <section class="card" id="executive-summary-section" style="margin-bottom: var(--spacing-xl); background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05)); border: 1px solid rgba(99, 102, 241, 0.2);">
-                <div class="section-header" style="border-bottom: none; margin-bottom: 0;">
-                    <h2 style="font-size: 1.25rem;">📊 Resumo Executivo</h2>
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <span class="badge badge-active" id="work-status-badge" style="font-size: 0.75rem;"></span>
-                        <span id="executive-last-update" style="font-size: 0.7rem; color: var(--text-muted);"></span>
-                    </div>
-                </div>
-                <div id="executive-summary-content" style="padding: var(--spacing-md) 0;">
-                    <p id="executive-summary-text" style="color: var(--text-secondary); font-size: 1rem; line-height: 1.7; margin-bottom: var(--spacing-md);">
-                        Carregando resumo...
-                    </p>
-                    <div style="display: flex; gap: var(--spacing-lg); flex-wrap: wrap; margin-top: var(--spacing-md);">
-                        <div id="executive-timeline" class="executive-chip" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full);">
-                            <span>📅</span>
-                            <span style="font-size: 0.875rem; color: var(--text-secondary);"></span>
-                        </div>
-                        <div id="executive-people" class="executive-chip" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full);">
-                            <span>👥</span>
-                            <span style="font-size: 0.875rem; color: var(--text-secondary);"></span>
-                        </div>
-                        <div id="executive-meetings" class="executive-chip" style="display: flex; align-items: center; gap: 8px; padding: 8px 16px; background: rgba(255,255,255,0.05); border-radius: var(--radius-full);">
-                            <span>📝</span>
-                            <span style="font-size: 0.875rem; color: var(--text-secondary);"></span>
-                        </div>
-                    </div>
-                </div>
-            </section>
             
-            <!-- Weekly Report Card -->
-            <section class="card report-card-section" id="report-card-section" style="margin-bottom: var(--spacing-xl); display: none;">
-                <div class="section-header" style="cursor: pointer;" onclick="toggleSection('report-card-content')">
-                    <h2>📋 Weekly Report Card</h2>
+            <!-- Header Stats (inline chips: health + counts) -->
+            <div class="work-header-stats" id="work-header-stats"></div>
+            
+            <!-- Weekly Report Card (collapsible, OPEN by default) -->
+            <section class="card collapsible-section report-card-section" id="report-card-section" style="margin-bottom: var(--spacing-lg); display: none;">
+                <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
+                    <h2>Weekly Report Card</h2>
                     <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="health-badge" id="rc-health-badge"></span>
                         <span id="rc-week-label" style="font-size: 0.75rem; color: var(--text-muted);"></span>
-                        <span style="font-size: 0.875rem; color: var(--text-muted);">▼</span>
+                        <span class="collapse-indicator open"></span>
                     </div>
                 </div>
-                <div id="report-card-content">
-                    <!-- Meetings -->
+                <div class="collapsible-body open" id="report-card-content">
                     <div class="rc-block">
                         <h3 class="rc-block-title">Reunioes desta semana</h3>
                         <div id="rc-meetings-list" class="rc-meetings-list">
                             <span class="text-muted">Carregando...</span>
                         </div>
                     </div>
-                    <!-- Confluence -->
                     <div class="rc-block">
                         <h3 class="rc-block-title">Confluence</h3>
                         <div id="rc-confluence-row" class="rc-confluence-row">
@@ -834,91 +806,97 @@
                 </div>
             </section>
             
-            <!-- Intelligence Artifacts -->
-            <section class="card intel-section" id="intel-section" style="margin-bottom: var(--spacing-xl); display: none;">
-                <div class="section-header" style="cursor: pointer;" onclick="toggleSection('intel-content')">
-                    <h2>🧠 Intelligence</h2>
-                    <span style="font-size: 0.875rem; color: var(--text-muted);">▼</span>
+            <!-- Intelligence (collapsible, OPEN if data exists) -->
+            <section class="card collapsible-section intel-section" id="intel-section" style="margin-bottom: var(--spacing-lg); display: none;">
+                <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
+                    <h2>Intelligence</h2>
+                    <span class="collapse-indicator open"></span>
                 </div>
-                <div id="intel-content">
+                <div class="collapsible-body open" id="intel-content">
                     <div id="intel-body">
                         <span class="text-muted">Carregando...</span>
                     </div>
                 </div>
             </section>
             
-            <!-- Quick Stats Row -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: var(--spacing-md); margin-bottom: var(--spacing-xl);">
-                <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
-                    <div class="number" id="work-docs-count" style="font-size: 1.5rem; color: var(--accent-primary);">-</div>
-                    <div class="label" style="font-size: 0.75rem;">Documentos</div>
+            <!-- Project Info (collapsible, CLOSED by default) -->
+            <section class="card collapsible-section" id="work-overview-section" style="margin-bottom: var(--spacing-lg);">
+                <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
+                    <h2>Informacoes do Projeto</h2>
+                    <span class="collapse-indicator"></span>
                 </div>
-                <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
-                    <div class="number" id="work-meetings-count-stat" style="font-size: 1.5rem; color: #22c55e;">-</div>
-                    <div class="label" style="font-size: 0.75rem;">Reunioes</div>
-                </div>
-                <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
-                    <div class="number" id="work-cases-count" style="font-size: 1.5rem; color: #f59e0b;">-</div>
-                    <div class="label" style="font-size: 0.75rem;">Cases</div>
-                </div>
-                <div class="stat-card" style="text-align: center; padding: var(--spacing-md);">
-                    <div class="number" id="work-last-activity" style="font-size: 0.9rem; color: var(--text-secondary);">-</div>
-                    <div class="label" style="font-size: 0.75rem;">Ultima Atividade</div>
-                </div>
-            </div>
-            
-            <!-- Overview Card (Expanded Details) -->
-            <section class="card" id="work-overview-section" style="margin-bottom: var(--spacing-xl);">
-                <div class="section-header" style="cursor: pointer;" onclick="toggleSection('work-overview-content')">
-                    <h2>📋 Detalhes do Projeto</h2>
-                    <span style="font-size: 0.875rem; color: var(--text-muted);">▼</span>
-                </div>
-                <div id="work-overview-content">
+                <div class="collapsible-body" id="work-overview-content">
                     <div class="overview-grid">
                         <div class="overview-card">
-                            <h3>📋 Definição</h3>
+                            <h3>Definicao</h3>
                             <p id="work-definition">Carregando...</p>
                         </div>
                         <div class="overview-card">
-                            <h3>🎯 Contexto</h3>
+                            <h3>Contexto</h3>
                             <p id="work-context">Carregando...</p>
                         </div>
                         <div class="overview-card full-width">
-                            <h3>📍 Status Atual</h3>
+                            <h3>Status Atual</h3>
                             <p id="work-current-status">Carregando...</p>
                         </div>
                     </div>
                 </div>
             </section>
             
-            <!-- Documentation Sections -->
-            <section class="card" id="work-sections-card" style="margin-bottom: var(--spacing-xl);">
-                <div class="section-header">
-                    <h2>📚 Documentação</h2>
-                    <span class="badge" id="work-sections-count" style="font-size:0.7rem;"></span>
+            <!-- Documentation (collapsible, CLOSED by default) -->
+            <section class="card collapsible-section" id="work-sections-card" style="margin-bottom: var(--spacing-lg);">
+                <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
+                    <h2>Documentacao</h2>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="badge" id="work-sections-count" style="font-size:0.7rem;"></span>
+                        <span class="collapse-indicator"></span>
+                    </div>
                 </div>
-                <div id="work-sections-list" class="sections-grid">
-                    <div class="empty-section">Carregando...</div>
-                </div>
-            </section>
-            
-            <!-- Meeting Notes -->
-            <section class="card" id="work-meetings-section" style="margin-bottom: var(--spacing-xl);">
-                <div class="section-header">
-                    <h2>📅 Reuniões Recentes</h2>
-                    <span class="badge badge-active" id="work-meetings-count" style="font-size:0.7rem;"></span>
-                </div>
-                <div id="work-meetings-list">
-                    <div class="empty-section">Carregando...</div>
+                <div class="collapsible-body" id="work-sections-content">
+                    <div id="work-sections-list" class="sections-grid">
+                        <div class="empty-section">Carregando...</div>
+                    </div>
                 </div>
             </section>
             
-            <!-- Cases (if any) -->
-            <section class="card" id="work-cases-section" style="margin-bottom: var(--spacing-xl); display:none;">
-                <div class="section-header">
-                    <h2>📁 Cases</h2>
+            <!-- Meetings (collapsible, CLOSED by default) -->
+            <section class="card collapsible-section" id="work-meetings-section" style="margin-bottom: var(--spacing-lg);">
+                <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
+                    <h2>Reunioes Recentes</h2>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="badge badge-active" id="work-meetings-count" style="font-size:0.7rem;"></span>
+                        <span class="collapse-indicator"></span>
+                    </div>
                 </div>
-                <div id="work-cases-list">
+                <div class="collapsible-body" id="work-meetings-content">
+                    <div id="work-meetings-list">
+                        <div class="empty-section">Carregando...</div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Cases (collapsible, CLOSED, only if data exists) -->
+            <section class="card collapsible-section" id="work-cases-section" style="margin-bottom: var(--spacing-lg); display:none;">
+                <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
+                    <h2>Cases</h2>
+                    <span class="collapse-indicator"></span>
+                </div>
+                <div class="collapsible-body" id="work-cases-content">
+                    <div id="work-cases-list"></div>
+                </div>
+            </section>
+            
+            <!-- Doc Preview (shared) -->
+            <section class="card" id="work-doc-preview-section" style="display:none; margin-bottom: var(--spacing-lg);">
+                <div class="section-header">
+                    <h2 id="work-preview-title">Documento</h2>
+                    <div class="preview-actions">
+                        <button class="btn-icon" onclick="openFullscreen()" title="Expandir (F)">Expandir</button>
+                        <button class="btn-primary" onclick="closePreview()">Fechar</button>
+                    </div>
+                </div>
+                <div class="doc-preview-wrapper" id="work-doc-preview-wrapper">
+                    <div id="work-doc-preview" class="doc-preview-content"></div>
                 </div>
             </section>
         </div>
@@ -1493,27 +1471,36 @@
         }
         
         function renderWorkProjectView(data) {
-            // Mostrar view de work project, esconder view regular
+            // Show work project view, hide regular view
             document.getElementById('work-project-view').style.display = 'block';
             document.getElementById('regular-project-view').style.display = 'none';
             
-            // Overview
+            // Overview (collapsible Project Info section)
             const overview = data.overview || {};
-            document.getElementById('work-definition').textContent = overview.definition || 'Sem definição disponível';
-            document.getElementById('work-context').textContent = overview.context || 'Sem contexto disponível';
-            document.getElementById('work-current-status').textContent = overview.current_status || 'Status não disponível';
+            document.getElementById('work-definition').textContent = overview.definition || 'Sem definicao disponivel';
+            document.getElementById('work-context').textContent = overview.context || 'Sem contexto disponivel';
+            document.getElementById('work-current-status').textContent = overview.current_status || 'Status nao disponivel';
             
-            // Status badge
-            const statusBadge = document.getElementById('work-status-badge');
-            if (overview.status_raw) {
-                statusBadge.textContent = overview.status_raw;
-                statusBadge.style.display = 'inline';
-            } else {
-                statusBadge.style.display = 'none';
+            // Header stats chips (inline counts)
+            const sectionsCount = data.sections ? data.sections.length : 0;
+            const meetingsCount = data.meeting_notes ? data.meeting_notes.length : 0;
+            const casesCount = data.cases ? data.cases.length : 0;
+            
+            const chips = [];
+            if (sectionsCount > 0) chips.push(`<span class="header-chip">${sectionsCount} docs</span>`);
+            if (meetingsCount > 0) chips.push(`<span class="header-chip">${meetingsCount} reunioes</span>`);
+            if (casesCount > 0) chips.push(`<span class="header-chip">${casesCount} cases</span>`);
+            
+            // Last activity
+            if (data.meeting_notes && data.meeting_notes.length > 0) {
+                const lastMeeting = data.meeting_notes[0];
+                const lastDate = lastMeeting.date || extractDateFromFilename(lastMeeting.file);
+                if (lastDate) {
+                    chips.push(`<span class="header-chip header-chip-muted">Ultima: ${formatMeetingDate(lastDate)}</span>`);
+                }
             }
             
-            // Executive Summary
-            renderExecutiveSummary(data, overview);
+            document.getElementById('work-header-stats').innerHTML = chips.join('');
             
             // Sections
             renderWorkSections(data.sections || []);
@@ -1529,6 +1516,21 @@
             // Load report card + intelligence (async, non-blocking)
             if (currentWorkSlug) {
                 loadReportCard(currentWorkSlug);
+            }
+        }
+        
+        // Unified collapsible toggle
+        function toggleCollapsible(toggleEl) {
+            const section = toggleEl.closest('.collapsible-section');
+            const body = section.querySelector('.collapsible-body');
+            const indicator = section.querySelector('.collapse-indicator');
+            
+            if (body.classList.contains('open')) {
+                body.classList.remove('open');
+                indicator.classList.remove('open');
+            } else {
+                body.classList.add('open');
+                indicator.classList.add('open');
             }
         }
         
@@ -1606,75 +1608,7 @@
             }
         }
         
-        function renderExecutiveSummary(data, overview) {
-            // Build executive summary text
-            let summaryParts = [];
-            
-            if (overview.definition) {
-                summaryParts.push(overview.definition);
-            }
-            
-            if (overview.current_status && overview.current_status !== 'Status não disponível') {
-                summaryParts.push(`Situação atual: ${overview.current_status}`);
-            }
-            
-            const summaryText = summaryParts.length > 0 
-                ? summaryParts.join(' ')
-                : 'Resumo do projeto não disponível. Consulte as seções de documentação para mais detalhes.';
-            
-            document.getElementById('executive-summary-text').textContent = summaryText;
-            
-            // Quick Stats
-            const sectionsCount = data.sections ? data.sections.length : 0;
-            const meetingsCount = data.meeting_notes ? data.meeting_notes.length : 0;
-            const casesCount = data.cases ? data.cases.length : 0;
-            
-            document.getElementById('work-docs-count').textContent = sectionsCount;
-            document.getElementById('work-meetings-count-stat').textContent = meetingsCount;
-            document.getElementById('work-cases-count').textContent = casesCount;
-            
-            // Last Activity (from most recent meeting)
-            if (data.meeting_notes && data.meeting_notes.length > 0) {
-                const lastMeeting = data.meeting_notes[0];
-                const lastDate = lastMeeting.date || extractDateFromFilename(lastMeeting.file);
-                if (lastDate) {
-                    document.getElementById('work-last-activity').textContent = formatMeetingDate(lastDate);
-                    document.getElementById('executive-last-update').textContent = `Última atualização: ${formatMeetingDate(lastDate)}`;
-                }
-            }
-            
-            // Executive Chips
-            const timelineChip = document.getElementById('executive-timeline');
-            const peopleChip = document.getElementById('executive-people');
-            const meetingsChip = document.getElementById('executive-meetings');
-            
-            // Timeline info from sections
-            const timelineSection = data.sections?.find(s => s.key === 'timeline' || s.key === 'history');
-            if (timelineSection && timelineSection.summary) {
-                timelineChip.querySelector('span:last-child').textContent = timelineSection.summary.substring(0, 40) + '...';
-                timelineChip.style.display = 'flex';
-            } else {
-                timelineChip.style.display = 'none';
-            }
-            
-            // People info from sections
-            const peopleSection = data.sections?.find(s => s.key === 'people');
-            if (peopleSection && peopleSection.summary) {
-                peopleChip.querySelector('span:last-child').textContent = peopleSection.summary.substring(0, 40) + '...';
-                peopleChip.style.display = 'flex';
-            } else {
-                peopleChip.style.display = 'none';
-            }
-            
-            // Meetings chip
-            if (meetingsCount > 0) {
-                meetingsChip.querySelector('span:last-child').textContent = `${meetingsCount} reuniões registradas`;
-                meetingsChip.style.display = 'flex';
-            } else {
-                meetingsChip.style.display = 'none';
-            }
-        }
-        
+        // Legacy toggle for non-collapsible sections
         function toggleSection(sectionId) {
             const section = document.getElementById(sectionId);
             if (section.style.display === 'none') {
@@ -1824,8 +1758,15 @@
                 priorityEl.style.display = 'none';
             }
             
-            document.getElementById('progress-fill').style.width = project.progress + '%';
-            document.getElementById('progress-text').textContent = project.progress + '%';
+            // Hide progress bar + generic stat cards for work projects (perennial, no %)
+            const isWork = isWorkProject(project.name, project.category);
+            document.querySelector('.project-progress-large').style.display = isWork ? 'none' : '';
+            document.getElementById('project-stats').style.display = isWork ? 'none' : '';
+            
+            if (!isWork) {
+                document.getElementById('progress-fill').style.width = project.progress + '%';
+                document.getElementById('progress-text').textContent = project.progress + '%';
+            }
         }
         
         // Load on start
