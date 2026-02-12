@@ -559,6 +559,26 @@ const WorkProjectsAPI = {
 };
 
 // ============================================
+// WEEKLY BRIEF API (CRUD on items)
+// ============================================
+
+const WeeklyBriefAPI = {
+    /**
+     * Add, complete, or remove an item from a weekly brief section
+     * @param {string} section - "urgent", "important", "decisions"
+     * @param {string} action - "add", "complete", "remove"
+     * @param {number|null} index - Item index (for complete/remove)
+     * @param {object|null} item - Item data (for add)
+     */
+    async patchItem(section, action, index = null, item = null) {
+        return apiRequest('/weekly-brief/items', {
+            method: 'PATCH',
+            body: JSON.stringify({ section, action, index, item }),
+        });
+    },
+};
+
+// ============================================
 // UI HELPERS - Error & Loading States
 // ============================================
 
@@ -639,6 +659,7 @@ window.CalendarAPI = CalendarAPI;
 window.MBAAPI = MBAAPI;
 window.ObservabilityAPI = ObservabilityAPI;
 window.WorkProjectsAPI = WorkProjectsAPI;
+window.WeeklyBriefAPI = WeeklyBriefAPI;
 window.showLoadingState = showLoadingState;
 window.showErrorState = showErrorState;
 window.showEmptyState = showEmptyState;

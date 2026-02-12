@@ -3887,6 +3887,55 @@ async def push_weekly_brief(request: Request):
         conn.close()
 
 
+class BriefItemAction(BaseModel):
+    section: str          # "urgent", "important", "decisions"
+    action: str           # "add", "complete", "remove"
+    index: Optional[int] = None
+    item: Optional[dict] = None
+
+
+BRIEF_SECTION_MAP = {
+    "urgent": "action_items_urgent",
+    "important": "action_items_important",
+    "decisions": "decisions",
+}
+
+
+@app.patch("/api/weekly-brief/items")
+async def patch_weekly_brief_items(body: BriefItemAction):
+    """Add, complete, or remove items from the weekly brief sections"""
+    col = BRIEF_SECTION_MAP.get(body.section)
+    if not col:
+        raise HTTPException(400, f"Invalid section: {body.section}")
+    if body.action not in ("add", "complete", "remove"):
+        raise HTTPException(400, f"Invalid action: {body.action}")
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, " + col + " FROM weekly_briefs ORDER BY week_start DESC LIMIT 1")
+    row = cursor.fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(404, "No weekly brief available")
+
+    brief_id = row["id"]
+    items = json.loads(row[col]) if isinstance(row[col], str) else (row[col] or [])
+
+    if body.action == "add" and body.item:
+        items.append(body.item)
+    elif body.action in ("complete", "remove") and body.index is not None:
+        if 0 <= body.index < len(items):
+            items.pop(body.index)
+    else:
+        conn.close()
+        raise HTTPException(400, "Missing index or item for action")
+
+    cursor.execute(f"UPDATE weekly_briefs SET {col} = ? WHERE id = ?", (json.dumps(items), brief_id))
+    conn.commit()
+    conn.close()
+    return {"status": "ok", "section": body.section, "items": items}
+
+
 @app.get("/api/weekly-brief")
 async def get_weekly_brief():
     """Get the latest weekly brief"""

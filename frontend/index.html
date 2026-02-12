@@ -7,7 +7,7 @@
     <meta name="description" content="Centro de Controle - Dashboard do Fábio">
     <title>Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=12">
+    <link rel="stylesheet" href="css/style.css?v=13">
     <link rel="manifest" href="manifest.json">
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -487,7 +487,7 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="js/api.js?v=6"></script>
+    <script src="js/api.js?v=7"></script>
     <script>
         // ===========================================
         // GPM DASHBOARD - MAIN SCRIPT
@@ -1017,6 +1017,8 @@
         
         let weeklyBriefData = null;
         let briefExpanded = false;
+        let briefSelectedDate = null;
+        let briefParsedDays = [];
         
         async function loadWeeklyBrief() {
             try {
@@ -1033,6 +1035,53 @@
             if (val > 10) return 'brief-gauge-red';
             if (val >= 6) return 'brief-gauge-amber';
             return 'brief-gauge-green';
+        }
+        
+        // Deep link map: keyword -> internal page
+        const BRIEF_LINK_MAP = [
+            { pattern: /MBA|Artefatos|elective|eletiva/i, href: 'mba', label: 'MBA' },
+            { pattern: /Catalog|Book AI/i, href: 'project.html?id=1', label: 'Catalog' },
+            { pattern: /CMS|Content|Braze|banner/i, href: 'project.html?id=2', label: 'CMS' },
+            { pattern: /DAM|uploader|Acquia/i, href: 'project.html?id=3', label: 'DAM' },
+            { pattern: /3TPM|Korea|Visagio/i, href: 'work', label: 'Work' },
+            { pattern: /CloudOps|SRE|Sprint|blocker/i, href: 'work', label: 'Work' },
+            { pattern: /Deep\s*Link|Feedback|Milano/i, href: 'work', label: 'Work' },
+        ];
+        
+        function briefItemLink(text) {
+            for (const m of BRIEF_LINK_MAP) {
+                if (m.pattern.test(text)) return m;
+            }
+            return null;
+        }
+        
+        // Render a single action item with CRUD controls and deep link
+        function renderBriefItem(item, section, index, cssClass) {
+            const text = item.action || item.decision || item;
+            const deadline = item.deadline || '';
+            const context = item.context || item.options || '';
+            const link = briefItemLink(typeof text === 'string' ? text : '');
+            const linkHtml = link ? `<a class="brief-item-link" href="${link.href}">${link.label}</a>` : '';
+            const rightLabel = deadline || context;
+            
+            return `<div class="brief-action-item ${cssClass || ''}" data-section="${section}" data-index="${index}">
+                <span class="brief-crud-check" onclick="briefCompleteItem('${section}', ${index})" title="Completar">&#10003;</span>
+                <span class="brief-action-text">${escapeHtml(typeof text === 'string' ? text : JSON.stringify(text))}</span>
+                ${linkHtml}
+                ${rightLabel ? `<span class="brief-action-deadline">${escapeHtml(rightLabel)}</span>` : ''}
+                <span class="brief-crud-remove" onclick="briefRemoveItem('${section}', ${index})" title="Remover">&minus;</span>
+            </div>`;
+        }
+        
+        // Section header with + button
+        function renderBriefSectionHeader(label, section, cssClass) {
+            return `<div class="brief-detail-header">
+                <div class="brief-detail-label ${cssClass}">${label}</div>
+                <span class="brief-crud-add" onclick="briefShowAddInput('${section}', this)" title="Adicionar">+</span>
+            </div>
+            <div class="brief-add-input-wrap" id="brief-add-${section}" style="display:none;">
+                <input class="brief-add-input" type="text" placeholder="Nova acao..." onkeydown="briefAddKeydown(event, '${section}')" />
+            </div>`;
         }
         
         function renderWeeklyBrief() {
@@ -1054,7 +1103,7 @@
                 rangeEl.textContent = fmt(start) + ' - ' + fmt(end);
             }
             
-            // Gauges — 3 small colored dots with labels
+            // Gauges — 3 colored dots
             if (b.energy_check) {
                 const e = b.energy_check;
                 const items = [
@@ -1071,44 +1120,71 @@
                 `).join('');
             }
             
-            // Top Actions — first 3 urgent items as pulse-item-like rows
+            // Top Actions — first 3 urgent with CRUD + links
             const urgent = b.action_items_urgent || [];
             const topActions = urgent.slice(0, 3);
             if (topActions.length > 0 && actionsEl) {
-                actionsEl.innerHTML = topActions.map(item => `
-                    <div class="brief-action-item">
-                        <span class="brief-action-text">${escapeHtml(item.action || item)}</span>
-                        <span class="brief-action-deadline">${escapeHtml(item.deadline || '')}</span>
-                    </div>
-                `).join('');
+                actionsEl.innerHTML = topActions.map((item, i) => renderBriefItem(item, 'urgent', i, '')).join('');
             } else if (actionsEl) {
                 actionsEl.innerHTML = '<div class="brief-action-item brief-action-clear"><span class="brief-action-text">Nenhuma acao urgente</span></div>';
             }
             
-            // Calendar — structured day rows
+            // Calendar — split layout: day list (left) + day agenda (right)
             if (b.week_glance && calendarEl) {
                 const dayMap = { 'MON': 'SEG', 'TUE': 'TER', 'WED': 'QUA', 'THU': 'QUI', 'FRI': 'SEX', 'SAT': 'SAB', 'SUN': 'DOM' };
                 const todayAbbrs = ['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
                 const todayAbbr = todayAbbrs[new Date().getDay()];
+                const weekStart = b.week_start ? new Date(b.week_start + 'T00:00:00') : null;
                 
                 const rawLines = b.week_glance.split('\n');
-                const days = [];
+                briefParsedDays = [];
+                const engDayOrder = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
                 rawLines.forEach(line => {
-                    const m = line.match(/^(MON|TUE|WED|THU|FRI|SAT|SUN)\s+\w+\s+\d+:\s*(.*)/i);
+                    const m = line.match(/^(MON|TUE|WED|THU|FRI|SAT|SUN)\s+\w+\s+(\d+):\s*(.*)/i);
                     if (m) {
-                        days.push({ abbr: dayMap[m[1].toUpperCase()] || m[1], text: m[2].trim() });
-                    } else if (days.length > 0 && line.trim()) {
-                        days[days.length - 1].text += ', ' + line.trim();
+                        const eng = m[1].toUpperCase();
+                        const dayNum = parseInt(m[2]);
+                        // Compute full date from week_start
+                        let dateStr = '';
+                        if (weekStart) {
+                            const offset = engDayOrder.indexOf(eng);
+                            if (offset >= 0) {
+                                const d = new Date(weekStart);
+                                d.setDate(d.getDate() + offset);
+                                dateStr = d.toISOString().split('T')[0];
+                            }
+                        }
+                        briefParsedDays.push({ abbr: dayMap[eng] || eng, text: m[3].trim(), date: dateStr, dayNum });
+                    } else if (briefParsedDays.length > 0 && line.trim()) {
+                        briefParsedDays[briefParsedDays.length - 1].text += ', ' + line.trim();
                     }
                 });
                 
-                calendarEl.innerHTML = days.map(d => {
+                // Set default selected date to today
+                const todayStr = new Date().toISOString().split('T')[0];
+                if (!briefSelectedDate) {
+                    briefSelectedDate = briefParsedDays.find(d => d.date === todayStr)?.date || (briefParsedDays[0]?.date) || todayStr;
+                }
+                
+                const dayListHtml = briefParsedDays.map(d => {
                     const isToday = d.abbr === todayAbbr;
-                    return `<div class="brief-day-row${isToday ? ' brief-today' : ''}">
+                    const isSelected = d.date === briefSelectedDate;
+                    return `<div class="brief-day-row${isToday ? ' brief-today' : ''}${isSelected ? ' brief-day-selected' : ''}" onclick="briefSelectDay('${d.date}')" data-date="${d.date}">
                         <span class="brief-day-abbr">${d.abbr}</span>
                         <span class="brief-day-text">${escapeHtml(d.text)}</span>
                     </div>`;
                 }).join('');
+                
+                calendarEl.innerHTML = `
+                    <div class="brief-calendar-split">
+                        <div class="brief-cal-days">${dayListHtml}</div>
+                        <div class="brief-cal-agenda" id="brief-day-agenda">
+                            <div class="brief-agenda-loading">Carregando...</div>
+                        </div>
+                    </div>`;
+                
+                // Load selected day agenda
+                loadBriefDayAgenda(briefSelectedDate);
             }
             
             // Footer — counts + expand button
@@ -1132,47 +1208,27 @@
                 }
             }
             
-            // Expanded detail
+            // Expanded detail with CRUD + links
             if (briefExpanded && detailEl) {
                 let html = '';
                 
-                // All urgent items (beyond the 3 shown)
-                if (urgent.length > 3) {
-                    html += '<div class="brief-detail-section"><div class="brief-detail-label brief-label-urgent">MAIS URGENTES</div>';
-                    html += urgent.slice(3).map(item => `
-                        <div class="brief-action-item">
-                            <span class="brief-action-text">${escapeHtml(item.action || item)}</span>
-                            <span class="brief-action-deadline">${escapeHtml(item.deadline || '')}</span>
-                        </div>
-                    `).join('');
-                    html += '</div>';
+                // All urgent items (beyond top 3)
+                if (urgent.length > 0) {
+                    html += renderBriefSectionHeader('URGENTES', 'urgent', 'brief-label-urgent');
+                    html += urgent.slice(3).map((item, i) => renderBriefItem(item, 'urgent', i + 3, '')).join('');
                 }
                 
                 // Important items
                 const important = b.action_items_important || [];
-                if (important.length > 0) {
-                    html += '<div class="brief-detail-section"><div class="brief-detail-label brief-label-important">IMPORTANTE</div>';
-                    html += important.map(item => `
-                        <div class="brief-action-item brief-action-important">
-                            <span class="brief-action-text">${escapeHtml(item.action || item)}</span>
-                            <span class="brief-action-context">${escapeHtml(item.context || '')}</span>
-                        </div>
-                    `).join('');
-                    html += '</div>';
-                }
+                html += renderBriefSectionHeader('IMPORTANTE', 'important', 'brief-label-important');
+                html += important.map((item, i) => renderBriefItem(item, 'important', i, 'brief-action-important')).join('');
+                if (important.length === 0) html += '<div class="brief-action-item brief-action-clear"><span class="brief-action-text" style="opacity:0.4;">Nenhum item</span></div>';
                 
                 // Decisions
                 const decisions = b.decisions || [];
-                if (decisions.length > 0) {
-                    html += '<div class="brief-detail-section"><div class="brief-detail-label brief-label-decision">DECISOES</div>';
-                    html += decisions.map(d => `
-                        <div class="brief-action-item brief-action-decision">
-                            <span class="brief-action-text">${escapeHtml(d.decision || d)}</span>
-                            <span class="brief-action-deadline">${escapeHtml(d.deadline || '')}</span>
-                        </div>
-                    `).join('');
-                    html += '</div>';
-                }
+                html += renderBriefSectionHeader('DECISOES', 'decisions', 'brief-label-decision');
+                html += decisions.map((d, i) => renderBriefItem(d, 'decisions', i, 'brief-action-decision')).join('');
+                if (decisions.length === 0) html += '<div class="brief-action-item brief-action-clear"><span class="brief-action-text" style="opacity:0.4;">Nenhuma decisao</span></div>';
                 
                 detailEl.innerHTML = html;
                 detailEl.style.display = 'block';
@@ -1186,6 +1242,94 @@
             const panel = document.getElementById('weekly-brief-panel');
             if (panel) panel.classList.toggle('expanded', briefExpanded);
             renderWeeklyBrief();
+        }
+        
+        // --- Split calendar: load day agenda ---
+        function briefSelectDay(dateStr) {
+            briefSelectedDate = dateStr;
+            // Update selected class
+            document.querySelectorAll('.brief-day-row').forEach(el => {
+                el.classList.toggle('brief-day-selected', el.dataset.date === dateStr);
+            });
+            loadBriefDayAgenda(dateStr);
+        }
+        
+        async function loadBriefDayAgenda(dateStr) {
+            const agendaEl = document.getElementById('brief-day-agenda');
+            if (!agendaEl || !dateStr) return;
+            agendaEl.innerHTML = '<div class="brief-agenda-loading">Carregando...</div>';
+            try {
+                const data = await CalendarAPI.getByDate(dateStr);
+                const events = data.events || data || [];
+                if (events.length === 0) {
+                    agendaEl.innerHTML = '<div class="brief-agenda-empty">Sem eventos</div>';
+                    return;
+                }
+                const d = new Date(dateStr + 'T00:00:00');
+                const dayLabel = d.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }).replace('.', '');
+                agendaEl.innerHTML = `<div class="brief-agenda-header">${dayLabel}</div>` +
+                    events.map(ev => `
+                        <div class="brief-agenda-event">
+                            <span class="brief-agenda-time">${escapeHtml(ev.time || '--:--')}</span>
+                            <span class="brief-agenda-title">${escapeHtml(ev.summary || ev.title || '')}</span>
+                        </div>
+                    `).join('');
+            } catch (e) {
+                agendaEl.innerHTML = '<div class="brief-agenda-empty">Erro ao carregar</div>';
+            }
+        }
+        
+        // --- CRUD handlers ---
+        function briefShowAddInput(section, btnEl) {
+            const wrap = document.getElementById('brief-add-' + section);
+            if (!wrap) return;
+            const visible = wrap.style.display !== 'none';
+            wrap.style.display = visible ? 'none' : 'block';
+            if (!visible) {
+                const input = wrap.querySelector('input');
+                if (input) { input.value = ''; input.focus(); }
+            }
+        }
+        
+        async function briefAddKeydown(event, section) {
+            if (event.key === 'Escape') {
+                const wrap = document.getElementById('brief-add-' + section);
+                if (wrap) wrap.style.display = 'none';
+                return;
+            }
+            if (event.key !== 'Enter') return;
+            const text = event.target.value.trim();
+            if (!text) return;
+            event.target.disabled = true;
+            try {
+                let item;
+                if (section === 'urgent') item = { action: text, deadline: '', owner: 'Fabio' };
+                else if (section === 'important') item = { action: text, context: '' };
+                else if (section === 'decisions') item = { decision: text, options: '', deadline: '', who: 'Fabio' };
+                await WeeklyBriefAPI.patchItem(section, 'add', null, item);
+                // Refresh data
+                weeklyBriefData = await apiRequest('/weekly-brief');
+                renderWeeklyBrief();
+            } catch (e) {
+                console.error('Failed to add brief item:', e);
+                event.target.disabled = false;
+            }
+        }
+        
+        async function briefCompleteItem(section, index) {
+            try {
+                await WeeklyBriefAPI.patchItem(section, 'complete', index);
+                weeklyBriefData = await apiRequest('/weekly-brief');
+                renderWeeklyBrief();
+            } catch (e) { console.error('Failed to complete brief item:', e); }
+        }
+        
+        async function briefRemoveItem(section, index) {
+            try {
+                await WeeklyBriefAPI.patchItem(section, 'remove', index);
+                weeklyBriefData = await apiRequest('/weekly-brief');
+                renderWeeklyBrief();
+            } catch (e) { console.error('Failed to remove brief item:', e); }
         }
         
         // ===========================================
