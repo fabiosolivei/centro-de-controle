@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0d1117">
     <title>Projeto - Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=10">
+    <link rel="stylesheet" href="css/style.css?v=11">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -1811,6 +1811,13 @@
             document.title = `${project.name} - Centro de Controle`;
             document.getElementById('project-name').textContent = project.name;
             document.getElementById('project-description').textContent = project.description || '';
+
+            // Back button: work projects go to work page, others to dashboard
+            const backBtn = document.querySelector('.back-btn');
+            if (backBtn && isWorkProject(project.name, project.category)) {
+                backBtn.href = 'work';
+                backBtn.textContent = '← Work Status';
+            }
             
             const categoryIcons = { trabalho: '💼', mba: '🎓', pessoal: '👤', familia: '👨‍👩‍👧' };
             document.getElementById('project-category').textContent = 
