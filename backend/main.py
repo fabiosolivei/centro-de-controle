@@ -8,6 +8,7 @@ import os
 import json
 import re
 import hashlib
+import asyncio
 from datetime import datetime, date
 from typing import Optional, List
 from contextlib import asynccontextmanager
@@ -5015,51 +5016,51 @@ async def get_langfuse_traces(limit: int = Query(25, ge=1, le=100)):
 
     try:
         async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(
-                f"{LANGFUSE_HOST}/api/public/traces",
-                params={"limit": limit, "orderBy": "timestamp.desc"},
-                auth=auth,
+            # Fetch traces and recent generations in parallel
+            traces_resp, gen_resp = await asyncio.gather(
+                client.get(
+                    f"{LANGFUSE_HOST}/api/public/traces",
+                    params={"limit": limit, "orderBy": "timestamp.desc"},
+                    auth=auth,
+                ),
+                client.get(
+                    f"{LANGFUSE_HOST}/api/public/observations",
+                    params={"type": "GENERATION", "limit": 50, "page": 1},
+                    auth=auth,
+                ),
             )
-            if resp.status_code != 200:
-                raise HTTPException(502, f"Langfuse returned {resp.status_code}")
+            if traces_resp.status_code != 200:
+                raise HTTPException(502, f"Langfuse returned {traces_resp.status_code}")
 
-            raw = resp.json()
+            raw = traces_resp.json()
+
+            # Build trace_id -> model lookup from generations
+            trace_model_map = {}
+            trace_tokens_map = {}
+            if gen_resp.status_code == 200:
+                for g in gen_resp.json().get("data", []):
+                    tid = g.get("traceId")
+                    if tid and tid not in trace_model_map:
+                        trace_model_map[tid] = g.get("model")
+                        ud = g.get("usageDetails") or {}
+                        trace_tokens_map[tid] = ud.get("input", 0) + ud.get("output", 0)
+
             traces = []
             for t in raw.get("data", []):
-                # Collect generation info from observations
-                obs = t.get("observations", [])
-                model = None
-                total_tokens = 0
-                cost = 0
-                latency_ms = None
-
-                for o in obs:
-                    if o.get("type") == "GENERATION":
-                        model = model or o.get("model")
-                        ud = o.get("usageDetails") or {}
-                        total_tokens += ud.get("input", 0) + ud.get("output", 0)
-                        cost += o.get("calculatedTotalCost") or 0
-
-                # Calculate latency from trace timestamps
-                if t.get("timestamp") and t.get("updatedAt"):
-                    from datetime import datetime
-                    try:
-                        start = datetime.fromisoformat(t["timestamp"].replace("Z", "+00:00"))
-                        end = datetime.fromisoformat(t["updatedAt"].replace("Z", "+00:00"))
-                        latency_ms = int((end - start).total_seconds() * 1000)
-                    except Exception:
-                        pass
+                tid = t.get("id", "")
+                cost = t.get("totalCost") or 0
+                latency = t.get("latency")
+                latency_ms = int(latency * 1000) if latency else None
 
                 traces.append({
-                    "id": t.get("id", ""),
+                    "id": tid,
                     "name": t.get("name", "unknown"),
                     "timestamp": t.get("timestamp", ""),
-                    "model": model,
-                    "total_tokens": total_tokens,
+                    "model": trace_model_map.get(tid),
+                    "total_tokens": trace_tokens_map.get(tid, 0),
                     "cost": round(cost, 6),
                     "latency_ms": latency_ms,
                     "tags": t.get("tags", []),
-                    "input_preview": str(t.get("input", ""))[:120] if t.get("input") else None,
                 })
 
             result = {
