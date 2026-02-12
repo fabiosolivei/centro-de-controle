@@ -2081,6 +2081,8 @@ form {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: var(--spacing-xl);
+    max-width: 1600px;
+    margin: 0 auto;
 }
 
 @media (min-width: 1400px) {
@@ -3204,7 +3206,9 @@ table {
 .top-context-row {
     display: grid;
     grid-template-columns: 1fr;
-    gap: var(--spacing-lg);
+    gap: var(--spacing-xl);
+    max-width: 1600px;
+    margin: 0 auto;
     width: 100%;
 }
 
