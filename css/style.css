@@ -3283,20 +3283,13 @@ table {
     font-size: 0.8rem;
     line-height: 1.6;
     color: var(--text-secondary);
-    max-height: 120px;
+    flex: 1;
     overflow: hidden;
     position: relative;
 }
 
 .brief-glance::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 30px;
-    background: linear-gradient(transparent, #1a1a25);
-    pointer-events: none;
+    display: none;
 }
 
 .brief-detail {
@@ -3304,14 +3297,9 @@ table {
     font-size: 0.82rem;
 }
 
-/* When brief is expanded, remove the fade mask */
+/* When brief is expanded, allow overflow */
 .weekly-brief-panel.expanded .brief-glance {
-    max-height: none;
     overflow: visible;
-}
-
-.weekly-brief-panel.expanded .brief-glance::after {
-    display: none;
 }
 
 /* Brief chips (urgentes, importantes, decisoes) */
@@ -3356,25 +3344,121 @@ table {
     border: 1px solid rgba(16, 185, 129, 0.25);
 }
 
+/* Energy bars (always visible in brief) */
+.brief-energy-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 0 4px;
+}
+
+.brief-energy-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+}
+
+.brief-energy-label {
+    width: 62px;
+    flex-shrink: 0;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-weight: 500;
+}
+
+.brief-energy-track {
+    flex: 1;
+    height: 6px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.brief-energy-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+}
+
+.brief-energy-low { background: #10b981; }
+.brief-energy-mid { background: #f59e0b; }
+.brief-energy-high { background: #ef4444; }
+
+.brief-energy-value {
+    width: 32px;
+    flex-shrink: 0;
+    text-align: right;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.7rem;
+}
+
+/* Glance week label */
+.brief-week-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+}
+
 /* Glance day rows */
 .brief-day-row {
-    padding: 3px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 3px 4px;
+    border-radius: var(--radius-sm);
     color: var(--text-secondary);
-    font-size: 0.8rem;
+    font-size: 0.78rem;
+    line-height: 1.5;
 }
 
 .brief-day-row:last-child {
     border-bottom: none;
 }
 
+.brief-day-abbr {
+    width: 28px;
+    flex-shrink: 0;
+    font-weight: 700;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+}
+
+.brief-day-text {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .brief-today {
     color: var(--accent-primary);
     font-weight: 600;
     background: rgba(99, 102, 241, 0.06);
-    border-radius: var(--radius-sm);
-    padding: 3px 6px;
-    margin: 0 -6px;
+}
+
+.brief-today .brief-day-abbr {
+    color: var(--accent-primary);
+}
+
+/* Detail group labels */
+.brief-detail-group {
+    margin-top: 0.5rem;
+}
+
+.brief-detail-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    margin-bottom: 4px;
 }
 
 .priority-pulse.all-clear {
