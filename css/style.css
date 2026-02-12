@@ -3500,6 +3500,214 @@ table {
 .brief-label-important { color: #f59e0b; }
 .brief-label-decision { color: var(--accent-primary); }
 
+/* --- Split Calendar: days left + agenda right --- */
+.brief-calendar-split {
+    display: flex;
+    gap: 0;
+    min-height: 0;
+}
+
+.brief-cal-days {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.brief-cal-agenda {
+    flex: 1;
+    min-width: 0;
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+    padding-left: 10px;
+    display: flex;
+    flex-direction: column;
+    font-size: 0.75rem;
+}
+
+.brief-day-row {
+    cursor: pointer;
+}
+
+.brief-day-selected {
+    background: rgba(16, 185, 129, 0.08);
+    border-radius: var(--radius-sm);
+}
+
+.brief-day-selected .brief-day-abbr {
+    color: #10b981;
+}
+
+.brief-agenda-header {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.brief-agenda-event {
+    display: flex;
+    gap: 6px;
+    padding: 2px 0;
+    line-height: 1.4;
+}
+
+.brief-agenda-time {
+    flex-shrink: 0;
+    width: 36px;
+    font-weight: 600;
+    color: var(--accent-secondary);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+}
+
+.brief-agenda-title {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-secondary);
+}
+
+.brief-agenda-loading,
+.brief-agenda-empty {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+    padding: 4px 0;
+}
+
+/* Mobile: stack calendar vertically */
+@media (max-width: 600px) {
+    .brief-calendar-split {
+        flex-direction: column;
+    }
+    .brief-cal-agenda {
+        border-left: none;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        padding-left: 0;
+        padding-top: 6px;
+        margin-top: 4px;
+    }
+}
+
+/* --- Deep Link Chips --- */
+.brief-item-link {
+    flex-shrink: 0;
+    font-size: 0.62rem;
+    font-weight: 600;
+    color: var(--accent-primary);
+    text-decoration: none;
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    transition: var(--transition-fast);
+    white-space: nowrap;
+}
+
+.brief-item-link:hover {
+    background: rgba(99, 102, 241, 0.1);
+    border-color: rgba(99, 102, 241, 0.4);
+}
+
+/* --- CRUD Controls --- */
+.brief-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 6px;
+    margin-bottom: 2px;
+}
+
+.brief-crud-add {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    transition: var(--transition-fast);
+    opacity: 0.4;
+}
+
+.brief-crud-add:hover {
+    opacity: 1;
+    color: var(--accent-primary);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.brief-add-input-wrap {
+    margin-bottom: 4px;
+}
+
+.brief-add-input {
+    width: 100%;
+    padding: 4px 8px;
+    font-size: 0.78rem;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color var(--transition-fast);
+}
+
+.brief-add-input:focus {
+    border-color: var(--accent-primary);
+}
+
+.brief-crud-check,
+.brief-crud-remove {
+    flex-shrink: 0;
+    cursor: pointer;
+    font-size: 0.7rem;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: var(--transition-fast);
+    opacity: 0;
+}
+
+.brief-action-item:hover .brief-crud-check,
+.brief-action-item:hover .brief-crud-remove {
+    opacity: 0.5;
+}
+
+.brief-crud-check:hover {
+    opacity: 1 !important;
+    color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.brief-crud-remove:hover {
+    opacity: 1 !important;
+    color: #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+}
+
+/* Mobile: always show CRUD buttons */
+@media (max-width: 767px) {
+    .brief-crud-check,
+    .brief-crud-remove {
+        opacity: 0.4;
+        min-width: 44px;
+        min-height: 44px;
+    }
+    .brief-crud-add {
+        min-width: 44px;
+        min-height: 44px;
+        opacity: 0.6;
+    }
+}
+
 .priority-pulse.all-clear {
     border-color: rgba(16, 185, 129, 0.2);
     background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), var(--bg-card));
