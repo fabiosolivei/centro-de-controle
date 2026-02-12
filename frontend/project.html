@@ -6,708 +6,15 @@
     <meta name="theme-color" content="#0d1117">
     <title>Projeto - Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=11">
+    <link rel="stylesheet" href="css/style.css?v=22">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <!-- Auth Check -->
     <script>
         if (!sessionStorage.getItem('auth_token')) {
             window.location.href = 'login';
         }
     </script>
-    <style>
-        /* Estilos específicos da página de projeto */
-        .project-header {
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-lg);
-            margin-bottom: var(--spacing-xl);
-            flex-wrap: wrap;
-        }
-        
-        .project-header .back-btn {
-            background: var(--bg-glass);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-secondary);
-            padding: 8px 16px;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            text-decoration: none;
-            transition: all var(--transition-fast);
-        }
-        
-        .project-header .back-btn:hover {
-            background: var(--bg-glass-hover);
-            color: var(--text-primary);
-        }
-        
-        .project-title-section {
-            flex: 1;
-        }
-        
-        .project-title-section h1 {
-            font-size: 1.75rem;
-            margin-bottom: 4px;
-        }
-        
-        .project-meta {
-            display: flex;
-            gap: var(--spacing-md);
-            color: var(--text-muted);
-            font-size: 0.875rem;
-            flex-wrap: wrap;
-        }
-        
-        .project-meta .badge {
-            padding: 2px 10px;
-            border-radius: var(--radius-full);
-            font-size: 0.75rem;
-            font-weight: 600;
-        }
-        
-        .badge-active { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
-        .badge-paused { background: rgba(234, 179, 8, 0.2); color: #eab308; }
-        .badge-high { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
-        
-        .project-progress-large {
-            margin: var(--spacing-lg) 0;
-        }
-        
-        .progress-bar-large {
-            height: 12px;
-            background: rgba(255,255,255,0.1);
-            border-radius: var(--radius-full);
-            overflow: hidden;
-            margin-bottom: 8px;
-        }
-        
-        .progress-fill-large {
-            height: 100%;
-            background: var(--gradient-primary);
-            border-radius: var(--radius-full);
-            transition: width 0.5s ease;
-        }
-        
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.875rem;
-            color: var(--text-muted);
-        }
-        
-        .project-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: var(--spacing-md);
-            margin-bottom: var(--spacing-xl);
-        }
-        
-        .stat-card {
-            background: var(--bg-glass);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            text-align: center;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        
-        .stat-card .number {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        
-        .stat-card .label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 4px;
-        }
-        
-        .project-sections {
-            display: grid;
-            gap: var(--spacing-xl);
-        }
-        
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: var(--spacing-md);
-        }
-        
-        .section-header h2 {
-            font-size: 1.125rem;
-        }
-        
-        .task-item-project {
-            background: var(--bg-card);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-sm);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            border-left: 3px solid var(--accent-primary);
-        }
-        
-        .task-item-project.status-done {
-            opacity: 0.6;
-            border-left-color: #22c55e;
-        }
-        
-        .task-item-project.status-doing {
-            border-left-color: #eab308;
-        }
-        
-        .task-checkbox {
-            width: 20px;
-            height: 20px;
-            border-radius: 4px;
-            border: 2px solid var(--text-muted);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        
-        .task-checkbox.checked {
-            background: #22c55e;
-            border-color: #22c55e;
-        }
-        
-        .task-checkbox.checked::after {
-            content: '✓';
-            color: white;
-            font-size: 12px;
-        }
-        
-        .task-info {
-            flex: 1;
-        }
-        
-        .task-title {
-            font-weight: 500;
-        }
-        
-        .task-meta {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-        
-        .doc-item {
-            background: var(--bg-card);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-sm);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-        }
-        
-        .doc-icon {
-            font-size: 1.5rem;
-        }
-        
-        .doc-info {
-            flex: 1;
-        }
-        
-        .doc-title {
-            font-weight: 500;
-            color: var(--accent-primary);
-        }
-        
-        .doc-title a {
-            color: inherit;
-            text-decoration: none;
-        }
-        
-        .doc-title a:hover {
-            text-decoration: underline;
-        }
-        
-        .note-item {
-            background: var(--bg-card);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-sm);
-        }
-        
-        .note-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        
-        .note-title {
-            font-weight: 600;
-        }
-        
-        .note-date {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-        
-        .note-content {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-        
-        .empty-section {
-            text-align: center;
-            padding: var(--spacing-xl);
-            color: var(--text-muted);
-        }
-        
-        .add-form {
-            background: var(--bg-glass);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-md);
-            display: none;
-        }
-        
-        .add-form.active {
-            display: block;
-        }
-        
-        .add-form input, .add-form textarea {
-            width: 100%;
-            padding: 10px;
-            background: var(--bg-card);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: var(--radius-sm);
-            color: var(--text-primary);
-            margin-bottom: 10px;
-        }
-        
-        .add-form .form-row {
-            display: flex;
-            gap: 10px;
-        }
-        
-        /* File items */
-        .file-item {
-            background: var(--bg-card);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-sm);
-            display: flex;
-            align-items: center;
-            gap: var(--spacing-md);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            border-left: 3px solid transparent;
-        }
-        
-        .file-item:hover {
-            background: var(--bg-card-hover);
-            border-left-color: var(--accent-primary);
-        }
-        
-        .file-item.type-epic {
-            border-left-color: #f59e0b;
-            background: rgba(245, 158, 11, 0.05);
-        }
-        
-        .file-item.type-draft {
-            border-left-color: #8b5cf6;
-        }
-        
-        .file-icon {
-            font-size: 1.25rem;
-            width: 30px;
-            text-align: center;
-        }
-        
-        .file-info {
-            flex: 1;
-        }
-        
-        .file-name {
-            font-weight: 500;
-            color: var(--text-primary);
-        }
-        
-        .file-meta {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-        }
-        
-        /* Document preview */
-        .doc-preview-wrapper {
-            position: relative;
-        }
-        
-        .doc-preview-content {
-            background: var(--bg-glass);
-            padding: var(--spacing-lg);
-            border-radius: var(--radius-md);
-            max-height: 70vh;
-            overflow-y: auto;
-            font-family: var(--font-family);
-            line-height: 1.8;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(99, 102, 241, 0.4) transparent;
-        }
-        
-        .doc-preview-content::-webkit-scrollbar {
-            width: 8px;
-        }
-        
-        .doc-preview-content::-webkit-scrollbar-track {
-            background: transparent;
-        }
-        
-        .doc-preview-content::-webkit-scrollbar-thumb {
-            background: rgba(99, 102, 241, 0.4);
-            border-radius: 4px;
-        }
-        
-        .doc-preview-content::-webkit-scrollbar-thumb:hover {
-            background: rgba(99, 102, 241, 0.6);
-        }
-        
-        /* Scroll indicator gradient */
-        .doc-preview-wrapper::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 40px;
-            background: linear-gradient(transparent, var(--bg-card));
-            pointer-events: none;
-            border-radius: 0 0 var(--radius-md) var(--radius-md);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        
-        .doc-preview-wrapper.has-scroll::after {
-            opacity: 1;
-        }
-        
-        /* Fullscreen mode */
-        .fullscreen-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 1000;
-            padding: 20px;
-            overflow-y: auto;
-        }
-        
-        .fullscreen-overlay.active {
-            display: block;
-        }
-        
-        .fullscreen-content {
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 40px;
-            background: var(--bg-card);
-            border-radius: var(--radius-lg);
-        }
-        
-        .fullscreen-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .fullscreen-header h2 {
-            font-size: 1.5rem;
-            color: var(--text-primary);
-        }
-        
-        .fullscreen-close {
-            background: var(--bg-glass);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-secondary);
-            padding: 8px 16px;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-        }
-        
-        .fullscreen-close:hover {
-            background: var(--bg-glass-hover);
-            color: var(--text-primary);
-        }
-        
-        .preview-actions {
-            display: flex;
-            gap: 8px;
-        }
-        
-        .btn-icon {
-            background: var(--bg-glass);
-            border: 1px solid rgba(255,255,255,0.1);
-            color: var(--text-secondary);
-            padding: 8px 12px;
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            font-size: 0.875rem;
-        }
-        
-        .btn-icon:hover {
-            background: var(--bg-glass-hover);
-            color: var(--text-primary);
-        }
-        
-        .doc-preview-content h1 { font-size: 1.5rem; margin: 1em 0 0.5em; color: var(--text-primary); }
-        .doc-preview-content h2 { font-size: 1.25rem; margin: 1em 0 0.5em; color: var(--text-primary); border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.3em; }
-        .doc-preview-content h3 { font-size: 1.1rem; margin: 1em 0 0.5em; color: var(--text-secondary); }
-        .doc-preview-content p { margin: 0.5em 0; color: var(--text-secondary); }
-        .doc-preview-content ul, .doc-preview-content ol { margin: 0.5em 0; padding-left: 1.5em; color: var(--text-secondary); }
-        .doc-preview-content li { margin: 0.25em 0; }
-        .doc-preview-content code { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.9em; }
-        .doc-preview-content pre { background: rgba(0,0,0,0.3); padding: 1em; border-radius: 8px; overflow-x: auto; margin: 1em 0; }
-        .doc-preview-content pre code { background: none; padding: 0; }
-        .doc-preview-content table { width: 100%; border-collapse: collapse; margin: 1em 0; }
-        .doc-preview-content th, .doc-preview-content td { border: 1px solid rgba(255,255,255,0.1); padding: 8px 12px; text-align: left; }
-        .doc-preview-content th { background: rgba(255,255,255,0.05); }
-        .doc-preview-content blockquote { border-left: 3px solid var(--accent-primary); padding-left: 1em; margin: 1em 0; color: var(--text-muted); font-style: italic; }
-        .doc-preview-content hr { border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 1.5em 0; }
-        .doc-preview-content input[type="checkbox"] { margin-right: 8px; }
-        
-        /* Work Project View Styles */
-        .overview-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: var(--spacing-lg);
-        }
-        
-        .overview-card {
-            background: var(--bg-glass);
-            padding: var(--spacing-lg);
-            border-radius: var(--radius-md);
-            border-left: 3px solid var(--accent-primary);
-        }
-        
-        .overview-card.full-width {
-            grid-column: 1 / -1;
-        }
-        
-        .overview-card h3 {
-            font-size: 0.875rem;
-            color: var(--text-muted);
-            margin-bottom: var(--spacing-sm);
-            font-weight: 600;
-        }
-        
-        .overview-card p {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-        
-        .sections-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: var(--spacing-md);
-        }
-        
-        .section-item {
-            background: var(--bg-card);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            border-left: 3px solid transparent;
-        }
-        
-        .section-item:hover {
-            background: var(--bg-card-hover);
-            border-left-color: var(--accent-primary);
-            transform: translateX(4px);
-        }
-        
-        .section-item .section-name {
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 4px;
-        }
-        
-        .section-item .section-summary {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        
-        .meeting-item {
-            background: var(--bg-card);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-sm);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            border-left: 3px solid #3b82f6;
-        }
-        
-        .meeting-item:hover {
-            background: var(--bg-card-hover);
-            transform: translateX(4px);
-        }
-        
-        .meeting-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 8px;
-        }
-        
-        .meeting-title {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-        
-        .meeting-date {
-            font-size: 0.75rem;
-            color: var(--accent-primary);
-            background: rgba(99, 102, 241, 0.1);
-            padding: 2px 8px;
-            border-radius: var(--radius-full);
-        }
-        
-        .meeting-preview {
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            line-height: 1.5;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-        }
-        
-        .case-item {
-            background: var(--bg-card);
-            padding: var(--spacing-md);
-            border-radius: var(--radius-md);
-            margin-bottom: var(--spacing-sm);
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            border-left: 3px solid #f59e0b;
-        }
-        
-        .case-item:hover {
-            background: var(--bg-card-hover);
-        }
-        
-        /* Mobile-first improvements for project page */
-        @media (max-width: 767px) {
-            .project-header {
-                gap: var(--spacing-md);
-            }
-            
-            .project-title-section h1 {
-                font-size: 1.25rem;
-            }
-            
-            .project-progress-large {
-                padding: var(--spacing-md);
-            }
-            
-            .project-stats {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .project-sections {
-                gap: var(--spacing-md);
-            }
-            
-            .task-item-project {
-                flex-wrap: wrap;
-                gap: var(--spacing-sm);
-            }
-            
-            .task-item-project .task-info {
-                min-width: 0;
-                flex: 1;
-            }
-            
-            .doc-item, .note-item, .file-item {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .section-header h2 {
-                font-size: 1rem;
-            }
-
-            /* Prevent markdown content from overflowing */
-            .markdown-content {
-                overflow-x: auto;
-                word-break: break-word;
-            }
-
-            .markdown-content pre {
-                overflow-x: auto;
-                max-width: calc(100vw - 48px);
-            }
-
-            .markdown-content table {
-                display: block;
-                overflow-x: auto;
-            }
-        }
-        
-        /* Tablet+ improvements for project page */
-        @media (min-width: 768px) {
-            .project-sections {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .project-sections > section:first-child {
-                grid-column: span 2;
-            }
-            
-            .project-stats {
-                grid-template-columns: repeat(5, 1fr);
-            }
-            
-            .task-item-project {
-                padding: var(--spacing-lg);
-            }
-            
-            .file-item {
-                padding: var(--spacing-lg);
-            }
-            
-            .doc-item {
-                padding: var(--spacing-lg);
-            }
-            
-            .note-item {
-                padding: var(--spacing-lg);
-            }
-        }
-        
-        @media (min-width: 1200px) {
-            .project-sections {
-                grid-template-columns: repeat(3, 1fr);
-            }
-            
-            .project-sections > section:first-child {
-                grid-column: span 3;
-            }
-        }
-    </style>
-    <!-- Marked.js para renderizar Markdown -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
@@ -726,21 +33,27 @@
     </header>
 
     <main class="main-content" style="display: block;">
-        <div class="project-header">
-            <a href="./" class="back-btn">← Dashboard</a>
-            <div class="project-title-section">
-                <h1 id="project-name">Carregando...</h1>
-                <div class="project-meta">
-                    <span id="project-category"></span>
-                    <span id="project-status" class="badge"></span>
-                    <span id="project-priority" class="badge"></span>
+
+        <!-- ===== HERO CARD ===== -->
+        <div class="proj-hero" id="proj-hero">
+            <a href="./" class="proj-hero-back" id="back-btn">← Dashboard</a>
+            <div class="proj-hero-top">
+                <div class="proj-hero-info">
+                    <h1 id="project-name" class="proj-hero-title">Carregando...</h1>
+                    <div class="proj-hero-meta">
+                        <span id="project-category"></span>
+                        <span id="project-status" class="badge"></span>
+                        <span id="project-priority" class="badge" style="display:none;"></span>
+                    </div>
+                    <p id="project-description" class="proj-hero-desc"></p>
                 </div>
+                <div class="proj-hero-health" id="hero-health" style="display:none;"></div>
             </div>
+            <div class="proj-hero-chips" id="hero-chips" style="display:none;"></div>
         </div>
-        
-        <p id="project-description" style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);"></p>
-        
-        <div class="project-progress-large" style="display: none;">
+
+        <!-- ===== PROGRESS BAR (non-work only, hidden by default) ===== -->
+        <div class="project-progress-large" id="progress-section" style="display: none;">
             <div class="progress-bar-large">
                 <div class="progress-fill-large" id="progress-fill" style="width: 0%"></div>
             </div>
@@ -749,7 +62,8 @@
                 <span id="progress-text">0%</span>
             </div>
         </div>
-        
+
+        <!-- ===== STAT CARDS (non-work only, hidden if all zeros) ===== -->
         <div class="project-stats" id="project-stats" style="display: none;">
             <div class="stat-card">
                 <div class="number" id="stat-tasks-todo">0</div>
@@ -772,53 +86,60 @@
                 <div class="label">Docs</div>
             </div>
         </div>
-        
-        <!-- WORK PROJECT VIEW (shown for work projects by JS) -->
+
+        <!-- ========================================== -->
+        <!-- WORK PROJECT VIEW                          -->
+        <!-- ========================================== -->
         <div id="work-project-view" style="display:none;">
-            
-            <!-- Header Stats (inline chips: health + counts) -->
-            <div class="work-header-stats" id="work-header-stats"></div>
-            
-            <!-- Weekly Report Card (collapsible, OPEN by default) -->
-            <section class="card collapsible-section report-card-section" id="report-card-section" style="margin-bottom: var(--spacing-lg); display: none;">
+
+            <!-- 1. This Week (open by default) -->
+            <section class="card collapsible-section report-card-section" id="this-week-section" style="display:none; margin-bottom: var(--spacing-lg);">
                 <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
-                    <h2>Weekly Report Card</h2>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="health-badge" id="rc-health-badge"></span>
-                        <span id="rc-week-label" style="font-size: 0.75rem; color: var(--text-muted);"></span>
+                    <h2>Esta Semana</h2>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span id="rc-week-label" style="font-size:0.75rem;color:var(--text-muted);"></span>
                         <span class="collapse-indicator open"></span>
                     </div>
                 </div>
-                <div class="collapsible-body open" id="report-card-content">
-                    <div class="rc-block">
-                        <h3 class="rc-block-title">Reunioes desta semana</h3>
-                        <div id="rc-meetings-list" class="rc-meetings-list">
-                            <span class="text-muted">Carregando...</span>
-                        </div>
-                    </div>
-                    <div class="rc-block">
-                        <h3 class="rc-block-title">Confluence</h3>
-                        <div id="rc-confluence-row" class="rc-confluence-row">
-                            <span class="text-muted">Carregando...</span>
-                        </div>
-                    </div>
+                <div class="collapsible-body open" id="this-week-content">
+                    <div id="rc-meetings-list" class="rc-meetings-list" style="margin-bottom:var(--spacing-md);"></div>
+                    <div id="rc-confluence-row" class="rc-confluence-row"></div>
                 </div>
             </section>
-            
-            <!-- Intelligence (collapsible, OPEN if data exists) -->
-            <section class="card collapsible-section intel-section" id="intel-section" style="margin-bottom: var(--spacing-lg); display: none;">
+
+            <!-- 2. Documentation (OPEN by default) -->
+            <section class="card collapsible-section" id="work-sections-card" style="margin-bottom: var(--spacing-lg);">
                 <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
-                    <h2>Intelligence</h2>
-                    <span class="collapse-indicator open"></span>
+                    <h2>Documentacao</h2>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="badge" id="work-sections-count" style="font-size:0.7rem;"></span>
+                        <span class="collapse-indicator open"></span>
+                    </div>
                 </div>
-                <div class="collapsible-body open" id="intel-content">
-                    <div id="intel-body">
-                        <span class="text-muted">Carregando...</span>
+                <div class="collapsible-body open" id="work-sections-content">
+                    <div id="work-sections-list" class="sections-grid">
+                        <div class="empty-section">Carregando...</div>
                     </div>
                 </div>
             </section>
-            
-            <!-- Project Info (collapsible, CLOSED by default) -->
+
+            <!-- 3. Meetings (collapsed) -->
+            <section class="card collapsible-section reference-section" id="work-meetings-section" style="margin-bottom: var(--spacing-lg);">
+                <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
+                    <h2>Reunioes</h2>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span class="badge badge-active" id="work-meetings-count" style="font-size:0.7rem;"></span>
+                        <span class="collapse-indicator"></span>
+                    </div>
+                </div>
+                <div class="collapsible-body" id="work-meetings-content">
+                    <div id="work-meetings-list">
+                        <div class="empty-section">Carregando...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. Project Info (collapsed) -->
             <section class="card collapsible-section reference-section" id="work-overview-section" style="margin-bottom: var(--spacing-lg);">
                 <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
                     <h2>Informacoes do Projeto</h2>
@@ -841,40 +162,19 @@
                     </div>
                 </div>
             </section>
-            
-            <!-- Documentation (collapsible, CLOSED by default) -->
-            <section class="card collapsible-section reference-section" id="work-sections-card" style="margin-bottom: var(--spacing-lg);">
+
+            <!-- 5. Intelligence (collapsed, hidden if no data) -->
+            <section class="card collapsible-section intel-section" id="intel-section" style="margin-bottom: var(--spacing-lg); display: none;">
                 <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
-                    <h2>Documentacao</h2>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="badge" id="work-sections-count" style="font-size:0.7rem;"></span>
-                        <span class="collapse-indicator"></span>
-                    </div>
+                    <h2>Intelligence</h2>
+                    <span class="collapse-indicator"></span>
                 </div>
-                <div class="collapsible-body" id="work-sections-content">
-                    <div id="work-sections-list" class="sections-grid">
-                        <div class="empty-section">Carregando...</div>
-                    </div>
+                <div class="collapsible-body" id="intel-content">
+                    <div id="intel-body"></div>
                 </div>
             </section>
-            
-            <!-- Meetings (collapsible, CLOSED by default) -->
-            <section class="card collapsible-section reference-section" id="work-meetings-section" style="margin-bottom: var(--spacing-lg);">
-                <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
-                    <h2>Reunioes Recentes</h2>
-                    <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="badge badge-active" id="work-meetings-count" style="font-size:0.7rem;"></span>
-                        <span class="collapse-indicator"></span>
-                    </div>
-                </div>
-                <div class="collapsible-body" id="work-meetings-content">
-                    <div id="work-meetings-list">
-                        <div class="empty-section">Carregando...</div>
-                    </div>
-                </div>
-            </section>
-            
-            <!-- Cases (collapsible, CLOSED, only if data exists) -->
+
+            <!-- 6. Cases (collapsed, hidden if empty) -->
             <section class="card collapsible-section reference-section" id="work-cases-section" style="margin-bottom: var(--spacing-lg); display:none;">
                 <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
                     <h2>Cases</h2>
@@ -884,8 +184,8 @@
                     <div id="work-cases-list"></div>
                 </div>
             </section>
-            
-            <!-- Doc Preview (shared) -->
+
+            <!-- Doc Preview (shared for work) -->
             <section class="card" id="work-doc-preview-section" style="display:none; margin-bottom: var(--spacing-lg);">
                 <div class="section-header">
                     <h2 id="work-preview-title">Documento</h2>
@@ -899,17 +199,41 @@
                 </div>
             </section>
         </div>
-        
+
+        <!-- ========================================== -->
+        <!-- MBA PROJECT VIEW                           -->
+        <!-- ========================================== -->
+        <div id="mba-project-view" style="display:none;">
+            <section class="card" style="margin-bottom: var(--spacing-lg);">
+                <div class="section-header">
+                    <h2>📅 Proximos Prazos</h2>
+                </div>
+                <div id="mba-deadlines-list">
+                    <div class="empty-section">Carregando...</div>
+                </div>
+            </section>
+            <section class="card" style="margin-bottom: var(--spacing-lg);">
+                <div class="section-header">
+                    <h2>📋 Atividades Pendentes</h2>
+                    <span class="badge badge-active" id="mba-pending-count" style="font-size:0.7rem;"></span>
+                </div>
+                <div id="mba-activities-list">
+                    <div class="empty-section">Carregando...</div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ========================================== -->
+        <!-- REGULAR PROJECT VIEW                       -->
+        <!-- ========================================== -->
         <div class="project-sections" id="regular-project-view" style="display:none;">
-            <!-- TASKS -->
             <section class="card">
                 <div class="section-header">
                     <h2>📋 Tarefas</h2>
                     <button class="btn-primary" onclick="toggleAddTask()">+ Nova Tarefa</button>
                 </div>
-                
                 <div class="add-form" id="add-task-form">
-                    <input type="text" id="new-task-title" placeholder="Título da tarefa">
+                    <input type="text" id="new-task-title" placeholder="Titulo da tarefa">
                     <div class="form-row">
                         <select id="new-task-priority" style="flex:1;">
                             <option value="low">Baixa</option>
@@ -919,14 +243,12 @@
                         <button class="btn-primary" onclick="addTask()">Adicionar</button>
                     </div>
                 </div>
-                
                 <div id="tasks-list">
                     <div class="empty-section">Carregando...</div>
                 </div>
             </section>
-            
-            <!-- ARQUIVOS DO PROJETO (Nova) -->
-            <section class="card" id="files-section">
+
+            <section class="card" id="files-section" style="display:none;">
                 <div class="section-header">
                     <h2>📂 Arquivos da Nova</h2>
                     <span class="badge badge-active" id="files-status" style="font-size:0.7rem;"></span>
@@ -935,45 +257,29 @@
                     <div class="empty-section">Escaneando...</div>
                 </div>
             </section>
-            
-            <!-- PREVIEW DE DOCUMENTO -->
+
             <section class="card" id="doc-preview-section" style="display:none;">
                 <div class="section-header">
                     <h2 id="preview-title">📄 Documento</h2>
                     <div class="preview-actions">
-                        <button class="btn-icon" onclick="openFullscreen()" title="Expandir (F)">⛶ Expandir</button>
-                        <button class="btn-primary" onclick="closePreview()">✕ Fechar</button>
+                        <button class="btn-icon" onclick="openFullscreen()" title="Expandir (F)">Expandir</button>
+                        <button class="btn-primary" onclick="closePreview()">Fechar</button>
                     </div>
                 </div>
                 <div class="doc-preview-wrapper" id="doc-preview-wrapper">
-                    <div id="doc-preview" class="doc-preview-content">
-                    </div>
+                    <div id="doc-preview" class="doc-preview-content"></div>
                 </div>
             </section>
-            
-            <!-- FULLSCREEN OVERLAY -->
-            <div class="fullscreen-overlay" id="fullscreen-overlay">
-                <div class="fullscreen-content">
-                    <div class="fullscreen-header">
-                        <h2 id="fullscreen-title">📄 Documento</h2>
-                        <button class="fullscreen-close" onclick="closeFullscreen()">✕ Fechar (Esc)</button>
-                    </div>
-                    <div id="fullscreen-content" class="doc-preview-content" style="max-height: none;">
-                    </div>
-                </div>
-            </div>
-            
-            <!-- DOCS & LINKS -->
+
             <section class="card">
                 <div class="section-header">
                     <h2>📄 Documentos</h2>
                     <button class="btn-primary" onclick="toggleAddDoc()">+ Adicionar</button>
                 </div>
-                
                 <div class="add-form" id="add-doc-form">
                     <input type="text" id="new-doc-title" placeholder="Nome do documento">
                     <input type="url" id="new-doc-url" placeholder="URL (opcional)">
-                    <textarea id="new-doc-description" rows="2" placeholder="Descrição/Notas do documento..." style="width:100%;padding:10px;background:var(--bg-card);border:1px solid rgba(255,255,255,0.1);border-radius:var(--radius-sm);color:var(--text-primary);margin-bottom:10px;resize:vertical;"></textarea>
+                    <textarea id="new-doc-description" rows="2" placeholder="Descricao/Notas do documento..." class="add-form-textarea"></textarea>
                     <div class="form-row">
                         <select id="new-doc-type" style="flex:1;">
                             <option value="doc">📄 Documento</option>
@@ -984,585 +290,659 @@
                             <option value="jira">📋 Jira</option>
                             <option value="pdf">📕 PDF</option>
                             <option value="sheet">📊 Planilha</option>
-                            <option value="slides">📽️ Apresentação</option>
+                            <option value="slides">📽️ Apresentacao</option>
                         </select>
                         <button class="btn-primary" onclick="addDoc()">Adicionar</button>
                     </div>
                 </div>
-                
                 <div id="docs-list">
                     <div class="empty-section">Carregando...</div>
                 </div>
             </section>
-            
-            <!-- NOTES -->
+
             <section class="card">
                 <div class="section-header">
                     <h2>🗒️ Notas</h2>
                     <button class="btn-primary" onclick="toggleAddNote()">+ Nova Nota</button>
                 </div>
-                
                 <div class="add-form" id="add-note-form">
-                    <input type="text" id="new-note-title" placeholder="Título da nota">
-                    <textarea id="new-note-content" rows="3" placeholder="Conteúdo..."></textarea>
+                    <input type="text" id="new-note-title" placeholder="Titulo da nota">
+                    <textarea id="new-note-content" rows="3" placeholder="Conteudo..."></textarea>
                     <button class="btn-primary" onclick="addNote()">Adicionar</button>
                 </div>
-                
                 <div id="notes-list">
                     <div class="empty-section">Carregando...</div>
                 </div>
             </section>
         </div>
+
+        <!-- FULLSCREEN OVERLAY (shared) -->
+        <div class="fullscreen-overlay" id="fullscreen-overlay">
+            <div class="fullscreen-content">
+                <div class="fullscreen-header">
+                    <h2 id="fullscreen-title">Documento</h2>
+                    <button class="fullscreen-close" onclick="closeFullscreen()">Fechar (Esc)</button>
+                </div>
+                <div id="fullscreen-content" class="doc-preview-content" style="max-height: none;"></div>
+            </div>
+        </div>
     </main>
 
     <script>
-        // Detectar se está rodando no GitHub Pages
         const isGitHubPages = window.location.hostname.includes('github.io');
-        const API_BASE = isGitHubPages 
-            ? 'https://srv1315519.hstgr.cloud/api' 
+        const API_BASE = isGitHubPages
+            ? 'https://srv1315519.hstgr.cloud/api'
             : '/api';
         let projectId = null;
         let projectData = null;
-        
-        // Pegar ID do projeto da URL
-        const urlParams = new URLSearchParams(window.location.search);
-        projectId = urlParams.get('id');
-        
-        if (!projectId) {
-            window.location.href = 'index.html';
-        }
-        
-        async function loadProject() {
-            try {
-                const response = await fetch(`${API_BASE}/projects/${projectId}/full`);
-                if (!response.ok) throw new Error('Projeto não encontrado');
-                projectData = await response.json();
-                renderProject();
-            } catch (error) {
-                console.error(error);
-                document.getElementById('project-name').textContent = 'Projeto não encontrado';
-            }
-        }
-        
-        function renderProject() {
-            const { project, tasks, notes, docs, stats } = projectData;
-            
-            // Show regular view (non-work projects)
-            document.getElementById('work-project-view').style.display = 'none';
-            document.getElementById('regular-project-view').style.display = 'grid';
-            
-            // Stats
-            document.getElementById('stat-tasks-todo').textContent = stats.tasks_todo;
-            document.getElementById('stat-tasks-doing').textContent = stats.tasks_doing;
-            document.getElementById('stat-tasks-done').textContent = stats.tasks_done;
-            document.getElementById('stat-notes').textContent = stats.total_notes;
-            document.getElementById('stat-docs').textContent = stats.total_docs;
-            
-            // Tasks
-            renderTasks(tasks);
-            
-            // Docs
-            renderDocs(docs);
-            
-            // Notes
-            renderNotes(notes);
-        }
-        
-        function renderTasks(tasks) {
-            const container = document.getElementById('tasks-list');
-            if (tasks.length === 0) {
-                container.innerHTML = '<div class="empty-section">Nenhuma tarefa ainda</div>';
-                return;
-            }
-            
-            container.innerHTML = tasks.map(task => `
-                <div class="task-item-project status-${task.status}">
-                    <div class="task-checkbox ${task.status === 'done' ? 'checked' : ''}" 
-                         onclick="toggleTask(${task.id}, '${task.status}')"></div>
-                    <div class="task-info">
-                        <div class="task-title">${escapeHtml(task.title)}</div>
-                        <div class="task-meta">
-                            ${task.priority === 'high' ? '⚡ Alta' : task.priority === 'low' ? '↓ Baixa' : ''}
-                            ${task.due_date ? ' • ' + task.due_date : ''}
-                        </div>
-                    </div>
-                    <button onclick="deleteTask(${task.id})" style="background:none;border:none;cursor:pointer;opacity:0.5;">🗑</button>
-                </div>
-            `).join('');
-        }
-        
-        function renderDocs(docs) {
-            const container = document.getElementById('docs-list');
-            if (docs.length === 0) {
-                container.innerHTML = '<div class="empty-section">Nenhum documento ainda. Adicione links, PDFs, Notion, etc.</div>';
-                return;
-            }
-            
-            const icons = { 
-                link: '🔗', doc: '📄', notion: '📝', figma: '🎨', github: '💻', 
-                jira: '📋', pdf: '📕', sheet: '📊', slides: '📽️' 
-            };
-            
-            container.innerHTML = docs.map(doc => `
-                <div class="doc-item">
-                    <span class="doc-icon">${icons[doc.doc_type] || '📄'}</span>
-                    <div class="doc-info">
-                        <div class="doc-title">
-                            ${doc.url ? `<a href="${doc.url}" target="_blank">${escapeHtml(doc.title)}</a>` : escapeHtml(doc.title)}
-                        </div>
-                        ${doc.description ? `<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px;line-height:1.4;">${escapeHtml(doc.description)}</div>` : ''}
-                    </div>
-                    <button onclick="deleteDoc(${doc.id})" style="background:none;border:none;cursor:pointer;opacity:0.5;font-size:1rem;">🗑</button>
-                </div>
-            `).join('');
-        }
-        
-        function renderNotes(notes) {
-            const container = document.getElementById('notes-list');
-            if (notes.length === 0) {
-                container.innerHTML = '<div class="empty-section">Nenhuma nota ainda</div>';
-                return;
-            }
-            
-            container.innerHTML = notes.map(note => `
-                <div class="note-item">
-                    <div class="note-header">
-                        <div class="note-title">${escapeHtml(note.title)}</div>
-                        <div class="note-date">${note.meeting_date || note.created_at?.split('T')[0] || ''}</div>
-                    </div>
-                    ${note.content ? `<div class="note-content">${escapeHtml(note.content).substring(0, 200)}${note.content.length > 200 ? '...' : ''}</div>` : ''}
-                </div>
-            `).join('');
-        }
-        
-        // Toggle forms
-        function toggleAddTask() { document.getElementById('add-task-form').classList.toggle('active'); }
-        function toggleAddDoc() { document.getElementById('add-doc-form').classList.toggle('active'); }
-        function toggleAddNote() { document.getElementById('add-note-form').classList.toggle('active'); }
-        
-        // Add task
-        async function addTask() {
-            const title = document.getElementById('new-task-title').value.trim();
-            if (!title) return;
-            
-            await fetch(`${API_BASE}/tasks`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    title,
-                    priority: document.getElementById('new-task-priority').value,
-                    project_id: parseInt(projectId)
-                })
-            });
-            
-            document.getElementById('new-task-title').value = '';
-            toggleAddTask();
-            loadProject();
-        }
-        
-        // Toggle task status
-        async function toggleTask(taskId, currentStatus) {
-            const newStatus = currentStatus === 'done' ? 'todo' : 'done';
-            await fetch(`${API_BASE}/tasks/${taskId}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
-            });
-            loadProject();
-        }
-        
-        // Delete task
-        async function deleteTask(taskId) {
-            if (!confirm('Deletar tarefa?')) return;
-            await fetch(`${API_BASE}/tasks/${taskId}`, { method: 'DELETE' });
-            loadProject();
-        }
-        
-        // Add doc
-        async function addDoc() {
-            const title = document.getElementById('new-doc-title').value.trim();
-            if (!title) return;
-            
-            const url = document.getElementById('new-doc-url').value.trim();
-            const docType = document.getElementById('new-doc-type').value;
-            const description = document.getElementById('new-doc-description').value.trim();
-            
-            let apiUrl = `${API_BASE}/projects/${projectId}/docs?title=${encodeURIComponent(title)}&doc_type=${docType}`;
-            if (url) apiUrl += `&url=${encodeURIComponent(url)}`;
-            if (description) apiUrl += `&description=${encodeURIComponent(description)}`;
-            
-            await fetch(apiUrl, {
-                method: 'POST'
-            });
-            
-            document.getElementById('new-doc-title').value = '';
-            document.getElementById('new-doc-url').value = '';
-            document.getElementById('new-doc-description').value = '';
-            toggleAddDoc();
-            loadProject();
-        }
-        
-        // Delete doc
-        async function deleteDoc(docId) {
-            if (!confirm('Remover documento?')) return;
-            await fetch(`${API_BASE}/projects/${projectId}/docs/${docId}`, { method: 'DELETE' });
-            loadProject();
-        }
-        
-        // Add note
-        async function addNote() {
-            const title = document.getElementById('new-note-title').value.trim();
-            if (!title) return;
-            
-            await fetch(`${API_BASE}/notes`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    title,
-                    content: document.getElementById('new-note-content').value,
-                    project_id: parseInt(projectId)
-                })
-            });
-            
-            document.getElementById('new-note-title').value = '';
-            document.getElementById('new-note-content').value = '';
-            toggleAddNote();
-            loadProject();
-        }
-        
-        function escapeHtml(text) {
-            if (!text) return '';
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
-        // ===== ARQUIVOS DA NOVA =====
-        async function loadProjectFiles() {
-            try {
-                const response = await fetch(`${API_BASE}/projects/${projectId}/files`);
-                const data = await response.json();
-                renderFiles(data);
-            } catch (error) {
-                console.error('Erro ao carregar arquivos:', error);
-                document.getElementById('files-list').innerHTML = 
-                    '<div class="empty-section">Erro ao carregar arquivos</div>';
-            }
-        }
-        
-        function renderFiles(data) {
-            const container = document.getElementById('files-list');
-            const statusEl = document.getElementById('files-status');
-            
-            if (!data.exists) {
-                container.innerHTML = '<div class="empty-section">Pasta do projeto não existe ainda</div>';
-                statusEl.textContent = '';
-                return;
-            }
-            
-            const files = data.files.filter(f => f.name !== 'manifest.json');
-            
-            if (files.length === 0) {
-                container.innerHTML = '<div class="empty-section">Nenhum arquivo ainda. A Nova vai salvar documentos aqui.</div>';
-                statusEl.textContent = '';
-                return;
-            }
-            
-            statusEl.textContent = `${files.length} arquivo${files.length > 1 ? 's' : ''}`;
-            
-            const icons = {
-                'epic': '📜',
-                'draft': '✏️',
-                'doc': '📄',
-                'note': '📝',
-                'file': '📁'
-            };
-            
-            const typeLabels = {
-                'epic': 'Épico Principal',
-                'draft': 'Rascunho',
-                'doc': 'Documento',
-                'note': 'Nota',
-                'file': 'Arquivo'
-            };
-            
-            container.innerHTML = files.map(file => {
-                // Para notas, extrair data do nome do arquivo em vez de usar modified
-                const filenameDate = extractDateFromFilename(file.name);
-                let dateDisplay;
-                
-                if (filenameDate) {
-                    dateDisplay = formatMeetingDate(filenameDate);
-                } else {
-                    const modified = new Date(file.modified * 1000);
-                    dateDisplay = formatTimeAgo(modified);
-                }
-                
-                return `
-                    <div class="file-item type-${file.type}" onclick="openFile('${data.slug}/${file.path}')">
-                        <span class="file-icon">${icons[file.type] || '📄'}</span>
-                        <div class="file-info">
-                            <div class="file-name">${file.name.replace('.md', '').replace(/^\d{4}-\d{2}-\d{2}-/, '')}</div>
-                            <div class="file-meta">${typeLabels[file.type]} • ${filenameDate ? dateDisplay : 'Atualizado ' + dateDisplay}</div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        function formatTimeAgo(date) {
-            const now = new Date();
-            const diff = Math.floor((now - date) / 1000);
-            
-            if (diff < 60) return 'agora';
-            if (diff < 3600) return `há ${Math.floor(diff / 60)} min`;
-            if (diff < 86400) return `há ${Math.floor(diff / 3600)}h`;
-            if (diff < 604800) return `há ${Math.floor(diff / 86400)} dias`;
-            return date.toLocaleDateString('pt-BR');
-        }
-        
-        function formatMeetingDate(dateStr) {
-            // Formata data de YYYY-MM-DD para "DD Mon"
-            if (!dateStr) return '';
-            const [year, month, day] = dateStr.split('-');
-            const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
-            return `${parseInt(day)} ${months[parseInt(month) - 1]}`;
-        }
-        
-        function extractDateFromFilename(filename) {
-            // Extrai data de arquivos no formato 2026-02-05-titulo.md
-            const match = filename.match(/^(\d{4}-\d{2}-\d{2})-/);
-            return match ? match[1] : null;
-        }
-        
-        async function openFile(filePath) {
-            try {
-                const response = await fetch(`${API_BASE}/projects/files/${filePath}`);
-                const data = await response.json();
-                
-                if (data.content) {
-                    showPreview(filePath.split('/').pop().replace('.md', ''), data.content);
-                }
-            } catch (error) {
-                console.error('Erro ao abrir arquivo:', error);
-                alert('Erro ao carregar arquivo');
-            }
-        }
-        
+        let workProjectData = null;
+        let currentWorkSlug = null;
         let currentPreviewTitle = '';
         let currentPreviewContent = '';
-        
+
+        const urlParams = new URLSearchParams(window.location.search);
+        projectId = urlParams.get('id');
+        if (!projectId) window.location.href = 'index.html';
+
+        // ===== WORK PROJECT SLUG MAPPING =====
+        const WORK_PROJECT_SLUGS = {
+            '3TPM': '3tpm', '3tpm': '3tpm',
+            'Catalog Admin': 'catalog-admin', 'Catalog': 'catalog-admin', 'CATALOG-ADMIN': 'catalog-admin',
+            'Company Store': 'company-store', 'Company & Store': 'company-store', 'COMPANY-STORE': 'company-store',
+            'CMS DAM': 'cms-dam', 'CMS-DAM': 'cms-dam', 'CMS': 'cms-dam', 'DAM': 'cms-dam',
+            'DAM - Documentação': 'cms-dam', 'CMS / DAM': 'cms-dam',
+            'POCs IA': 'pocs-ia', 'POCS-IA': 'pocs-ia',
+            'Autonomy': 'autonomy', 'AUTONOMY-AUTOMATION': 'autonomy'
+        };
+
+        function isWorkProject(name, cat) { return cat === 'trabalho' || !!WORK_PROJECT_SLUGS[name]; }
+        function getWorkSlug(name) { return WORK_PROJECT_SLUGS[name] || name.toLowerCase().replace(/\s+/g, '-'); }
+        function escapeHtml(t) { if (!t) return ''; const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+        function formatMeetingDate(s) {
+            if (!s) return '';
+            const [y,m,d] = s.split('-');
+            const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+            return `${parseInt(d)} ${months[parseInt(m)-1]}`;
+        }
+        function formatTimeAgo(date) {
+            const diff = Math.floor((new Date() - date) / 1000);
+            if (diff < 60) return 'agora';
+            if (diff < 3600) return `ha ${Math.floor(diff/60)} min`;
+            if (diff < 86400) return `ha ${Math.floor(diff/3600)}h`;
+            if (diff < 604800) return `ha ${Math.floor(diff/86400)} dias`;
+            return date.toLocaleDateString('pt-BR');
+        }
+        function extractDateFromFilename(f) { const m = f.match(/^(\d{4}-\d{2}-\d{2})-/); return m ? m[1] : null; }
+
+        // ===== MAIN ENTRY POINT =====
+        async function loadProjectWithWorkCheck() {
+            try {
+                const response = await fetch(`${API_BASE}/projects/${projectId}/full`);
+                if (!response.ok) throw new Error('Projeto nao encontrado');
+                projectData = await response.json();
+                const { project } = projectData;
+
+                renderHeroCard(project);
+
+                if (isWorkProject(project.name, project.category)) {
+                    const ok = await loadWorkProject(project.name);
+                    if (ok) return;
+                }
+
+                if (project.category === 'mba') {
+                    renderMbaView(project);
+                    return;
+                }
+
+                renderRegularProject(project);
+            } catch (error) {
+                console.error(error);
+                document.getElementById('project-name').textContent = 'Projeto nao encontrado';
+            }
+        }
+
+        // ===== HERO CARD =====
+        function renderHeroCard(project) {
+            document.title = `${project.name} - Centro de Controle`;
+            document.getElementById('project-name').textContent = project.name;
+            document.getElementById('project-description').textContent = project.description || '';
+
+            // Back button context
+            const backBtn = document.getElementById('back-btn');
+            if (isWorkProject(project.name, project.category)) {
+                backBtn.href = 'work';
+                backBtn.textContent = '← Work Status';
+            } else if (project.category === 'mba') {
+                backBtn.href = 'mba';
+                backBtn.textContent = '← MBA';
+            }
+
+            // Category
+            const catIcons = { trabalho: '💼', mba: '🎓', pessoal: '👤', familia: '👨‍👩‍👧' };
+            document.getElementById('project-category').textContent =
+                (catIcons[project.category] || '📁') + ' ' + (project.category || 'Geral');
+
+            // Status
+            const statusEl = document.getElementById('project-status');
+            statusEl.textContent = project.status === 'active' ? 'Ativo' : project.status === 'paused' ? 'Pausado' : 'Concluido';
+            statusEl.className = 'badge ' + (project.status === 'active' ? 'badge-active' : 'badge-paused');
+
+            // Priority
+            const prioEl = document.getElementById('project-priority');
+            if (project.priority === 'high') {
+                prioEl.textContent = '🔥 Alta Prioridade';
+                prioEl.className = 'badge badge-high';
+                prioEl.style.display = 'inline';
+            }
+        }
+
+        // Populate hero health badge (called async after report card loads)
+        function setHeroHealth(health) {
+            const el = document.getElementById('hero-health');
+            const colors = { green: '#22c55e', yellow: '#eab308', red: '#ef4444' };
+            const labels = { green: 'On Track', yellow: 'Atencao', red: 'Critico' };
+            const c = colors[health] || colors.green;
+            el.style.display = '';
+            el.innerHTML = `<span class="health-badge" style="background:${c}22;color:${c};border:1px solid ${c}44;">${labels[health] || health}</span>`;
+        }
+
+        // Populate hero chips (called from work project render)
+        function setHeroChips(chips) {
+            const el = document.getElementById('hero-chips');
+            if (chips.length > 0) {
+                el.innerHTML = chips.map(c => `<span class="header-chip${c.muted?' header-chip-muted':''}">${c.text}</span>`).join('');
+                el.style.display = '';
+            }
+        }
+
+        // ===== WORK PROJECT =====
+        async function loadWorkProject(name) {
+            const slug = getWorkSlug(name);
+            currentWorkSlug = slug;
+            try {
+                const resp = await fetch(`${API_BASE}/work-projects/${slug}`);
+                if (!resp.ok) return false;
+                workProjectData = await resp.json();
+                renderWorkView(workProjectData);
+                return true;
+            } catch (e) { console.error(e); return false; }
+        }
+
+        function renderWorkView(data) {
+            document.getElementById('work-project-view').style.display = 'block';
+            document.getElementById('regular-project-view').style.display = 'none';
+            document.getElementById('mba-project-view').style.display = 'none';
+
+            // Hero chips from work data
+            const chips = [];
+            const sCount = data.sections ? data.sections.length : 0;
+            const mCount = data.meeting_notes ? data.meeting_notes.length : 0;
+            const cCount = data.cases ? data.cases.length : 0;
+            if (sCount > 0) chips.push({ text: `📄 ${sCount} docs` });
+            if (mCount > 0) chips.push({ text: `📅 ${mCount} reunioes` });
+            if (cCount > 0) chips.push({ text: `📋 ${cCount} cases` });
+            if (data.meeting_notes && data.meeting_notes.length > 0) {
+                const last = data.meeting_notes[0];
+                const d = last.date || extractDateFromFilename(last.file);
+                if (d) chips.push({ text: `🕐 Ultima: ${formatMeetingDate(d)}`, muted: true });
+            }
+            setHeroChips(chips);
+
+            // Overview
+            const ov = data.overview || {};
+            const defText = ov.definition || '', ctxText = ov.context || '', stText = ov.current_status || '';
+            const defCard = document.getElementById('work-definition').closest('.overview-card');
+            const ctxCard = document.getElementById('work-context').closest('.overview-card');
+            const stCard = document.getElementById('work-current-status').closest('.overview-card');
+            if (defText) { document.getElementById('work-definition').textContent = defText; defCard.style.display = ''; } else defCard.style.display = 'none';
+            if (ctxText) { document.getElementById('work-context').textContent = ctxText; ctxCard.style.display = ''; } else ctxCard.style.display = 'none';
+            if (stText) { document.getElementById('work-current-status').textContent = stText; stCard.style.display = ''; } else stCard.style.display = 'none';
+            document.getElementById('work-overview-section').style.display = (!defText && !ctxText && !stText) ? 'none' : '';
+
+            renderWorkSections(data.sections || []);
+            renderWorkMeetings(data.meeting_notes || []);
+            if (data.cases && data.cases.length > 0) renderWorkCases(data.cases);
+
+            if (currentWorkSlug) loadReportCard(currentWorkSlug);
+        }
+
+        async function loadReportCard(slug) {
+            try {
+                const rc = await fetch(`${API_BASE}/work-projects/${slug}/report-card`).then(r => r.ok ? r.json() : null);
+                if (!rc) return;
+
+                // Health in hero card
+                setHeroHealth(rc.health);
+
+                // This Week section
+                const twSection = document.getElementById('this-week-section');
+                const hasMeetings = rc.meetings_this_week && rc.meetings_this_week.length > 0;
+                const c = rc.confluence || {};
+                const hasConf = c.current_sprint || c.epics_open || c.risks || c.bugs;
+
+                if (hasMeetings || hasConf) {
+                    twSection.style.display = '';
+                    document.getElementById('rc-week-label').textContent = rc.week ? `Semana de ${rc.week}` : '';
+
+                    const meetEl = document.getElementById('rc-meetings-list');
+                    if (hasMeetings) {
+                        meetEl.innerHTML = rc.meetings_this_week.map(m => `
+                            <div class="rc-meeting-item">
+                                <span class="rc-meeting-date">${m.date||''}</span>
+                                <span class="rc-meeting-title">${escapeHtml(m.title)}</span>
+                                ${m.summary ? `<span class="rc-meeting-summary">${escapeHtml(m.summary)}</span>` : ''}
+                            </div>
+                        `).join('');
+                    } else {
+                        meetEl.innerHTML = '<span class="text-muted">Nenhuma reuniao esta semana</span>';
+                    }
+
+                    const confEl = document.getElementById('rc-confluence-row');
+                    if (hasConf) {
+                        const chips = [];
+                        if (c.current_sprint) chips.push(`<span class="rc-chip">${escapeHtml(c.current_sprint)}</span>`);
+                        if (c.epics_open) chips.push(`<span class="rc-chip">${c.epics_open} open epics</span>`);
+                        if (c.epics_closed) chips.push(`<span class="rc-chip rc-chip-done">${c.epics_closed} closed</span>`);
+                        if (c.risks) chips.push(`<span class="rc-chip rc-chip-risk">${c.risks} risk${c.risks>1?'s':''}</span>`);
+                        if (c.bugs) chips.push(`<span class="rc-chip rc-chip-bug">${c.bugs} bug${c.bugs>1?'s':''}</span>`);
+                        confEl.innerHTML = chips.join('');
+                    } else {
+                        confEl.innerHTML = '';
+                    }
+                }
+
+                // Intelligence -- only show if real summary exists
+                const intelSection = document.getElementById('intel-section');
+                const intelBody = document.getElementById('intel-body');
+                if (rc.intelligence_summary) {
+                    intelSection.style.display = '';
+                    intelBody.innerHTML = `
+                        <div class="intel-source">Fonte: ${escapeHtml(rc.intelligence_file || 'Deep Dive')}</div>
+                        <p class="intel-summary">${escapeHtml(rc.intelligence_summary)}</p>
+                    `;
+                } else {
+                    intelSection.style.display = 'none';
+                }
+
+                // Hide Reunioes section if empty and This Week already shows meetings
+                const reunioesList = document.getElementById('work-meetings-list');
+                const hasFullMeetings = reunioesList && reunioesList.querySelector('.meeting-item');
+                if (!hasFullMeetings && hasMeetings) {
+                    document.getElementById('work-meetings-section').style.display = 'none';
+                }
+            } catch (e) { console.error('Error loading report card:', e); }
+        }
+
+        function renderWorkSections(sections) {
+            const container = document.getElementById('work-sections-list');
+            const badge = document.getElementById('work-sections-count');
+            if (sections.length === 0) {
+                container.innerHTML = '<div class="empty-section">Nenhuma secao de documentacao</div>';
+                badge.textContent = '';
+                return;
+            }
+            badge.textContent = `${sections.length} secoes`;
+            const icons = { context:'🎯', definition:'📋', history:'📜', architecture:'🏗️', people:'👥', timeline:'📅', status:'📍', roadmap:'🗺️', readme:'📖' };
+            container.innerHTML = sections.map(s => `
+                <div class="section-item" onclick="openWorkFile('${s.file}')">
+                    <div class="section-name">${icons[s.key]||'📄'} ${s.name}</div>
+                    <div class="section-summary">${s.summary || 'Clique para ver detalhes'}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderWorkMeetings(meetings) {
+            const container = document.getElementById('work-meetings-list');
+            const badge = document.getElementById('work-meetings-count');
+            if (meetings.length === 0) {
+                container.innerHTML = '<div class="empty-section">Nenhuma nota de reuniao</div>';
+                badge.textContent = '';
+                return;
+            }
+            badge.textContent = `${meetings.length} reunioes`;
+            container.innerHTML = meetings.slice(0, 10).map(m => `
+                <div class="meeting-item" onclick="openWorkFile('${m.file}')">
+                    <div class="meeting-header">
+                        <span class="meeting-title">${escapeHtml(m.title)}</span>
+                        ${m.date ? `<span class="meeting-date">${formatMeetingDate(m.date)}</span>` : ''}
+                    </div>
+                    <div class="meeting-preview">${escapeHtml(m.preview) || 'Clique para ver detalhes'}</div>
+                </div>
+            `).join('');
+        }
+
+        function renderWorkCases(cases) {
+            const section = document.getElementById('work-cases-section');
+            const container = document.getElementById('work-cases-list');
+            section.style.display = 'block';
+            container.innerHTML = cases.map(c => `
+                <div class="case-item" onclick="openWorkFile('${c.file}')">
+                    <div class="meeting-title">${escapeHtml(c.title)}</div>
+                    <div class="meeting-preview">${escapeHtml(c.summary)||''}</div>
+                </div>
+            `).join('');
+        }
+
+        async function openWorkFile(filePath) {
+            if (!currentWorkSlug) return;
+            try {
+                const resp = await fetch(`${API_BASE}/work-projects/${currentWorkSlug}/file/${filePath}`);
+                if (!resp.ok) throw new Error('Not found');
+                const d = await resp.json();
+                showWorkPreview(d.title, d.content);
+            } catch (e) { console.error(e); alert('Erro ao carregar arquivo'); }
+        }
+
+        function showWorkPreview(title, content) {
+            currentPreviewTitle = title;
+            currentPreviewContent = content;
+            document.getElementById('work-preview-title').textContent = title;
+            document.getElementById('work-doc-preview').innerHTML = marked.parse(content);
+            document.getElementById('work-doc-preview-section').style.display = 'block';
+            document.getElementById('work-doc-preview-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ===== MBA PROJECT VIEW =====
+        async function renderMbaView(project) {
+            document.getElementById('mba-project-view').style.display = 'block';
+            document.getElementById('work-project-view').style.display = 'none';
+            document.getElementById('regular-project-view').style.display = 'none';
+
+            // Also load files section (in regular view), but we show it conditionally
+            loadProjectFiles();
+
+            try {
+                const stats = await fetch(`${API_BASE}/mba/stats`).then(r => r.ok ? r.json() : null);
+                if (!stats) {
+                    document.getElementById('mba-deadlines-list').innerHTML = '<div class="empty-section">Dados do MBA nao disponiveis. Sincronize o Adalove.</div>';
+                    document.getElementById('mba-activities-list').innerHTML = '<div class="empty-section">Sem dados</div>';
+                    return;
+                }
+
+                // Hero chips for MBA
+                const chips = [];
+                if (stats.pendentes > 0) chips.push({ text: `📋 ${stats.pendentes} pendentes` });
+                if (stats.em_andamento > 0) chips.push({ text: `🔄 ${stats.em_andamento} em andamento` });
+                if (stats.concluidas > 0) chips.push({ text: `✅ ${stats.concluidas} concluidas`, muted: true });
+                setHeroChips(chips);
+
+                // Deadlines
+                const dlContainer = document.getElementById('mba-deadlines-list');
+                if (stats.proximos_prazos && stats.proximos_prazos.length > 0) {
+                    dlContainer.innerHTML = stats.proximos_prazos.map(d => {
+                        const isOverdue = d.due_date && new Date(d.due_date) < new Date();
+                        return `<div class="task-item-project ${isOverdue ? 'status-doing' : ''}">
+                            <div class="task-info">
+                                <div class="task-title">${escapeHtml(d.title)}</div>
+                                <div class="task-meta">${d.due_date || ''} ${d.turma ? '• ' + escapeHtml(d.turma) : ''}</div>
+                            </div>
+                        </div>`;
+                    }).join('');
+                } else {
+                    dlContainer.innerHTML = '<div class="empty-section">Nenhum prazo proximo</div>';
+                }
+
+                // Pending count
+                document.getElementById('mba-pending-count').textContent = stats.pendentes > 0 ? `${stats.pendentes} pendentes` : '';
+
+                // Activities list (from the full data)
+                const fullData = await fetch(`${API_BASE}/mba/data`).then(r => r.ok ? r.json() : null).catch(() => null);
+                const actContainer = document.getElementById('mba-activities-list');
+                if (fullData) {
+                    const pending = [];
+                    for (const turma of (fullData.turmas || [])) {
+                        for (const semana of (turma.semanas || [])) {
+                            for (const a of (semana.atividades?.a_fazer || [])) {
+                                pending.push({ ...a, turma: turma.nome, semana: semana.nome });
+                            }
+                        }
+                    }
+                    if (pending.length > 0) {
+                        actContainer.innerHTML = pending.slice(0, 10).map(a => `
+                            <div class="task-item-project">
+                                <div class="task-info">
+                                    <div class="task-title">${escapeHtml(a.titulo || a.title || 'Atividade')}</div>
+                                    <div class="task-meta">${a.prazo ? a.prazo + ' • ' : ''}${escapeHtml(a.turma || '')} ${a.semana ? '• ' + escapeHtml(a.semana) : ''}</div>
+                                </div>
+                            </div>
+                        `).join('');
+                    } else {
+                        actContainer.innerHTML = '<div class="empty-section">Nenhuma atividade pendente</div>';
+                    }
+                } else {
+                    actContainer.innerHTML = '<div class="empty-section">Dados completos nao disponiveis</div>';
+                }
+            } catch (e) {
+                console.error('Error loading MBA data:', e);
+                document.getElementById('mba-deadlines-list').innerHTML = '<div class="empty-section">Erro ao carregar dados</div>';
+            }
+        }
+
+        // ===== REGULAR PROJECT VIEW =====
+        function renderRegularProject(project) {
+            document.getElementById('work-project-view').style.display = 'none';
+            document.getElementById('mba-project-view').style.display = 'none';
+            document.getElementById('regular-project-view').style.display = 'grid';
+
+            const { tasks, notes, docs, stats } = projectData;
+            const hasAnyStats = stats.tasks_todo + stats.tasks_doing + stats.tasks_done + stats.total_notes + stats.total_docs > 0;
+
+            // Only show progress and stats if there's actual data
+            if (hasAnyStats) {
+                document.getElementById('project-stats').style.display = '';
+                document.getElementById('stat-tasks-todo').textContent = stats.tasks_todo;
+                document.getElementById('stat-tasks-doing').textContent = stats.tasks_doing;
+                document.getElementById('stat-tasks-done').textContent = stats.tasks_done;
+                document.getElementById('stat-notes').textContent = stats.total_notes;
+                document.getElementById('stat-docs').textContent = stats.total_docs;
+            }
+
+            // Show progress bar only if progress > 0
+            if (project.progress > 0) {
+                document.getElementById('progress-section').style.display = '';
+                document.getElementById('progress-fill').style.width = project.progress + '%';
+                document.getElementById('progress-text').textContent = project.progress + '%';
+            }
+
+            renderTasks(tasks);
+            renderDocs(docs);
+            renderNotes(notes);
+            loadProjectFiles();
+        }
+
+        // ===== REGULAR VIEW RENDERERS =====
+        function renderTasks(tasks) {
+            const container = document.getElementById('tasks-list');
+            if (tasks.length === 0) { container.innerHTML = '<div class="empty-section">Nenhuma tarefa ainda</div>'; return; }
+            container.innerHTML = tasks.map(t => `
+                <div class="task-item-project status-${t.status}">
+                    <div class="task-checkbox ${t.status==='done'?'checked':''}" onclick="toggleTask(${t.id},'${t.status}')"></div>
+                    <div class="task-info">
+                        <div class="task-title">${escapeHtml(t.title)}</div>
+                        <div class="task-meta">${t.priority==='high'?'⚡ Alta':t.priority==='low'?'↓ Baixa':''}${t.due_date?' • '+t.due_date:''}</div>
+                    </div>
+                    <button onclick="deleteTask(${t.id})" class="btn-delete-subtle">🗑</button>
+                </div>
+            `).join('');
+        }
+
+        function renderDocs(docs) {
+            const container = document.getElementById('docs-list');
+            if (docs.length === 0) { container.innerHTML = '<div class="empty-section">Nenhum documento ainda</div>'; return; }
+            const icons = { link:'🔗', doc:'📄', notion:'📝', figma:'🎨', github:'💻', jira:'📋', pdf:'📕', sheet:'📊', slides:'📽️' };
+            container.innerHTML = docs.map(d => `
+                <div class="doc-item">
+                    <span class="doc-icon">${icons[d.doc_type]||'📄'}</span>
+                    <div class="doc-info">
+                        <div class="doc-title">${d.url?`<a href="${d.url}" target="_blank">${escapeHtml(d.title)}</a>`:escapeHtml(d.title)}</div>
+                        ${d.description?`<div class="doc-desc">${escapeHtml(d.description)}</div>`:''}
+                    </div>
+                    <button onclick="deleteDoc(${d.id})" class="btn-delete-subtle">🗑</button>
+                </div>
+            `).join('');
+        }
+
+        function renderNotes(notes) {
+            const container = document.getElementById('notes-list');
+            if (notes.length === 0) { container.innerHTML = '<div class="empty-section">Nenhuma nota ainda</div>'; return; }
+            container.innerHTML = notes.map(n => `
+                <div class="note-item">
+                    <div class="note-header">
+                        <div class="note-title">${escapeHtml(n.title)}</div>
+                        <div class="note-date">${n.meeting_date||n.created_at?.split('T')[0]||''}</div>
+                    </div>
+                    ${n.content?`<div class="note-content">${escapeHtml(n.content).substring(0,200)}${n.content.length>200?'...':''}</div>`:''}
+                </div>
+            `).join('');
+        }
+
+        // ===== PROJECT FILES =====
+        async function loadProjectFiles() {
+            try {
+                const resp = await fetch(`${API_BASE}/projects/${projectId}/files`);
+                const data = await resp.json();
+                renderFiles(data);
+            } catch (e) {
+                console.error('Error loading files:', e);
+                const el = document.getElementById('files-list');
+                if (el) el.innerHTML = '<div class="empty-section">Erro ao carregar arquivos</div>';
+            }
+        }
+
+        function renderFiles(data) {
+            const section = document.getElementById('files-section');
+            const container = document.getElementById('files-list');
+            const statusEl = document.getElementById('files-status');
+            if (!section || !container || !statusEl) return;
+
+            const files = data.exists ? (data.files || []).filter(f => f.name !== 'manifest.json') : [];
+
+            // Hide entire section if no real files
+            if (files.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+
+            section.style.display = '';
+            statusEl.textContent = `${files.length} arquivo${files.length > 1 ? 's' : ''}`;
+            const icons = { epic:'📜', draft:'✏️', doc:'📄', note:'📝', file:'📁' };
+            const labels = { epic:'Epico Principal', draft:'Rascunho', doc:'Documento', note:'Nota', file:'Arquivo' };
+
+            container.innerHTML = files.map(file => {
+                const fd = extractDateFromFilename(file.name);
+                const dateDisplay = fd ? formatMeetingDate(fd) : 'Atualizado ' + formatTimeAgo(new Date(file.modified * 1000));
+                return `<div class="file-item type-${file.type}" onclick="openFile('${data.slug}/${file.path}')">
+                    <span class="file-icon">${icons[file.type]||'📄'}</span>
+                    <div class="file-info">
+                        <div class="file-name">${file.name.replace('.md','').replace(/^\d{4}-\d{2}-\d{2}-/,'')}</div>
+                        <div class="file-meta">${labels[file.type]||'Arquivo'} • ${dateDisplay}</div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        async function openFile(filePath) {
+            try {
+                const resp = await fetch(`${API_BASE}/projects/files/${filePath}`);
+                const data = await resp.json();
+                if (data.content) showPreview(filePath.split('/').pop().replace('.md',''), data.content);
+            } catch (e) { console.error(e); alert('Erro ao carregar arquivo'); }
+        }
+
         function showPreview(title, content) {
             currentPreviewTitle = title;
             currentPreviewContent = content;
-            
-            document.getElementById('preview-title').textContent = '📄 ' + title;
-            
-            // Renderizar markdown
-            const html = marked.parse(content);
-            document.getElementById('doc-preview').innerHTML = html;
-            
-            // Check if content needs scroll indicator
-            setTimeout(() => {
-                const wrapper = document.getElementById('doc-preview-wrapper');
-                const preview = document.getElementById('doc-preview');
-                if (preview.scrollHeight > preview.clientHeight) {
-                    wrapper.classList.add('has-scroll');
-                } else {
-                    wrapper.classList.remove('has-scroll');
-                }
-            }, 100);
-            
-            // Mostrar seção
-            document.getElementById('doc-preview-section').style.display = 'block';
-            document.getElementById('doc-preview-section').scrollIntoView({ behavior: 'smooth' });
+            const titleEl = document.getElementById('preview-title');
+            if (titleEl) titleEl.textContent = '📄 ' + title;
+            const previewEl = document.getElementById('doc-preview');
+            if (previewEl) previewEl.innerHTML = marked.parse(content);
+            const section = document.getElementById('doc-preview-section');
+            if (section) { section.style.display = 'block'; section.scrollIntoView({ behavior: 'smooth' }); }
         }
-        
+
         function closePreview() {
-            document.getElementById('doc-preview-section').style.display = 'none';
+            const s1 = document.getElementById('doc-preview-section');
+            const s2 = document.getElementById('work-doc-preview-section');
+            if (s1) s1.style.display = 'none';
+            if (s2) s2.style.display = 'none';
         }
-        
+
         function openFullscreen() {
-            document.getElementById('fullscreen-title').textContent = '📄 ' + currentPreviewTitle;
+            document.getElementById('fullscreen-title').textContent = currentPreviewTitle;
             document.getElementById('fullscreen-content').innerHTML = marked.parse(currentPreviewContent);
             document.getElementById('fullscreen-overlay').classList.add('active');
             document.body.style.overflow = 'hidden';
         }
-        
+
         function closeFullscreen() {
             document.getElementById('fullscreen-overlay').classList.remove('active');
             document.body.style.overflow = '';
         }
-        
-        // Keyboard shortcuts for preview
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                if (document.getElementById('fullscreen-overlay').classList.contains('active')) {
-                    closeFullscreen();
-                } else if (document.getElementById('doc-preview-section').style.display !== 'none') {
-                    closePreview();
-                }
-            }
-            if (e.key === 'f' || e.key === 'F') {
-                if (document.getElementById('doc-preview-section').style.display !== 'none' && 
-                    !document.getElementById('fullscreen-overlay').classList.contains('active') &&
-                    document.activeElement.tagName !== 'INPUT' && 
-                    document.activeElement.tagName !== 'TEXTAREA') {
-                    openFullscreen();
-                }
-            }
-        });
-        
-        // ===== WORK PROJECTS =====
-        
-        // Mapeamento de projetos de trabalho
-        const WORK_PROJECT_SLUGS = {
-            '3TPM': '3tpm',
-            '3tpm': '3tpm',
-            'Catalog Admin': 'catalog-admin',
-            'Catalog': 'catalog-admin',
-            'CATALOG-ADMIN': 'catalog-admin',
-            'Company Store': 'company-store',
-            'Company & Store': 'company-store',
-            'COMPANY-STORE': 'company-store',
-            'CMS DAM': 'cms-dam',
-            'CMS-DAM': 'cms-dam',
-            'CMS': 'cms-dam',
-            'DAM': 'cms-dam',
-            'DAM - Documentação': 'cms-dam',
-            'CMS / DAM': 'cms-dam',
-            'POCs IA': 'pocs-ia',
-            'POCS-IA': 'pocs-ia',
-            'Autonomy': 'autonomy',
-            'AUTONOMY-AUTOMATION': 'autonomy'
-        };
-        
-        let workProjectData = null;
-        let currentWorkSlug = null;
-        
-        function isWorkProject(projectName, category) {
-            return category === 'trabalho' || WORK_PROJECT_SLUGS[projectName];
+
+        // ===== FORM ACTIONS =====
+        function toggleAddTask() { document.getElementById('add-task-form').classList.toggle('active'); }
+        function toggleAddDoc() { document.getElementById('add-doc-form').classList.toggle('active'); }
+        function toggleAddNote() { document.getElementById('add-note-form').classList.toggle('active'); }
+
+        async function addTask() {
+            const title = document.getElementById('new-task-title').value.trim();
+            if (!title) return;
+            await fetch(`${API_BASE}/tasks`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ title, priority: document.getElementById('new-task-priority').value, project_id: parseInt(projectId) }) });
+            document.getElementById('new-task-title').value = '';
+            toggleAddTask();
+            loadProjectWithWorkCheck();
         }
-        
-        function getWorkProjectSlug(projectName) {
-            return WORK_PROJECT_SLUGS[projectName] || projectName.toLowerCase().replace(/\s+/g, '-');
+
+        async function toggleTask(taskId, currentStatus) {
+            await fetch(`${API_BASE}/tasks/${taskId}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ status: currentStatus === 'done' ? 'todo' : 'done' }) });
+            loadProjectWithWorkCheck();
         }
-        
-        async function loadWorkProject(projectName) {
-            const slug = getWorkProjectSlug(projectName);
-            currentWorkSlug = slug;
-            
-            try {
-                const response = await fetch(`${API_BASE}/work-projects/${slug}`);
-                if (!response.ok) {
-                    console.log('Projeto de trabalho não encontrado, usando view padrão');
-                    return false;
-                }
-                
-                workProjectData = await response.json();
-                renderWorkProjectView(workProjectData);
-                return true;
-            } catch (error) {
-                console.error('Erro ao carregar projeto de trabalho:', error);
-                return false;
-            }
+
+        async function deleteTask(taskId) {
+            if (!confirm('Deletar tarefa?')) return;
+            await fetch(`${API_BASE}/tasks/${taskId}`, { method: 'DELETE' });
+            loadProjectWithWorkCheck();
         }
-        
-        function renderWorkProjectView(data) {
-            // Show work project view, hide regular view
-            document.getElementById('work-project-view').style.display = 'block';
-            document.getElementById('regular-project-view').style.display = 'none';
-            
-            // Overview (collapsible Project Info section) — hide empty sub-cards
-            const overview = data.overview || {};
-            const defText = overview.definition || '';
-            const ctxText = overview.context || '';
-            const statusText = overview.current_status || '';
-            
-            const defCard = document.getElementById('work-definition').closest('.overview-card');
-            const ctxCard = document.getElementById('work-context').closest('.overview-card');
-            const statusCard = document.getElementById('work-current-status').closest('.overview-card');
-            
-            if (defText) {
-                document.getElementById('work-definition').textContent = defText;
-                defCard.style.display = '';
-            } else {
-                defCard.style.display = 'none';
-            }
-            
-            if (ctxText) {
-                document.getElementById('work-context').textContent = ctxText;
-                ctxCard.style.display = '';
-            } else {
-                ctxCard.style.display = 'none';
-            }
-            
-            if (statusText) {
-                document.getElementById('work-current-status').textContent = statusText;
-                statusCard.style.display = '';
-            } else {
-                statusCard.style.display = 'none';
-            }
-            
-            // Hide entire "Informacoes do Projeto" section if ALL sub-cards are empty
-            const overviewSection = document.getElementById('work-overview-section');
-            if (!defText && !ctxText && !statusText) {
-                overviewSection.style.display = 'none';
-            } else {
-                overviewSection.style.display = '';
-            }
-            
-            // Header stats chips (inline counts)
-            const sectionsCount = data.sections ? data.sections.length : 0;
-            const meetingsCount = data.meeting_notes ? data.meeting_notes.length : 0;
-            const casesCount = data.cases ? data.cases.length : 0;
-            
-            const chips = [];
-            if (sectionsCount > 0) chips.push(`<span class="header-chip">📄 ${sectionsCount} docs</span>`);
-            if (meetingsCount > 0) chips.push(`<span class="header-chip">📅 ${meetingsCount} reunioes</span>`);
-            if (casesCount > 0) chips.push(`<span class="header-chip">📋 ${casesCount} cases</span>`);
-            
-            // Last activity
-            if (data.meeting_notes && data.meeting_notes.length > 0) {
-                const lastMeeting = data.meeting_notes[0];
-                const lastDate = lastMeeting.date || extractDateFromFilename(lastMeeting.file);
-                if (lastDate) {
-                    chips.push(`<span class="header-chip header-chip-muted">🕐 Ultima: ${formatMeetingDate(lastDate)}</span>`);
-                }
-            }
-            
-            const statsEl = document.getElementById('work-header-stats');
-            if (chips.length > 0) {
-                statsEl.innerHTML = chips.join('');
-                statsEl.style.display = '';
-            } else {
-                statsEl.style.display = 'none';
-            }
-            
-            // Sections
-            renderWorkSections(data.sections || []);
-            
-            // Meeting Notes
-            renderWorkMeetings(data.meeting_notes || []);
-            
-            // Cases
-            if (data.cases && data.cases.length > 0) {
-                renderWorkCases(data.cases);
-            }
-            
-            // Load report card + intelligence (async, non-blocking)
-            if (currentWorkSlug) {
-                loadReportCard(currentWorkSlug);
-            }
+
+        async function addDoc() {
+            const title = document.getElementById('new-doc-title').value.trim();
+            if (!title) return;
+            const url = document.getElementById('new-doc-url').value.trim();
+            const docType = document.getElementById('new-doc-type').value;
+            const description = document.getElementById('new-doc-description').value.trim();
+            let apiUrl = `${API_BASE}/projects/${projectId}/docs?title=${encodeURIComponent(title)}&doc_type=${docType}`;
+            if (url) apiUrl += `&url=${encodeURIComponent(url)}`;
+            if (description) apiUrl += `&description=${encodeURIComponent(description)}`;
+            await fetch(apiUrl, { method: 'POST' });
+            document.getElementById('new-doc-title').value = '';
+            document.getElementById('new-doc-url').value = '';
+            document.getElementById('new-doc-description').value = '';
+            toggleAddDoc();
+            loadProjectWithWorkCheck();
         }
-        
-        // Unified collapsible toggle with ARIA support
+
+        async function deleteDoc(docId) {
+            if (!confirm('Remover documento?')) return;
+            await fetch(`${API_BASE}/projects/${projectId}/docs/${docId}`, { method: 'DELETE' });
+            loadProjectWithWorkCheck();
+        }
+
+        async function addNote() {
+            const title = document.getElementById('new-note-title').value.trim();
+            if (!title) return;
+            await fetch(`${API_BASE}/notes`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ title, content: document.getElementById('new-note-content').value, project_id: parseInt(projectId) }) });
+            document.getElementById('new-note-title').value = '';
+            document.getElementById('new-note-content').value = '';
+            toggleAddNote();
+            loadProjectWithWorkCheck();
+        }
+
+        // ===== COLLAPSIBLE SECTIONS =====
         function toggleCollapsible(toggleEl) {
             const section = toggleEl.closest('.collapsible-section');
             const body = section.querySelector('.collapsible-body');
             const indicator = section.querySelector('.collapse-indicator');
             const isOpen = body.classList.contains('open');
-            
             if (isOpen) {
                 body.classList.remove('open');
                 indicator.classList.remove('open');
@@ -1573,283 +953,38 @@
                 toggleEl.setAttribute('aria-expanded', 'true');
             }
         }
-        
-        // Initialize ARIA attributes and keyboard support for collapsibles
+
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.collapsible-toggle').forEach(toggle => {
                 const body = toggle.nextElementSibling;
                 const isOpen = body && body.classList.contains('open');
-                
                 toggle.setAttribute('role', 'button');
                 toggle.setAttribute('tabindex', '0');
                 toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-                if (body && body.id) {
-                    toggle.setAttribute('aria-controls', body.id);
-                }
-                
-                // Keyboard support: Enter and Space
+                if (body && body.id) toggle.setAttribute('aria-controls', body.id);
                 toggle.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        toggleCollapsible(toggle);
-                    }
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCollapsible(toggle); }
                 });
             });
         });
-        
-        async function loadReportCard(slug) {
-            try {
-                const rc = await fetch(`${API_BASE}/work-projects/${slug}/report-card`).then(r => r.ok ? r.json() : null);
-                if (!rc) return;
-                
-                // Show report card section
-                document.getElementById('report-card-section').style.display = '';
-                
-                // Health badge
-                const badge = document.getElementById('rc-health-badge');
-                const healthColors = { green: '#22c55e', yellow: '#eab308', red: '#ef4444' };
-                const healthLabels = { green: 'On Track', yellow: 'Atencao', red: 'Critico' };
-                badge.style.background = `${healthColors[rc.health] || healthColors.green}22`;
-                badge.style.color = healthColors[rc.health] || healthColors.green;
-                badge.style.border = `1px solid ${healthColors[rc.health] || healthColors.green}44`;
-                badge.textContent = healthLabels[rc.health] || rc.health;
-                
-                // Week label
-                document.getElementById('rc-week-label').textContent = rc.week ? `Semana de ${rc.week}` : '';
-                
-                // Meetings list
-                const meetingsEl = document.getElementById('rc-meetings-list');
-                if (rc.meetings_this_week && rc.meetings_this_week.length > 0) {
-                    meetingsEl.innerHTML = rc.meetings_this_week.map(m => `
-                        <div class="rc-meeting-item">
-                            <span class="rc-meeting-date">${m.date || ''}</span>
-                            <span class="rc-meeting-title">${escapeHtml(m.title)}</span>
-                            ${m.summary ? `<span class="rc-meeting-summary">${escapeHtml(m.summary)}</span>` : ''}
-                        </div>
-                    `).join('');
-                } else {
-                    meetingsEl.innerHTML = '<span class="text-muted">Nenhuma reuniao encontrada nos ultimos 7 dias</span>';
-                }
-                
-                // Confluence row
-                const confEl = document.getElementById('rc-confluence-row');
-                const c = rc.confluence || {};
-                if (c.current_sprint || c.epics_open || c.risks || c.bugs) {
-                    const chips = [];
-                    if (c.current_sprint) chips.push(`<span class="rc-chip">${escapeHtml(c.current_sprint)}</span>`);
-                    if (c.epics_open) chips.push(`<span class="rc-chip">${c.epics_open} open epics</span>`);
-                    if (c.epics_closed) chips.push(`<span class="rc-chip rc-chip-done">${c.epics_closed} closed</span>`);
-                    if (c.risks) chips.push(`<span class="rc-chip rc-chip-risk">${c.risks} risk${c.risks > 1 ? 's' : ''}</span>`);
-                    if (c.bugs) chips.push(`<span class="rc-chip rc-chip-bug">${c.bugs} bug${c.bugs > 1 ? 's' : ''}</span>`);
-                    confEl.innerHTML = chips.join('');
-                } else {
-                    confEl.innerHTML = '<span class="text-muted">Sem dados do Confluence</span>';
-                }
-                
-                // Intelligence section — hide entirely when no data
-                const intelSection = document.getElementById('intel-section');
-                const intelBody = document.getElementById('intel-body');
-                if (rc.intelligence_summary) {
-                    intelSection.style.display = '';
-                    intelBody.innerHTML = `
-                        <div class="intel-source">Fonte: ${escapeHtml(rc.intelligence_file || 'Deep Dive')}</div>
-                        <p class="intel-summary">${escapeHtml(rc.intelligence_summary)}</p>
-                    `;
-                } else if (rc.intelligence_file) {
-                    intelSection.style.display = '';
-                    intelBody.innerHTML = `
-                        <div class="intel-source">Fonte: ${escapeHtml(rc.intelligence_file)}</div>
-                        <p class="text-muted">Resumo nao disponivel.</p>
-                    `;
-                } else {
-                    // No intelligence at all — hide entire section
-                    intelSection.style.display = 'none';
-                }
-                
-                // Hide "Reunioes Recentes" if empty AND Report Card already shows meetings
-                const reunioesSection = document.getElementById('work-meetings-section');
-                const reunioesList = document.getElementById('work-meetings-list');
-                const hasReunioesData = reunioesList && reunioesList.querySelector('.meeting-item');
-                const rcHasMeetings = rc.meetings_this_week && rc.meetings_this_week.length > 0;
-                if (!hasReunioesData && rcHasMeetings) {
-                    reunioesSection.style.display = 'none';
-                }
-                
-            } catch (error) {
-                console.error('Error loading report card:', error);
-            }
-        }
-        
-        // Legacy toggle for non-collapsible sections
-        function toggleSection(sectionId) {
-            const section = document.getElementById(sectionId);
-            if (section.style.display === 'none') {
-                section.style.display = 'block';
-            } else {
-                section.style.display = 'none';
-            }
-        }
-        
-        function renderWorkSections(sections) {
-            const container = document.getElementById('work-sections-list');
-            const countBadge = document.getElementById('work-sections-count');
-            
-            if (sections.length === 0) {
-                container.innerHTML = '<div class="empty-section">Nenhuma seção de documentação</div>';
-                countBadge.textContent = '';
-                return;
-            }
-            
-            countBadge.textContent = `${sections.length} seções`;
-            
-            const sectionIcons = {
-                'context': '🎯',
-                'definition': '📋',
-                'history': '📜',
-                'architecture': '🏗️',
-                'people': '👥',
-                'timeline': '📅',
-                'status': '📍',
-                'roadmap': '🗺️',
-                'readme': '📖'
-            };
-            
-            container.innerHTML = sections.map(section => {
-                const icon = sectionIcons[section.key] || '📄';
-                return `
-                    <div class="section-item" onclick="openWorkFile('${section.file}')">
-                        <div class="section-name">${icon} ${section.name}</div>
-                        <div class="section-summary">${section.summary || 'Clique para ver detalhes'}</div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        function renderWorkMeetings(meetings) {
-            const container = document.getElementById('work-meetings-list');
-            const countBadge = document.getElementById('work-meetings-count');
-            
-            if (meetings.length === 0) {
-                container.innerHTML = '<div class="empty-section">Nenhuma nota de reunião</div>';
-                countBadge.textContent = '';
-                return;
-            }
-            
-            countBadge.textContent = `${meetings.length} reuniões`;
-            
-            container.innerHTML = meetings.slice(0, 10).map(meeting => `
-                <div class="meeting-item" onclick="openWorkFile('${meeting.file}')">
-                    <div class="meeting-header">
-                        <span class="meeting-title">${escapeHtml(meeting.title)}</span>
-                        ${meeting.date ? `<span class="meeting-date">${formatMeetingDate(meeting.date)}</span>` : ''}
-                    </div>
-                    <div class="meeting-preview">${escapeHtml(meeting.preview) || 'Clique para ver detalhes'}</div>
-                </div>
-            `).join('');
-        }
-        
-        function renderWorkCases(cases) {
-            const section = document.getElementById('work-cases-section');
-            const container = document.getElementById('work-cases-list');
-            
-            section.style.display = 'block';
-            
-            container.innerHTML = cases.map(caseItem => `
-                <div class="case-item" onclick="openWorkFile('${caseItem.file}')">
-                    <div class="meeting-title">${escapeHtml(caseItem.title)}</div>
-                    <div class="meeting-preview">${escapeHtml(caseItem.summary) || ''}</div>
-                </div>
-            `).join('');
-        }
-        
-        async function openWorkFile(filePath) {
-            if (!currentWorkSlug) return;
-            
-            try {
-                const response = await fetch(`${API_BASE}/work-projects/${currentWorkSlug}/file/${filePath}`);
-                if (!response.ok) throw new Error('Arquivo não encontrado');
-                
-                const data = await response.json();
-                showPreview(data.title, data.content);
-            } catch (error) {
-                console.error('Erro ao abrir arquivo:', error);
-                alert('Erro ao carregar arquivo');
-            }
-        }
-        
-        // ===== MODIFIED LOAD PROJECT =====
-        
-        async function loadProjectWithWorkCheck() {
-            try {
-                const response = await fetch(`${API_BASE}/projects/${projectId}/full`);
-                if (!response.ok) throw new Error('Projeto não encontrado');
-                projectData = await response.json();
-                
-                const { project } = projectData;
-                
-                // Renderizar header primeiro
-                renderProjectHeader(project);
-                
-                // Verificar se é projeto de trabalho
-                if (isWorkProject(project.name, project.category)) {
-                    const loadedWork = await loadWorkProject(project.name);
-                    if (loadedWork) {
-                        // Sucesso - view de trabalho já está renderizada
-                        return;
-                    }
-                }
-                
-                // Se não é trabalho ou falhou, usar view padrão
-                renderProject();
-            } catch (error) {
-                console.error(error);
-                document.getElementById('project-name').textContent = 'Projeto não encontrado';
-            }
-        }
-        
-        function renderProjectHeader(project) {
-            document.title = `${project.name} - Centro de Controle`;
-            document.getElementById('project-name').textContent = project.name;
-            document.getElementById('project-description').textContent = project.description || '';
 
-            // Back button: work projects go to work page, others to dashboard
-            const backBtn = document.querySelector('.back-btn');
-            if (backBtn && isWorkProject(project.name, project.category)) {
-                backBtn.href = 'work';
-                backBtn.textContent = '← Work Status';
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (document.getElementById('fullscreen-overlay').classList.contains('active')) closeFullscreen();
+                else closePreview();
             }
-            
-            const categoryIcons = { trabalho: '💼', mba: '🎓', pessoal: '👤', familia: '👨‍👩‍👧' };
-            document.getElementById('project-category').textContent = 
-                (categoryIcons[project.category] || '📁') + ' ' + (project.category || 'Geral');
-            
-            const statusEl = document.getElementById('project-status');
-            statusEl.textContent = project.status === 'active' ? 'Ativo' : 
-                                   project.status === 'paused' ? 'Pausado' : 'Concluído';
-            statusEl.className = 'badge ' + (project.status === 'active' ? 'badge-active' : 'badge-paused');
-            
-            const priorityEl = document.getElementById('project-priority');
-            if (project.priority === 'high') {
-                priorityEl.textContent = '🔥 Alta Prioridade';
-                priorityEl.className = 'badge badge-high';
-                priorityEl.style.display = 'inline';
-            } else {
-                priorityEl.style.display = 'none';
+            if ((e.key === 'f' || e.key === 'F') && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                const docSection = document.getElementById('doc-preview-section');
+                const workSection = document.getElementById('work-doc-preview-section');
+                if ((docSection && docSection.style.display !== 'none') || (workSection && workSection.style.display !== 'none')) {
+                    if (!document.getElementById('fullscreen-overlay').classList.contains('active')) openFullscreen();
+                }
             }
-            
-            // Show progress bar + stat cards ONLY for non-work projects (work projects are perennial, no %)
-            const isWork = isWorkProject(project.name, project.category);
-            if (!isWork) {
-                document.querySelector('.project-progress-large').style.display = '';
-                document.getElementById('project-stats').style.display = '';
-                document.getElementById('progress-fill').style.width = project.progress + '%';
-                document.getElementById('progress-text').textContent = project.progress + '%';
-            }
-        }
-        
-        // Load on start
+        });
+
+        // ===== START =====
         loadProjectWithWorkCheck();
-        loadProjectFiles();
     </script>
     <script src="js/mobile-nav.js?v=7"></script>
 </body>
