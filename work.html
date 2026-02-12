@@ -7,7 +7,7 @@
     <meta name="description" content="Centro de Controle - Work Status">
     <title>Work Status | Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=19">
+    <link rel="stylesheet" href="css/style.css?v=20">
     <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -896,11 +896,12 @@
         async function loadWorkProjectCards() {
             const container = document.getElementById('work-project-cards');
             try {
-                const [projData, rcData] = await Promise.all([
-                    fetch(`${API_BASE}/work-projects`).then(r => r.json()),
+                // Use /projects (database) for IDs, plus report-cards for enrichment
+                const [allProjects, rcData] = await Promise.all([
+                    fetch(`${API_BASE}/projects`).then(r => r.json()),
                     fetch(`${API_BASE}/work-projects/report-cards`).then(r => r.json()).catch(() => ({ report_cards: {} }))
                 ]);
-                const projects = projData.projects || [];
+                const projects = (Array.isArray(allProjects) ? allProjects : []).filter(p => p.category === 'trabalho');
                 const rcs = rcData.report_cards || {};
                 
                 if (projects.length === 0) {
