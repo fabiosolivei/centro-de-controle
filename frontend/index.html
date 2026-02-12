@@ -7,7 +7,7 @@
     <meta name="description" content="Centro de Controle - Dashboard do Fábio">
     <title>Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=10">
+    <link rel="stylesheet" href="css/style.css?v=11">
     <link rel="manifest" href="manifest.json">
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -166,6 +166,7 @@
                         <div id="brief-summary" class="brief-summary">
                             <div class="skeleton skeleton-text" style="height:14px;width:70%;"></div>
                         </div>
+                        <div id="brief-energy" class="brief-energy-section"></div>
                         <div id="brief-glance" class="brief-glance"></div>
                         <div id="brief-detail" class="brief-detail" style="display:none;"></div>
                     </div>
@@ -1031,6 +1032,7 @@
         
         function renderWeeklyBrief() {
             const summaryEl = document.getElementById('brief-summary');
+            const energyEl = document.getElementById('brief-energy');
             const glanceEl = document.getElementById('brief-glance');
             const detailEl = document.getElementById('brief-detail');
             if (!summaryEl || !weeklyBriefData) return;
@@ -1050,13 +1052,57 @@
                 </div>
             `;
             
-            // Week at a glance (always visible)
-            if (b.week_glance) {
-                const lines = b.week_glance.split('\n').filter(l => l.trim());
-                glanceEl.innerHTML = lines.map(line => {
-                    const isToday = line.includes('Today') || line.includes('HOJE');
-                    return `<div class="brief-day-row${isToday ? ' brief-today' : ''}">${escapeHtml(line)}</div>`;
-                }).join('');
+            // Energy bars (always visible)
+            if (b.energy_check && energyEl) {
+                const e = b.energy_check;
+                const maxVal = 15;
+                function energyBar(label, value, color) {
+                    const pct = Math.round((value / maxVal) * 100);
+                    const level = pct >= 70 ? 'high' : pct >= 40 ? 'mid' : 'low';
+                    return `
+                        <div class="brief-energy-row">
+                            <span class="brief-energy-label">${label}</span>
+                            <div class="brief-energy-track">
+                                <div class="brief-energy-fill brief-energy-${level}" style="width:${pct}%"></div>
+                            </div>
+                            <span class="brief-energy-value">${value}/${maxVal}</span>
+                        </div>`;
+                }
+                energyEl.innerHTML = 
+                    energyBar('Reunioes', e.meeting_load || 0, '#ef4444') +
+                    energyBar('Deadlines', e.deadline_press || 0, '#f59e0b') +
+                    energyBar('Energia', e.energy_risk || 0, '#6366f1');
+            }
+            
+            // Week at a glance — structured day rows
+            if (b.week_glance && glanceEl) {
+                const dayMap = { 'MON': 'SEG', 'TUE': 'TER', 'WED': 'QUA', 'THU': 'QUI', 'FRI': 'SEX', 'SAT': 'SAB', 'SUN': 'DOM' };
+                const todayIdx = new Date().getDay(); // 0=Sun, 1=Mon...
+                const todayAbbrs = ['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
+                const todayAbbr = todayAbbrs[todayIdx];
+                
+                // Parse lines: merge continuation lines (starting with spaces) into previous day
+                const rawLines = b.week_glance.split('\n');
+                const days = [];
+                rawLines.forEach(line => {
+                    const dayMatch = line.match(/^(MON|TUE|WED|THU|FRI|SAT|SUN)\s+\w+\s+\d+:\s*(.*)/i);
+                    if (dayMatch) {
+                        const engDay = dayMatch[1].toUpperCase();
+                        days.push({ abbr: dayMap[engDay] || engDay, text: dayMatch[2].trim() });
+                    } else if (days.length > 0 && line.trim()) {
+                        // Continuation line
+                        days[days.length - 1].text += ', ' + line.trim();
+                    }
+                });
+                
+                glanceEl.innerHTML = '<div class="brief-week-label">SEMANA</div>' +
+                    days.map(d => {
+                        const isToday = d.abbr === todayAbbr;
+                        return `<div class="brief-day-row${isToday ? ' brief-today' : ''}">
+                            <span class="brief-day-abbr">${d.abbr}</span>
+                            <span class="brief-day-text">${escapeHtml(d.text)}</span>
+                        </div>`;
+                    }).join('');
             }
             
             // Expanded detail
@@ -1065,7 +1111,7 @@
                 
                 // Urgent action items
                 if (b.action_items_urgent && b.action_items_urgent.length > 0) {
-                    html += '<div style="margin-top:0.5rem;"><strong style="color:#ef4444;font-size:0.8rem;">URGENTE</strong>';
+                    html += '<div class="brief-detail-group"><div class="brief-detail-label" style="color:#ef4444;">URGENTE</div>';
                     html += b.action_items_urgent.map(item => `
                         <div class="reminder-item" style="border-left:3px solid #ef4444;">
                             <div class="reminder-content">
@@ -1079,7 +1125,7 @@
                 
                 // Important action items
                 if (b.action_items_important && b.action_items_important.length > 0) {
-                    html += '<div style="margin-top:0.5rem;"><strong style="color:#f59e0b;font-size:0.8rem;">IMPORTANTE</strong>';
+                    html += '<div class="brief-detail-group"><div class="brief-detail-label" style="color:#f59e0b;">IMPORTANTE</div>';
                     html += b.action_items_important.map(item => `
                         <div class="reminder-item">
                             <div class="reminder-content">
@@ -1093,7 +1139,7 @@
                 
                 // Decisions
                 if (b.decisions && b.decisions.length > 0) {
-                    html += '<div style="margin-top:0.5rem;"><strong style="color:var(--accent);font-size:0.8rem;">DECISOES</strong>';
+                    html += '<div class="brief-detail-group"><div class="brief-detail-label" style="color:var(--accent-primary);">DECISOES</div>';
                     html += b.decisions.map(d => `
                         <div class="reminder-item">
                             <div class="reminder-content">
@@ -1102,16 +1148,6 @@
                             </div>
                         </div>
                     `).join('');
-                    html += '</div>';
-                }
-                
-                // Energy check
-                if (b.energy_check) {
-                    const e = b.energy_check;
-                    html += '<div style="margin-top:0.5rem;font-size:0.8rem;">';
-                    if (e.meeting_load) html += `<div>Reunioes: ${'█'.repeat(Math.round(e.meeting_load/15*10))}${'░'.repeat(10-Math.round(e.meeting_load/15*10))} ${e.meeting_load}/15</div>`;
-                    if (e.deadline_press) html += `<div>Deadlines: ${'█'.repeat(Math.round(e.deadline_press/15*10))}${'░'.repeat(10-Math.round(e.deadline_press/15*10))} ${e.deadline_press}/15</div>`;
-                    if (e.energy_risk) html += `<div>Energia: ${'█'.repeat(Math.round(e.energy_risk/15*10))}${'░'.repeat(10-Math.round(e.energy_risk/15*10))} ${e.energy_risk}/15</div>`;
                     html += '</div>';
                 }
                 
