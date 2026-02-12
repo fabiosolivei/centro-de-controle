@@ -7,7 +7,7 @@
     <meta name="description" content="Centro de Controle - Work Status">
     <title>Work Status | Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=10">
+    <link rel="stylesheet" href="css/style.css?v=19">
     <link rel="manifest" href="manifest.json">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -264,6 +264,86 @@
         .tab-content.active {
             display: block;
             animation: fadeIn 0.3s ease;
+        }
+        
+        /* Project Summary Cards (horizontal) */
+        .work-project-cards {
+            display: flex;
+            gap: var(--spacing-lg);
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .work-proj-card {
+            flex: 1;
+            background: var(--bg-card);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-lg);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-left: 3px solid rgba(99, 102, 241, 0.4);
+            cursor: pointer;
+            transition: var(--transition-fast);
+        }
+        
+        .work-proj-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+        
+        .work-proj-name {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .work-proj-status {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        
+        .work-proj-meta {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        
+        .work-proj-progress {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .work-proj-bar {
+            flex: 1;
+            height: 4px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .work-proj-fill {
+            height: 100%;
+            border-radius: 2px;
+            background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
+            transition: width 0.4s ease;
+        }
+        
+        .work-proj-pct {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            min-width: 32px;
+            text-align: right;
+        }
+        
+        @media (max-width: 767px) {
+            .work-project-cards {
+                flex-direction: column;
+            }
         }
         
         /* Initiative Card */
@@ -686,6 +766,13 @@
             </div>
         </div>
         
+        <!-- Project Summary Cards (horizontal) -->
+        <div class="work-project-cards" id="work-project-cards">
+            <div class="loading-skeleton" style="height:80px;flex:1;"></div>
+            <div class="loading-skeleton" style="height:80px;flex:1;"></div>
+            <div class="loading-skeleton" style="height:80px;flex:1;"></div>
+        </div>
+        
         <!-- Team Filter -->
         <div class="team-filter" id="team-filter">
             <button class="team-chip active" data-team="all">Todos</button>
@@ -766,6 +853,7 @@
         
         document.addEventListener('DOMContentLoaded', () => {
             loadAllWorkData();
+            loadWorkProjectCards();
             setupTabNavigation();
             setupTeamFilter();
         });
@@ -802,6 +890,58 @@
                 console.log(`Work data loaded in ${elapsed}ms (single request)`);
             } catch (error) {
                 console.error('Error loading work data:', error);
+            }
+        }
+        
+        async function loadWorkProjectCards() {
+            const container = document.getElementById('work-project-cards');
+            try {
+                const [projData, rcData] = await Promise.all([
+                    fetch(`${API_BASE}/work-projects`).then(r => r.json()),
+                    fetch(`${API_BASE}/work-projects/report-cards`).then(r => r.json()).catch(() => ({ report_cards: {} }))
+                ]);
+                const projects = projData.projects || [];
+                const rcs = rcData.report_cards || {};
+                
+                if (projects.length === 0) {
+                    container.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;">Nenhum projeto encontrado</div>';
+                    return;
+                }
+                
+                const NAME_TO_SLUG = {
+                    'Catalog': 'catalog-admin', 'Catalog Admin': 'catalog-admin',
+                    'CMS': 'cms-dam', 'CMS DAM': 'cms-dam', 'DAM': 'cms-dam',
+                    'DAM - Documentação': 'cms-dam', '3TPM': '3tpm'
+                };
+                
+                container.innerHTML = projects.map(p => {
+                    const slug = NAME_TO_SLUG[p.name] || p.name.toLowerCase().replace(/\s+/g, '-');
+                    const rc = rcs[slug];
+                    const healthColors = { green: '#22c55e', yellow: '#eab308', red: '#ef4444' };
+                    const healthDot = rc && !rc.error
+                        ? `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${healthColors[rc.health] || healthColors.green};"></span>`
+                        : '';
+                    const chips = [];
+                    if (rc && !rc.error) {
+                        if (rc.meetings_count > 0) chips.push(`${rc.meetings_count} meeting${rc.meetings_count > 1 ? 's' : ''}`);
+                        if (rc.confluence && rc.confluence.current_sprint) chips.push(rc.confluence.current_sprint);
+                        if (rc.confluence && rc.confluence.epics_open > 0) chips.push(`${rc.confluence.epics_open} epics`);
+                    }
+                    const statusLabel = p.status === 'active' ? '🟢 Ativo' : p.status === 'paused' ? '🟡 Pausado' : '✅ Concluído';
+                    
+                    return `<div class="work-proj-card" onclick="window.location.href='project.html?id=${p.id}'">
+                        <div class="work-proj-name">${healthDot} ${escapeHtml(p.name)}</div>
+                        <div class="work-proj-status">${statusLabel}</div>
+                        ${chips.length > 0 ? `<div class="work-proj-meta">${chips.join(' · ')}</div>` : ''}
+                        <div class="work-proj-progress">
+                            <div class="work-proj-bar"><div class="work-proj-fill" style="width:${p.progress || 0}%"></div></div>
+                            <span class="work-proj-pct">${p.progress || 0}%</span>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (error) {
+                console.error('Error loading project cards:', error);
+                container.innerHTML = '<div style="color:var(--text-muted);font-size:0.85rem;">Erro ao carregar projetos</div>';
             }
         }
         
