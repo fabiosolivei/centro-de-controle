@@ -382,29 +382,41 @@
             </div>
         </div>
 
-        <!-- Embed Section: Langfuse + Grafana -->
+        <!-- Daily Cost Chart -->
+        <div class="embed-section">
+            <h2>Daily Cost (30d)</h2>
+            <div id="cost-chart-container" style="background:var(--bg-card); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:var(--spacing-lg); min-height:180px;">
+                <div class="loading-state" id="cost-chart-loading">Loading chart...</div>
+                <div id="cost-chart" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- Model Breakdown -->
+        <div class="embed-section">
+            <h2>Model Breakdown</h2>
+            <div id="model-breakdown" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap:12px;">
+                <div class="loading-state">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Recent Traces -->
+        <div class="embed-section">
+            <h2 style="display:flex; justify-content:space-between; align-items:center;">
+                Recent Traces
+                <a id="langfuse-link" href="#" target="_blank" style="font-size:0.8rem; color:var(--accent-primary); text-decoration:none;">Open Langfuse UI ↗</a>
+            </h2>
+            <div id="traces-table-container" style="background:var(--bg-card); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); overflow:hidden;">
+                <div class="loading-state" id="traces-loading">Loading traces...</div>
+                <div id="traces-table" style="display:none; overflow-x:auto;"></div>
+            </div>
+        </div>
+
+        <!-- Embed Section: Grafana -->
         <div class="embed-section">
             <h2>Live Dashboards</h2>
             <div class="embed-grid" id="dashboards-grid">
-                <!-- Langfuse -->
-                <div class="embed-card">
-                    <div class="embed-card-header">
-                        <h3>Langfuse — Traces & Agent Graphs</h3>
-                        <a id="langfuse-link" href="#" target="_blank">Open Full UI</a>
-                    </div>
-                    <div id="langfuse-embed">
-                        <div class="embed-placeholder" id="langfuse-placeholder">
-                            <div class="placeholder-icon">🔍</div>
-                            <div id="langfuse-status">Checking connection...</div>
-                            <div style="font-size: 0.75rem; color: var(--text-muted);">
-                                Traces, spans, agent graphs, LLM-as-judge scores
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- Grafana -->
-                <div class="embed-card">
+                <div class="embed-card" style="grid-column:1/-1;">
                     <div class="embed-card-header">
                         <h3 id="grafana-title">Grafana — Nova Cost Tracker</h3>
                         <div style="display: flex; gap: 12px; align-items: center;">
@@ -656,6 +668,136 @@
             }
         }
 
+        // ============================================
+        // DAILY COST CHART (pure CSS bars)
+        // ============================================
+        async function loadDailyCostChart() {
+            try {
+                const data = await ObservabilityAPI.getLangfuseStats(30).catch(() => null);
+                if (!data || !data.daily || data.daily.length === 0) {
+                    document.getElementById('cost-chart-loading').textContent = 'No daily data available';
+                    return;
+                }
+                const daily = data.daily;
+                const maxCost = Math.max(...daily.map(d => d.cost), 0.001);
+                
+                let html = '<div style="display:flex; align-items:flex-end; gap:3px; height:140px; padding-top:8px;">';
+                for (const d of daily) {
+                    const pct = Math.max(2, (d.cost / maxCost) * 100);
+                    const label = d.date.slice(5); // MM-DD
+                    const tooltip = `${d.date}: $${d.cost.toFixed(4)} | ${d.traces} traces | ${d.observations} calls`;
+                    html += `<div style="flex:1; display:flex; flex-direction:column; align-items:center; height:100%; justify-content:flex-end;" title="${tooltip}">
+                        <div style="width:100%; max-width:28px; background:linear-gradient(180deg,#6366f1,#4f46e5); border-radius:3px 3px 0 0; height:${pct}%; min-height:2px; transition:height 0.3s;"></div>
+                        <div style="font-size:0.55rem; color:var(--text-muted); margin-top:4px; transform:rotate(-45deg); white-space:nowrap;">${label}</div>
+                    </div>`;
+                }
+                html += '</div>';
+                html += `<div style="display:flex; justify-content:space-between; font-size:0.65rem; color:var(--text-muted); margin-top:12px;">
+                    <span>Total: $${data.total_cost.toFixed(4)}</span>
+                    <span>${data.total_traces} traces | ${data.total_observations} calls</span>
+                </div>`;
+                
+                document.getElementById('cost-chart-loading').style.display = 'none';
+                const chart = document.getElementById('cost-chart');
+                chart.style.display = 'block';
+                chart.innerHTML = html;
+            } catch (e) {
+                document.getElementById('cost-chart-loading').textContent = 'Error loading chart';
+                console.error('Cost chart error:', e);
+            }
+        }
+
+        // ============================================
+        // MODEL BREAKDOWN
+        // ============================================
+        async function loadModelBreakdown() {
+            try {
+                const data = await ObservabilityAPI.getLangfuseStats(30).catch(() => null);
+                const container = document.getElementById('model-breakdown');
+                if (!data || !data.model_breakdown || Object.keys(data.model_breakdown).length === 0) {
+                    container.innerHTML = '<div class="loading-state">No model data</div>';
+                    return;
+                }
+                const models = Object.entries(data.model_breakdown).sort((a, b) => b[1].total_cost - a[1].total_cost);
+                const totalCost = models.reduce((sum, [, v]) => sum + v.total_cost, 0);
+                
+                container.innerHTML = models.map(([name, v]) => {
+                    const pct = totalCost > 0 ? ((v.total_cost / totalCost) * 100).toFixed(1) : 0;
+                    return `<div style="background:var(--bg-card); border:1px solid rgba(255,255,255,0.06); border-radius:var(--radius-lg); padding:var(--spacing-lg);">
+                        <div style="font-weight:600; color:var(--text-primary); font-size:0.9rem; margin-bottom:8px;">${name}</div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-secondary); margin-bottom:4px;">
+                            <span>$${v.total_cost.toFixed(4)}</span>
+                            <span>${pct}%</span>
+                        </div>
+                        <div style="height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden; margin-bottom:8px;">
+                            <div style="height:100%; width:${pct}%; background:linear-gradient(90deg,#6366f1,#8b5cf6); border-radius:3px;"></div>
+                        </div>
+                        <div style="font-size:0.7rem; color:var(--text-muted);">
+                            ${v.calls.toLocaleString()} calls · ${formatTokens(v.input_tokens)} in · ${formatTokens(v.output_tokens)} out
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (e) {
+                document.getElementById('model-breakdown').innerHTML = '<div class="loading-state">Error</div>';
+                console.error('Model breakdown error:', e);
+            }
+        }
+
+        // ============================================
+        // RECENT TRACES TABLE
+        // ============================================
+        async function loadTracesTable() {
+            try {
+                const apiBase = window.location.hostname.includes('github.io')
+                    ? 'https://srv1315519.hstgr.cloud' : '';
+                const resp = await fetch(`${apiBase}/api/metrics/langfuse-traces?limit=20`);
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                const data = await resp.json();
+                
+                const container = document.getElementById('traces-table');
+                const loading = document.getElementById('traces-loading');
+                
+                if (!data.traces || data.traces.length === 0) {
+                    loading.textContent = 'No traces found';
+                    return;
+                }
+                
+                let html = `<table style="width:100%; border-collapse:collapse; font-size:0.8rem;">
+                    <thead>
+                        <tr style="background:rgba(255,255,255,0.03); text-align:left;">
+                            <th style="padding:10px 14px; color:var(--text-muted); font-weight:600; font-size:0.7rem; text-transform:uppercase;">Name</th>
+                            <th style="padding:10px 14px; color:var(--text-muted); font-weight:600; font-size:0.7rem; text-transform:uppercase;">Model</th>
+                            <th style="padding:10px 14px; color:var(--text-muted); font-weight:600; font-size:0.7rem; text-transform:uppercase;">Tokens</th>
+                            <th style="padding:10px 14px; color:var(--text-muted); font-weight:600; font-size:0.7rem; text-transform:uppercase;">Cost</th>
+                            <th style="padding:10px 14px; color:var(--text-muted); font-weight:600; font-size:0.7rem; text-transform:uppercase;">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody>`;
+                
+                for (const t of data.traces) {
+                    const time = t.timestamp ? new Date(t.timestamp).toLocaleString('pt-BR', {
+                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                    }) : '--';
+                    const latency = t.latency_ms ? `${(t.latency_ms/1000).toFixed(1)}s` : '--';
+                    html += `<tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+                        <td style="padding:10px 14px; color:var(--text-primary); font-weight:500; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t.name || 'unnamed'}</td>
+                        <td style="padding:10px 14px; color:var(--text-secondary); font-family:'JetBrains Mono',monospace; font-size:0.7rem;">${t.model || '--'}</td>
+                        <td style="padding:10px 14px; color:var(--text-secondary);">${t.total_tokens > 0 ? formatTokens(t.total_tokens) : '--'}</td>
+                        <td style="padding:10px 14px; color:var(--text-secondary); font-family:'JetBrains Mono',monospace;">${t.cost > 0 ? '$'+t.cost.toFixed(4) : '--'}</td>
+                        <td style="padding:10px 14px; color:var(--text-muted); font-size:0.75rem; white-space:nowrap;">${time}<br><span style="font-size:0.65rem;">${latency}</span></td>
+                    </tr>`;
+                }
+                html += '</tbody></table>';
+                
+                loading.style.display = 'none';
+                container.style.display = 'block';
+                container.innerHTML = html;
+            } catch (e) {
+                document.getElementById('traces-loading').textContent = 'Error loading traces';
+                console.error('Traces error:', e);
+            }
+        }
+
         async function loadAllData() {
             document.getElementById('last-refresh').textContent = 
                 `Last refresh: ${new Date().toLocaleTimeString()}`;
@@ -666,6 +808,9 @@
                 loadToolMetrics(),
                 loadRoutingMetrics(),
                 loadQualityMetrics(),
+                loadDailyCostChart(),
+                loadModelBreakdown(),
+                loadTracesTable(),
                 loadReports(),
             ]);
         }
@@ -688,10 +833,10 @@
                     grafanaEmbed: 'http://localhost:3001'
                 };
             }
-            // From GitHub Pages or any remote device: use VPS HTTPS proxy
+            // From GitHub Pages or any remote device: use VPS HTTPS proxy on port 443
             return {
-                langfuse: `${VPS_BASE}:9443`,
-                langfuseHealth: `${VPS_BASE}:9443/api/public/health`,
+                langfuse: `${VPS_BASE}/langfuse`,
+                langfuseHealth: `${VPS_BASE}/langfuse/api/public/health`,
                 grafana: `${VPS_BASE}/grafana/`,
                 grafanaHealth: `${VPS_BASE}/grafana/api/health`,
                 grafanaEmbed: `${VPS_BASE}/grafana`
@@ -710,24 +855,11 @@
         async function setupEmbeds() {
             const urls = getServiceUrls();
 
-            // Check Langfuse
-            const lfUp = await checkService(urls.langfuseHealth);
-            if (lfUp) {
-                document.getElementById('langfuse-status').innerHTML = 
-                    `Langfuse v3 <strong style="color: #10b981;">online</strong><br>
-                     <a href="${urls.langfuse}" target="_blank">Open Langfuse Dashboard</a>`;
-            } else {
-                document.getElementById('langfuse-status').innerHTML = 
-                    `<span style="color: #ef4444;">Langfuse offline</span><br>
-                     <span style="font-size:0.8rem">Ensure PC is on and Docker is running.<br>
-                     Start: cd ~/Documents/langfuse-server && docker compose up -d</span>`;
-            }
-
             // Check Grafana
             const gfUp = await checkService(urls.grafanaHealth);
             window._grafanaOnline = gfUp;
             window._grafanaEmbedBase = urls.grafanaEmbed;
-            window._currentGrafanaDash = 'cost'; // default to cost dashboard
+            window._currentGrafanaDash = 'cost';
             if (gfUp) {
                 document.getElementById('grafana-embed').innerHTML = 
                     `<iframe id="grafana-iframe" src="${urls.grafanaEmbed}/d/nova-cost-tracker/nova-cost-tracker?orgId=1&kiosk" 
