@@ -3207,6 +3207,9 @@ table {
     display: grid;
     grid-template-columns: 1fr;
     gap: var(--spacing-lg);
+    max-width: 1600px;
+    margin: 0 auto;
+    width: 100%;
 }
 
 @media (min-width: 768px) {
@@ -3228,7 +3231,7 @@ table {
     background: var(--bg-card);
     border: 1px solid rgba(99, 102, 241, 0.2);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     animation: pulse-fade-in 0.4s ease-out;
 }
 
@@ -3244,7 +3247,7 @@ table {
     background: var(--bg-card);
     border: 1px solid rgba(16, 185, 129, 0.2);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md);
     animation: pulse-fade-in 0.4s ease-out 0.1s both;
     display: flex;
     flex-direction: column;
@@ -3321,8 +3324,8 @@ table {
 .brief-action-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 7px 10px;
+    gap: 8px;
+    padding: 5px 8px;
     border-left: 3px solid #ef4444;
     border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
     background: rgba(239, 68, 68, 0.05);
@@ -3511,7 +3514,7 @@ table {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
 }
 
 .pulse-title {
@@ -3534,16 +3537,16 @@ table {
 .pulse-items {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
 }
 
 .pulse-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
+    gap: 8px;
+    padding: 7px 10px;
     border-radius: var(--radius-md);
-    font-size: 0.875rem;
+    font-size: 0.82rem;
     transition: var(--transition-fast);
     border-left: 3px solid transparent;
 }
