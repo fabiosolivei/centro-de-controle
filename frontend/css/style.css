@@ -564,7 +564,7 @@ body {
 @media (min-width: 1200px) {
     .main-content {
         grid-template-columns: repeat(3, 1fr);
-        max-width: 1600px;
+        max-width: 1400px;
         padding: var(--spacing-xl);
     }
     
@@ -573,20 +573,15 @@ body {
     }
     
     .header-content {
-        max-width: 1600px;
+        max-width: 1400px;
     }
 }
 
 /* Extra Large Desktop (1600px+) */
 @media (min-width: 1600px) {
     .main-content {
-        max-width: 1800px;
         padding: var(--spacing-2xl);
         gap: var(--spacing-xl);
-    }
-    
-    .header-content {
-        max-width: 1800px;
     }
     
     .card {
@@ -613,16 +608,11 @@ body {
 /* Ultra Wide (1920px+) */
 @media (min-width: 1920px) {
     .main-content {
-        grid-template-columns: repeat(4, 1fr);
-        max-width: 2000px;
-    }
-    
-    .header-content {
-        max-width: 2000px;
+        grid-template-columns: repeat(3, 1fr);
     }
     
     .card-kanban {
-        grid-column: span 4;
+        grid-column: span 3;
     }
     
     .kanban-board {
