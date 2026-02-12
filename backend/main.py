@@ -4989,6 +4989,100 @@ async def get_langfuse_stats(days: int = Query(30, ge=1, le=365)):
 
 
 # ============================================
+# LANGFUSE TRACES PROXY
+# ============================================
+
+_traces_cache = {"data": None, "expires": 0}
+
+
+@app.get("/api/metrics/langfuse-traces")
+async def get_langfuse_traces(limit: int = Query(25, ge=1, le=100)):
+    """
+    Returns recent Langfuse traces with generation details.
+    Cached for 2 minutes.
+    """
+    import httpx
+    import time as _time
+
+    now = _time.time()
+    if _traces_cache["data"] and _traces_cache["expires"] > now:
+        cached = _traces_cache["data"]
+        if cached.get("limit") == limit:
+            cached["from_cache"] = True
+            return cached
+
+    auth = (LANGFUSE_PUBLIC_KEY, LANGFUSE_SECRET_KEY)
+
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(
+                f"{LANGFUSE_HOST}/api/public/traces",
+                params={"limit": limit, "orderBy": "timestamp.desc"},
+                auth=auth,
+            )
+            if resp.status_code != 200:
+                raise HTTPException(502, f"Langfuse returned {resp.status_code}")
+
+            raw = resp.json()
+            traces = []
+            for t in raw.get("data", []):
+                # Collect generation info from observations
+                obs = t.get("observations", [])
+                model = None
+                total_tokens = 0
+                cost = 0
+                latency_ms = None
+
+                for o in obs:
+                    if o.get("type") == "GENERATION":
+                        model = model or o.get("model")
+                        ud = o.get("usageDetails") or {}
+                        total_tokens += ud.get("input", 0) + ud.get("output", 0)
+                        cost += o.get("calculatedTotalCost") or 0
+
+                # Calculate latency from trace timestamps
+                if t.get("timestamp") and t.get("updatedAt"):
+                    from datetime import datetime
+                    try:
+                        start = datetime.fromisoformat(t["timestamp"].replace("Z", "+00:00"))
+                        end = datetime.fromisoformat(t["updatedAt"].replace("Z", "+00:00"))
+                        latency_ms = int((end - start).total_seconds() * 1000)
+                    except Exception:
+                        pass
+
+                traces.append({
+                    "id": t.get("id", ""),
+                    "name": t.get("name", "unknown"),
+                    "timestamp": t.get("timestamp", ""),
+                    "model": model,
+                    "total_tokens": total_tokens,
+                    "cost": round(cost, 6),
+                    "latency_ms": latency_ms,
+                    "tags": t.get("tags", []),
+                    "input_preview": str(t.get("input", ""))[:120] if t.get("input") else None,
+                })
+
+            result = {
+                "traces": traces,
+                "total": raw.get("meta", {}).get("totalItems", len(traces)),
+                "limit": limit,
+                "from_cache": False,
+            }
+
+            _traces_cache["data"] = result
+            _traces_cache["expires"] = now + 120  # 2 min cache
+            return result
+
+    except httpx.ConnectError:
+        raise HTTPException(503, "Cannot reach Langfuse (is local PC online?)")
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Langfuse traces error: {e}")
+        raise HTTPException(502, f"Langfuse query failed: {str(e)}")
+
+
+# ============================================
 # RUN
 # ============================================
 
