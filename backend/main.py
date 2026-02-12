@@ -4833,7 +4833,7 @@ async def get_cost_timeseries(days: int = Query(30, ge=1, le=365)):
 # In-memory cache for Langfuse stats (avoid hammering the API)
 _langfuse_cache = {"data": None, "expires": 0}
 
-LANGFUSE_HOST = "http://100.126.23.80:3100"
+LANGFUSE_HOST = "http://100.126.23.80:3100/langfuse"
 LANGFUSE_PUBLIC_KEY = "pk-atlas-local-observability"
 LANGFUSE_SECRET_KEY = "sk-atlas-local-observability"
 
