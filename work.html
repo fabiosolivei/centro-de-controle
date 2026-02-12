@@ -956,13 +956,26 @@
             
             // Show only last 5 sprints for speed
             const recentSprints = sprints.slice(0, 5);
-            container.innerHTML = recentSprints.map(sprint => `
+            container.innerHTML = recentSprints.map(sprint => {
+                // Build minimal date range from start_date / end_date text fields
+                let dateLabel = '';
+                if (sprint.start_date && sprint.end_date) {
+                    // Shorten month names: "February 23" → "Feb 23"
+                    const shorten = s => s.replace(/January/,'Jan').replace(/February/,'Feb').replace(/March/,'Mar')
+                        .replace(/April/,'Apr').replace(/Abril/,'Apr').replace(/June/,'Jun').replace(/July/,'Jul')
+                        .replace(/August/,'Aug').replace(/September/,'Sep').replace(/October/,'Oct')
+                        .replace(/November/,'Nov').replace(/December/,'Dec');
+                    dateLabel = `${shorten(sprint.start_date)} – ${shorten(sprint.end_date)}`;
+                } else if (sprint.release_date) {
+                    dateLabel = `Release: ${formatDate(sprint.release_date)}`;
+                }
+                return `
                 <div class="sprint-chip ${sprint.is_current ? 'current' : ''}" 
                      onclick="filterBySprint('${sprint.sprint_name}')">
                     <span class="sprint-name">${escapeHtml(sprint.sprint_name)}</span>
-                    ${sprint.release_date ? `<span class="sprint-dates">Release: ${formatDate(sprint.release_date)}</span>` : ''}
-                </div>
-            `).join('');
+                    ${dateLabel ? `<span class="sprint-dates">${dateLabel}</span>` : ''}
+                </div>`;
+            }).join('');
         }
         
         function filterBySprint(sprintName) {
