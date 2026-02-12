@@ -7,7 +7,7 @@
     <meta name="description" content="Centro de Controle - Dashboard do Fábio">
     <title>Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=18">
+    <link rel="stylesheet" href="css/style.css?v=19">
     <link rel="manifest" href="manifest.json">
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1138,23 +1138,22 @@
                 
                 const rawLines = b.week_glance.split('\n');
                 briefParsedDays = [];
-                const engDayOrder = ['MON','TUE','WED','THU','FRI','SAT','SUN'];
+                const monthMap = { Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11 };
+                const wsYear = weekStart ? weekStart.getFullYear() : new Date().getFullYear();
                 rawLines.forEach(line => {
-                    const m = line.match(/^(MON|TUE|WED|THU|FRI|SAT|SUN)\s+\w+\s+(\d+):\s*(.*)/i);
+                    const m = line.match(/^(MON|TUE|WED|THU|FRI|SAT|SUN)\s+(\w+)\s+(\d+):\s*(.*)/i);
                     if (m) {
                         const eng = m[1].toUpperCase();
-                        const dayNum = parseInt(m[2]);
-                        // Compute full date from week_start
+                        const monthStr = m[2];
+                        const dayNum = parseInt(m[3]);
+                        // Build date from month+day in the line itself
                         let dateStr = '';
-                        if (weekStart) {
-                            const offset = engDayOrder.indexOf(eng);
-                            if (offset >= 0) {
-                                const d = new Date(weekStart);
-                                d.setDate(d.getDate() + offset);
-                                dateStr = d.toISOString().split('T')[0];
-                            }
+                        const mi = monthMap[monthStr];
+                        if (mi !== undefined) {
+                            const d = new Date(wsYear, mi, dayNum);
+                            dateStr = d.toISOString().split('T')[0];
                         }
-                        briefParsedDays.push({ abbr: dayMap[eng] || eng, text: m[3].trim(), date: dateStr, dayNum });
+                        briefParsedDays.push({ abbr: dayMap[eng] || eng, text: m[4].trim(), date: dateStr, dayNum });
                     } else if (briefParsedDays.length > 0 && line.trim()) {
                         briefParsedDays[briefParsedDays.length - 1].text += ', ' + line.trim();
                     }
