@@ -379,6 +379,12 @@ def init_db():
         )
     """)
 
+    # Add reminders column if it doesn't exist (migration)
+    try:
+        cursor.execute("ALTER TABLE weekly_briefs ADD COLUMN reminders TEXT DEFAULT '[]'")
+    except Exception:
+        pass  # Column already exists
+
     # Atlas canonical memory mirror — decisions log
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS atlas_decisions (
@@ -3898,6 +3904,7 @@ BRIEF_SECTION_MAP = {
     "urgent": "action_items_urgent",
     "important": "action_items_important",
     "decisions": "decisions",
+    "reminders": "reminders",
 }
 
 
@@ -3923,7 +3930,14 @@ async def patch_weekly_brief_items(body: BriefItemAction):
 
     if body.action == "add" and body.item:
         items.append(body.item)
-    elif body.action in ("complete", "remove") and body.index is not None:
+    elif body.action == "complete" and body.index is not None:
+        if 0 <= body.index < len(items):
+            item = items[body.index]
+            if isinstance(item, dict):
+                item["completed"] = not item.get("completed", False)
+            else:
+                items[body.index] = {"text": str(item), "completed": True}
+    elif body.action == "remove" and body.index is not None:
         if 0 <= body.index < len(items):
             items.pop(body.index)
     else:
@@ -3950,7 +3964,7 @@ async def get_weekly_brief():
     
     brief = dict(row)
     # Parse JSON fields
-    for field in ["action_items_urgent", "action_items_important", "decisions", "energy_check"]:
+    for field in ["action_items_urgent", "action_items_important", "decisions", "energy_check", "reminders"]:
         if brief.get(field) and isinstance(brief[field], str):
             try:
                 brief[field] = json.loads(brief[field])

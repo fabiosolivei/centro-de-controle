@@ -3489,6 +3489,26 @@ table {
 .brief-label-urgent { color: #ef4444; }
 .brief-label-important { color: #f59e0b; }
 .brief-label-decision { color: var(--accent-primary); }
+.brief-label-reminder { color: #f59e0b; }
+
+/* Completed items: strikethrough */
+.brief-item-completed .brief-action-text {
+    text-decoration: line-through;
+    opacity: 0.45;
+}
+.brief-item-completed .brief-action-deadline,
+.brief-item-completed .brief-item-link {
+    opacity: 0.35;
+}
+.brief-item-completed .brief-crud-check {
+    opacity: 0.3 !important;
+    color: #10b981;
+}
+
+/* Reminder items accent */
+.brief-action-reminder {
+    border-left-color: #f59e0b;
+}
 
 /* --- Split Calendar: days left + agenda right --- */
 .brief-calendar-split {
