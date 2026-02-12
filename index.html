@@ -7,7 +7,7 @@
     <meta name="description" content="Centro de Controle - Dashboard do Fábio">
     <title>Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=11">
+    <link rel="stylesheet" href="css/style.css?v=12">
     <link rel="manifest" href="manifest.json">
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -161,13 +161,12 @@
                     <div class="weekly-brief-panel" id="weekly-brief-panel">
                         <div class="pulse-header">
                             <div class="pulse-title">WEEKLY BRIEF</div>
-                            <span class="brief-expand-btn" onclick="toggleBriefExpand()" id="brief-toggle">Ver mais</span>
+                            <span class="brief-week-range" id="brief-week-range"></span>
                         </div>
-                        <div id="brief-summary" class="brief-summary">
-                            <div class="skeleton skeleton-text" style="height:14px;width:70%;"></div>
-                        </div>
-                        <div id="brief-energy" class="brief-energy-section"></div>
-                        <div id="brief-glance" class="brief-glance"></div>
+                        <div id="brief-gauges" class="brief-gauges"></div>
+                        <div id="brief-actions" class="brief-actions"></div>
+                        <div id="brief-calendar" class="brief-calendar"></div>
+                        <div id="brief-footer" class="brief-footer"></div>
                         <div id="brief-detail" class="brief-detail" style="display:none;"></div>
                     </div>
                 </div>
@@ -1025,127 +1024,151 @@
                 renderWeeklyBrief();
             } catch (error) {
                 console.log('Weekly Brief not available:', error.message);
-                const el = document.getElementById('brief-summary');
-                if (el) el.innerHTML = '<span style="color:var(--text-muted)">Nenhum brief disponivel</span>';
+                const el = document.getElementById('brief-gauges');
+                if (el) el.innerHTML = '<span style="color:var(--text-muted);font-size:0.8rem;">Nenhum brief disponivel</span>';
             }
         }
         
+        function briefGaugeColor(val) {
+            if (val > 10) return 'brief-gauge-red';
+            if (val >= 6) return 'brief-gauge-amber';
+            return 'brief-gauge-green';
+        }
+        
         function renderWeeklyBrief() {
-            const summaryEl = document.getElementById('brief-summary');
-            const energyEl = document.getElementById('brief-energy');
-            const glanceEl = document.getElementById('brief-glance');
+            const gaugesEl = document.getElementById('brief-gauges');
+            const actionsEl = document.getElementById('brief-actions');
+            const calendarEl = document.getElementById('brief-calendar');
+            const footerEl = document.getElementById('brief-footer');
             const detailEl = document.getElementById('brief-detail');
-            if (!summaryEl || !weeklyBriefData) return;
+            const rangeEl = document.getElementById('brief-week-range');
+            if (!gaugesEl || !weeklyBriefData) return;
             
             const b = weeklyBriefData;
-            const urgentCount = (b.action_items_urgent || []).length;
-            const importantCount = (b.action_items_important || []).length;
-            const decisionCount = (b.decisions || []).length;
             
-            // Summary chips
-            summaryEl.innerHTML = `
-                <div class="brief-chips">
-                    ${urgentCount > 0 ? `<span class="brief-chip chip-urgent">${urgentCount} urgente${urgentCount !== 1 ? 's' : ''}</span>` : ''}
-                    ${importantCount > 0 ? `<span class="brief-chip chip-important">${importantCount} importante${importantCount !== 1 ? 's' : ''}</span>` : ''}
-                    ${decisionCount > 0 ? `<span class="brief-chip chip-decision">${decisionCount} decisao${decisionCount !== 1 ? 'es' : ''}</span>` : ''}
-                    ${urgentCount === 0 && importantCount === 0 ? '<span class="brief-chip chip-clear">Semana tranquila</span>' : ''}
-                </div>
-            `;
-            
-            // Energy bars (always visible)
-            if (b.energy_check && energyEl) {
-                const e = b.energy_check;
-                const maxVal = 15;
-                function energyBar(label, value, color) {
-                    const pct = Math.round((value / maxVal) * 100);
-                    const level = pct >= 70 ? 'high' : pct >= 40 ? 'mid' : 'low';
-                    return `
-                        <div class="brief-energy-row">
-                            <span class="brief-energy-label">${label}</span>
-                            <div class="brief-energy-track">
-                                <div class="brief-energy-fill brief-energy-${level}" style="width:${pct}%"></div>
-                            </div>
-                            <span class="brief-energy-value">${value}/${maxVal}</span>
-                        </div>`;
-                }
-                energyEl.innerHTML = 
-                    energyBar('Reunioes', e.meeting_load || 0, '#ef4444') +
-                    energyBar('Deadlines', e.deadline_press || 0, '#f59e0b') +
-                    energyBar('Energia', e.energy_risk || 0, '#6366f1');
+            // Week range in header
+            if (rangeEl && b.week_start) {
+                const start = new Date(b.week_start + 'T00:00:00');
+                const end = new Date(start); end.setDate(end.getDate() + 4);
+                const fmt = (d) => d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '');
+                rangeEl.textContent = fmt(start) + ' - ' + fmt(end);
             }
             
-            // Week at a glance — structured day rows
-            if (b.week_glance && glanceEl) {
+            // Gauges — 3 small colored dots with labels
+            if (b.energy_check) {
+                const e = b.energy_check;
+                const items = [
+                    { label: 'Reunioes', val: e.meeting_load || 0 },
+                    { label: 'Deadlines', val: e.deadline_press || 0 },
+                    { label: 'Energia', val: e.energy_risk || 0 }
+                ];
+                gaugesEl.innerHTML = items.map(g => `
+                    <div class="brief-gauge">
+                        <span class="brief-gauge-dot ${briefGaugeColor(g.val)}"></span>
+                        <span class="brief-gauge-label">${g.label}</span>
+                        <span class="brief-gauge-val">${g.val}/15</span>
+                    </div>
+                `).join('');
+            }
+            
+            // Top Actions — first 3 urgent items as pulse-item-like rows
+            const urgent = b.action_items_urgent || [];
+            const topActions = urgent.slice(0, 3);
+            if (topActions.length > 0 && actionsEl) {
+                actionsEl.innerHTML = topActions.map(item => `
+                    <div class="brief-action-item">
+                        <span class="brief-action-text">${escapeHtml(item.action || item)}</span>
+                        <span class="brief-action-deadline">${escapeHtml(item.deadline || '')}</span>
+                    </div>
+                `).join('');
+            } else if (actionsEl) {
+                actionsEl.innerHTML = '<div class="brief-action-item brief-action-clear"><span class="brief-action-text">Nenhuma acao urgente</span></div>';
+            }
+            
+            // Calendar — structured day rows
+            if (b.week_glance && calendarEl) {
                 const dayMap = { 'MON': 'SEG', 'TUE': 'TER', 'WED': 'QUA', 'THU': 'QUI', 'FRI': 'SEX', 'SAT': 'SAB', 'SUN': 'DOM' };
-                const todayIdx = new Date().getDay(); // 0=Sun, 1=Mon...
                 const todayAbbrs = ['DOM','SEG','TER','QUA','QUI','SEX','SAB'];
-                const todayAbbr = todayAbbrs[todayIdx];
+                const todayAbbr = todayAbbrs[new Date().getDay()];
                 
-                // Parse lines: merge continuation lines (starting with spaces) into previous day
                 const rawLines = b.week_glance.split('\n');
                 const days = [];
                 rawLines.forEach(line => {
-                    const dayMatch = line.match(/^(MON|TUE|WED|THU|FRI|SAT|SUN)\s+\w+\s+\d+:\s*(.*)/i);
-                    if (dayMatch) {
-                        const engDay = dayMatch[1].toUpperCase();
-                        days.push({ abbr: dayMap[engDay] || engDay, text: dayMatch[2].trim() });
+                    const m = line.match(/^(MON|TUE|WED|THU|FRI|SAT|SUN)\s+\w+\s+\d+:\s*(.*)/i);
+                    if (m) {
+                        days.push({ abbr: dayMap[m[1].toUpperCase()] || m[1], text: m[2].trim() });
                     } else if (days.length > 0 && line.trim()) {
-                        // Continuation line
                         days[days.length - 1].text += ', ' + line.trim();
                     }
                 });
                 
-                glanceEl.innerHTML = '<div class="brief-week-label">SEMANA</div>' +
-                    days.map(d => {
-                        const isToday = d.abbr === todayAbbr;
-                        return `<div class="brief-day-row${isToday ? ' brief-today' : ''}">
-                            <span class="brief-day-abbr">${d.abbr}</span>
-                            <span class="brief-day-text">${escapeHtml(d.text)}</span>
-                        </div>`;
-                    }).join('');
+                calendarEl.innerHTML = days.map(d => {
+                    const isToday = d.abbr === todayAbbr;
+                    return `<div class="brief-day-row${isToday ? ' brief-today' : ''}">
+                        <span class="brief-day-abbr">${d.abbr}</span>
+                        <span class="brief-day-text">${escapeHtml(d.text)}</span>
+                    </div>`;
+                }).join('');
+            }
+            
+            // Footer — counts + expand button
+            if (footerEl) {
+                const decisionCount = (b.decisions || []).length;
+                const extraUrgent = Math.max(0, urgent.length - 3);
+                const importantCount = (b.action_items_important || []).length;
+                const parts = [];
+                if (decisionCount > 0) parts.push(`${decisionCount} decisao${decisionCount !== 1 ? 'es' : ''}`);
+                if (extraUrgent > 0) parts.push(`+${extraUrgent} urgente${extraUrgent !== 1 ? 's' : ''}`);
+                if (importantCount > 0) parts.push(`${importantCount} importante${importantCount !== 1 ? 's' : ''}`);
+                
+                if (parts.length > 0) {
+                    footerEl.innerHTML = `
+                        <span class="brief-footer-counts">${parts.join(' &middot; ')}</span>
+                        <span class="brief-footer-btn" id="brief-expand-btn" onclick="toggleBriefExpand()">
+                            ${briefExpanded ? 'Recolher' : 'Expandir'}
+                        </span>`;
+                } else {
+                    footerEl.innerHTML = '';
+                }
             }
             
             // Expanded detail
-            if (briefExpanded) {
+            if (briefExpanded && detailEl) {
                 let html = '';
                 
-                // Urgent action items
-                if (b.action_items_urgent && b.action_items_urgent.length > 0) {
-                    html += '<div class="brief-detail-group"><div class="brief-detail-label" style="color:#ef4444;">URGENTE</div>';
-                    html += b.action_items_urgent.map(item => `
-                        <div class="reminder-item" style="border-left:3px solid #ef4444;">
-                            <div class="reminder-content">
-                                <div class="reminder-title">${escapeHtml(item.action || item)}</div>
-                                <div class="reminder-time">${escapeHtml(item.deadline || '')} ${item.owner ? '· ' + escapeHtml(item.owner) : ''}</div>
-                            </div>
+                // All urgent items (beyond the 3 shown)
+                if (urgent.length > 3) {
+                    html += '<div class="brief-detail-section"><div class="brief-detail-label brief-label-urgent">MAIS URGENTES</div>';
+                    html += urgent.slice(3).map(item => `
+                        <div class="brief-action-item">
+                            <span class="brief-action-text">${escapeHtml(item.action || item)}</span>
+                            <span class="brief-action-deadline">${escapeHtml(item.deadline || '')}</span>
                         </div>
                     `).join('');
                     html += '</div>';
                 }
                 
-                // Important action items
-                if (b.action_items_important && b.action_items_important.length > 0) {
-                    html += '<div class="brief-detail-group"><div class="brief-detail-label" style="color:#f59e0b;">IMPORTANTE</div>';
-                    html += b.action_items_important.map(item => `
-                        <div class="reminder-item">
-                            <div class="reminder-content">
-                                <div class="reminder-title">${escapeHtml(item.action || item)}</div>
-                                <div class="reminder-time">${escapeHtml(item.context || '')}</div>
-                            </div>
+                // Important items
+                const important = b.action_items_important || [];
+                if (important.length > 0) {
+                    html += '<div class="brief-detail-section"><div class="brief-detail-label brief-label-important">IMPORTANTE</div>';
+                    html += important.map(item => `
+                        <div class="brief-action-item brief-action-important">
+                            <span class="brief-action-text">${escapeHtml(item.action || item)}</span>
+                            <span class="brief-action-context">${escapeHtml(item.context || '')}</span>
                         </div>
                     `).join('');
                     html += '</div>';
                 }
                 
                 // Decisions
-                if (b.decisions && b.decisions.length > 0) {
-                    html += '<div class="brief-detail-group"><div class="brief-detail-label" style="color:var(--accent-primary);">DECISOES</div>';
-                    html += b.decisions.map(d => `
-                        <div class="reminder-item">
-                            <div class="reminder-content">
-                                <div class="reminder-title">${escapeHtml(d.decision || d)}</div>
-                                <div class="reminder-time">${escapeHtml(d.options || '')} ${d.deadline ? '· ' + escapeHtml(d.deadline) : ''}</div>
-                            </div>
+                const decisions = b.decisions || [];
+                if (decisions.length > 0) {
+                    html += '<div class="brief-detail-section"><div class="brief-detail-label brief-label-decision">DECISOES</div>';
+                    html += decisions.map(d => `
+                        <div class="brief-action-item brief-action-decision">
+                            <span class="brief-action-text">${escapeHtml(d.decision || d)}</span>
+                            <span class="brief-action-deadline">${escapeHtml(d.deadline || '')}</span>
                         </div>
                     `).join('');
                     html += '</div>';
@@ -1153,15 +1176,13 @@
                 
                 detailEl.innerHTML = html;
                 detailEl.style.display = 'block';
-            } else {
+            } else if (detailEl) {
                 detailEl.style.display = 'none';
             }
         }
         
         function toggleBriefExpand() {
             briefExpanded = !briefExpanded;
-            const toggle = document.getElementById('brief-toggle');
-            if (toggle) toggle.textContent = briefExpanded ? 'Recolher' : 'Ver mais';
             const panel = document.getElementById('weekly-brief-panel');
             if (panel) panel.classList.toggle('expanded', briefExpanded);
             renderWeeklyBrief();
