@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0d1117">
     <title>Projeto - Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=25">
+    <link rel="stylesheet" href="css/style.css?v=26">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -158,6 +158,14 @@
 
             <!-- ===== MEETINGS TAB ===== -->
             <div class="sp-panel sp-panel--hidden" id="tab-meetings" role="tabpanel" aria-labelledby="tab-btn-meetings">
+                <!-- Upcoming meetings prep -->
+                <div class="mt-upcoming" id="mt-upcoming" style="display:none;"></div>
+                <!-- Key Insights from exec brief -->
+                <div class="mt-insights" id="mt-insights" style="display:none;">
+                    <h4 class="mt-insights-title">Key Insights</h4>
+                    <div class="mt-insights-list" id="mt-insights-list"></div>
+                </div>
+                <!-- Timeline -->
                 <div class="sp-timeline" id="sp-timeline">
                     <div class="sp-empty-state">Loading meetings...</div>
                 </div>
@@ -684,6 +692,21 @@
             const timeline = document.getElementById('sp-timeline');
             const weekMeetings = rc.meetings_this_week || [];
             const allMeetings = _workData ? (_workData.meeting_notes || []) : [];
+            const brief = rc.executive_brief || {};
+            const todayStr = new Date().toISOString().split('T')[0];
+
+            // Key Insights from executive brief
+            const recentMeetingsInsights = (brief.recent_meetings || []).filter(m => m.insight);
+            if (recentMeetingsInsights.length > 0) {
+                const insightsEl = document.getElementById('mt-insights');
+                insightsEl.style.display = '';
+                document.getElementById('mt-insights-list').innerHTML = recentMeetingsInsights.map(m =>
+                    `<div class="mt-insight-item">
+                        <span class="mt-insight-topic">${escapeHtml(m.title)}</span>
+                        <span class="mt-insight-text">${escapeHtml(m.insight)}</span>
+                    </div>`
+                ).join('');
+            }
 
             // Combine and deduplicate by title
             const seen = new Set();
@@ -697,16 +720,84 @@
                 if (!seen.has(key)) { seen.add(key); combined.push({ title: m.title, date: m.date || extractDateFromFilename(m.file), preview: m.preview, file: m.file, source: 'notes' }); }
             }
 
-            if (combined.length === 0) {
-                timeline.innerHTML = '<div class="sp-empty-state"><div class="sp-empty-icon">📅</div>No meetings recorded yet</div>';
+            // Separate upcoming vs past
+            const upcoming = combined.filter(m => m.date && m.date > todayStr);
+            const past = combined.filter(m => !m.date || m.date <= todayStr);
+
+            // Render upcoming meeting prep cards
+            if (upcoming.length > 0) {
+                const upEl = document.getElementById('mt-upcoming');
+                upEl.style.display = '';
+                upEl.innerHTML = upcoming.map(m => {
+                    // Build prep context from brief data
+                    const prepParts = [];
+
+                    // Exec summary snippet
+                    if (brief.executive_summary) {
+                        const snippet = brief.executive_summary.replace(/\*\*/g, '').substring(0, 200);
+                        prepParts.push(`<div class="mt-prep-context">${escapeHtml(snippet)}${brief.executive_summary.length > 200 ? '...' : ''}</div>`);
+                    }
+
+                    // Key people
+                    if (brief.key_people && brief.key_people.length > 0) {
+                        const peopleHtml = brief.key_people.slice(0, 6).map(p => {
+                            const ini = p.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+                            return `<span class="eb-person"><span class="eb-person-avatar" style="width:22px;height:22px;font-size:0.55rem;">${ini}</span>${escapeHtml(p.name)}${p.role ? `<span class="eb-person-role">${escapeHtml(p.role)}</span>` : ''}</span>`;
+                        }).join('');
+                        prepParts.push(`<div class="mt-prep-section"><span class="mt-prep-label">Key People</span><div class="mt-prep-people">${peopleHtml}</div></div>`);
+                    }
+
+                    // Open action items
+                    if (brief.action_items && brief.action_items.length > 0) {
+                        const actionsHtml = brief.action_items.slice(0, 4).map(a =>
+                            `<span class="mt-prep-action">${escapeHtml(a)}</span>`
+                        ).join('');
+                        prepParts.push(`<div class="mt-prep-section"><span class="mt-prep-label">Open Action Items</span><div class="mt-prep-actions">${actionsHtml}</div></div>`);
+                    }
+
+                    // Relevant risks
+                    if (brief.risks_blockers && brief.risks_blockers.length > 0) {
+                        const risksHtml = brief.risks_blockers.slice(0, 3).map(r =>
+                            `<span class="mt-prep-risk">${escapeHtml(r)}</span>`
+                        ).join('');
+                        prepParts.push(`<div class="mt-prep-section"><span class="mt-prep-label">Watch Out</span><div class="mt-prep-risks">${risksHtml}</div></div>`);
+                    }
+
+                    // Related docs count
+                    const docCount = _workData ? (_workData.sections || []).length : 0;
+                    if (docCount > 0) {
+                        prepParts.push(`<div class="mt-prep-docs"><a href="#" onclick="switchTab('docs');return false;">📄 ${docCount} docs available for reference</a></div>`);
+                    }
+
+                    return `<div class="mt-prep-card">
+                        <div class="mt-prep-header">
+                            <div class="mt-prep-badge">UPCOMING</div>
+                            <span class="mt-prep-date">${formatMeetingDate(m.date)}</span>
+                            <span class="mt-prep-title">${escapeHtml(m.title)}</span>
+                        </div>
+                        <details class="mt-prep-details">
+                            <summary class="mt-prep-toggle">Meeting Prep</summary>
+                            <div class="mt-prep-body">${prepParts.join('')}</div>
+                        </details>
+                    </div>`;
+                }).join('');
+            }
+
+            if (past.length === 0 && upcoming.length === 0) {
+                timeline.innerHTML = '<div class="sp-empty-state">No meetings recorded yet</div>';
                 return;
             }
 
-            // Group by week
+            if (past.length === 0) {
+                timeline.innerHTML = '';
+                return;
+            }
+
+            // Group past meetings by week
             const groups = {};
-            combined.forEach(m => {
+            past.forEach(m => {
                 if (!m.date) return;
-                const d = new Date(m.date);
+                const d = new Date(m.date + 'T00:00:00');
                 const monday = new Date(d);
                 monday.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1));
                 const weekKey = monday.toISOString().split('T')[0];
@@ -724,7 +815,7 @@
                             <div class="sp-timeline-content">
                                 <div class="sp-timeline-date">${formatMeetingDate(m.date)}</div>
                                 <div class="sp-timeline-title">${escapeHtml(m.title)}</div>
-                                ${m.summary || m.preview ? `<div class="sp-timeline-insight">${escapeHtml((m.summary || m.preview || '').substring(0, 150))}${(m.summary || m.preview || '').length > 150 ? '...' : ''}</div>` : ''}
+                                ${m.summary || m.preview ? `<div class="sp-timeline-insight">${escapeHtml((m.summary || m.preview || '').substring(0, 200))}${(m.summary || m.preview || '').length > 200 ? '...' : ''}</div>` : ''}
                             </div>
                         </div>
                     `).join('')}

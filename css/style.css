@@ -5380,6 +5380,183 @@ table {
 }
 
 /* ============================================
+   MEETINGS TAB — UPCOMING PREP
+   ============================================ */
+
+.mt-upcoming { margin-bottom: var(--spacing-lg); }
+
+.mt-prep-card {
+    background: var(--bg-card);
+    border: 1px solid rgba(99,102,241,0.2);
+    border-left: 3px solid #6366f1;
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin-bottom: var(--spacing-sm);
+}
+
+.mt-prep-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.mt-prep-badge {
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    background: rgba(99,102,241,0.2);
+    color: #a5b4fc;
+}
+
+.mt-prep-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.mt-prep-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.mt-prep-details { margin-top: var(--spacing-sm); }
+
+.mt-prep-toggle {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--accent-primary);
+    cursor: pointer;
+    padding: 4px 0;
+    list-style: none;
+    user-select: none;
+}
+.mt-prep-toggle::-webkit-details-marker { display: none; }
+.mt-prep-toggle::before {
+    content: '▸ ';
+    display: inline;
+}
+details[open] > .mt-prep-toggle::before { content: '▾ '; }
+
+.mt-prep-body {
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.mt-prep-context {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(255,255,255,0.02);
+    border-radius: var(--radius-sm);
+    border-left: 2px solid rgba(255,255,255,0.08);
+}
+
+.mt-prep-section { margin-bottom: var(--spacing-md); }
+
+.mt-prep-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+
+.mt-prep-people { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.mt-prep-actions, .mt-prep-risks {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.mt-prep-action, .mt-prep-risk {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    padding: 4px 0;
+    padding-left: 14px;
+    position: relative;
+}
+.mt-prep-action::before, .mt-prep-risk::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 10px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+}
+.mt-prep-action::before { background: #818cf8; }
+.mt-prep-risk::before { background: #f87171; }
+
+.mt-prep-docs {
+    margin-top: var(--spacing-sm);
+}
+.mt-prep-docs a {
+    font-size: 0.8rem;
+    color: var(--accent-primary);
+    text-decoration: none;
+}
+.mt-prep-docs a:hover { text-decoration: underline; }
+
+/* ============================================
+   MEETINGS TAB — KEY INSIGHTS
+   ============================================ */
+
+.mt-insights {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md) var(--spacing-lg);
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-left: 3px solid #f59e0b;
+}
+
+.mt-insights-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin: 0 0 var(--spacing-sm) 0;
+}
+
+.mt-insights-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.mt-insight-item {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: baseline;
+    font-size: 0.84rem;
+    line-height: 1.5;
+}
+
+.mt-insight-topic {
+    font-weight: 600;
+    color: var(--text-primary);
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.mt-insight-topic::after { content: ' —'; color: var(--text-muted); }
+
+.mt-insight-text {
+    color: var(--text-secondary);
+}
+
+/* ============================================
    TIMELINE (Meetings Tab)
    ============================================ */
 
@@ -5549,6 +5726,9 @@ table {
     .eb-kpi { min-width: 100px; }
     .eb-people { gap: 6px; }
     .eb-person { font-size: 0.78rem; }
+    .mt-insight-item { flex-direction: column; gap: 2px; }
+    .mt-prep-card { padding: var(--spacing-md); }
+    .mt-prep-header { flex-direction: column; align-items: flex-start; gap: 4px; }
 }
 
 @media (min-width: 768px) and (max-width: 1199px) {
