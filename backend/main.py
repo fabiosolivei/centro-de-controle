@@ -2764,31 +2764,50 @@ async def get_work_project(slug: str):
 
 # Keyword mapping for cross-referencing Notion meetings, Confluence, etc.
 PROJECT_KEYWORDS = {
-    "3tpm": ["3tpm", "3TPM", "marketplace", "skunk", "korea", "coreia"],
-    "catalog-admin": ["catalog", "Catalog Admin", "Book AI", "Payment Method"],
-    "cms-dam": ["CMS", "DAM", "content", "braze", "banner", "Acquia", "DeepLink"],
-    "company-store": ["Company", "Store Management", "company-store"],
-    "autonomy": ["autonomy", "automation", "Visagio", "CoE", "autonomia"],
-    "pocs-ia": ["POC", "IA", "MultiPOC", "AI"],
+    "3tpm": ["3tpm", "3TPM", "marketplace", "skunk", "korea", "coreia", "catalog", "Catalog Admin", "Book AI", "Payment Method", "SKU", "produto", "variante"],
+    "catalog-admin": ["catalog", "Catalog Admin", "Book AI", "Payment Method", "3tpm", "3TPM", "taxonomy", "bulk import"],
+    "cms-dam": ["CMS", "DAM", "content", "braze", "banner", "Acquia", "DeepLink", "approval flow", "digicomms", "Strategy"],
+    "company-store": ["Company", "Store Management", "company-store", "onboarding", "vendor", "seller"],
+    "autonomy": ["autonomy", "automation", "Visagio", "CoE", "autonomia", "KPI", "Esmael"],
+    "pocs-ia": ["POC", "IA", "MultiPOC", "AI", "chatbot", "taxonomy score"],
 }
 
 # Intelligence deep-dive file mapping
 INTELLIGENCE_FILES = {
     "3tpm": "3TPM-DEEP-DIVE.md",
-    "catalog-admin": None,
+    "catalog-admin": "3TPM-DEEP-DIVE.md",  # Catalog is part of 3TPM
     "cms-dam": "CMS-DAM-CONTENT-DEEP-DIVE.md",
     "company-store": None,
     "autonomy": "AUTONOMY-AUTOMATION-DEEP-DIVE.md",
     "pocs-ia": None,
 }
 
+# Project intelligence files (enriched project docs in trabalho/projetos/)
+PROJECT_INTEL_FILES = {
+    "3tpm": None,  # multi-type uses folder
+    "catalog-admin": "CATALOG-ADMIN.md",
+    "cms-dam": "CMS-DAM-STRATEGY.md",
+    "company-store": "COMPANY-STORE.md",
+    "autonomy": "AUTONOMY-AUTOMATION.md",
+    "pocs-ia": "POCS-IA.md",
+}
+
+# 3TPM multi-folder files for executive brief consolidation
+_3TPM_FOLDER = "3TPM"
+_3TPM_FILES = {
+    "definition": "01-definicao.md",
+    "people": "04-pessoas.md",
+    "status": "06-status.md",
+    "roadmap": "07-roadmap.md",
+}
+
 # Project display names
 PROJECT_DISPLAY_NAMES = {
     "3tpm": "3TPM",
     "catalog-admin": "Catalog Admin",
-    "cms-dam": "CMS / DAM",
+    "cms-dam": "Content",
     "company-store": "Company & Store",
-    "autonomy": "Autonomy",
+    "autonomy": "Autonomy & Automation",
     "pocs-ia": "POCs IA",
 }
 
@@ -2800,26 +2819,261 @@ def _matches_keywords(text: str, keywords: list) -> bool:
     text_lower = text.lower()
     return any(kw.lower() in text_lower for kw in keywords)
 
-def _get_intelligence_summary(slug: str) -> dict:
-    """Read intelligence deep-dive file and extract executive summary."""
-    intel_file = INTELLIGENCE_FILES.get(slug)
-    if not intel_file:
-        return {"summary": None, "file": None}
+def _get_executive_brief(slug: str) -> dict:
+    """Build a structured executive brief from deep-dive + project intelligence files.
+    
+    Returns structured dict with: executive_summary, kpis, risks_blockers,
+    recent_meetings, action_items, next_challenges, key_people.
+    """
+    import re as _re
+    
+    brief = {
+        "executive_summary": None,
+        "kpis": [],
+        "risks_blockers": [],
+        "recent_meetings": [],
+        "action_items": [],
+        "next_challenges": [],
+        "key_people": [],
+        "sources": [],
+    }
     
     _LOCAL_INTEL_PATH = '/home/fabio/Documents/Nova/openclaw-workspace/docs/intelligence'
     _SERVER_INTEL_PATH = '/root/Nova/openclaw-workspace/docs/intelligence'
-    intel_path = _LOCAL_INTEL_PATH if os.path.exists(_LOCAL_INTEL_PATH) else _SERVER_INTEL_PATH
+    intel_base = _LOCAL_INTEL_PATH if os.path.exists(_LOCAL_INTEL_PATH) else _SERVER_INTEL_PATH
     
-    file_path = os.path.join(intel_path, intel_file)
-    if not os.path.exists(file_path):
-        return {"summary": None, "file": intel_file}
+    _LOCAL_PROJ_PATH = '/home/fabio/Documents/Nova/openclaw-workspace/docs/trabalho/projetos'
+    _SERVER_PROJ_PATH = '/root/Nova/openclaw-workspace/docs/trabalho/projetos'
+    proj_base = _LOCAL_PROJ_PATH if os.path.exists(_LOCAL_PROJ_PATH) else _SERVER_PROJ_PATH
     
-    parsed = parse_markdown_file(file_path)
-    summary = parsed.get("summary", "")
-    if len(summary) > 200:
-        summary = summary[:200] + "..."
+    def _read_file(path):
+        try:
+            if os.path.exists(path):
+                with open(path, 'r', encoding='utf-8') as f:
+                    return f.read()
+        except Exception:
+            pass
+        return ""
     
-    return {"summary": summary, "file": intel_file}
+    def _extract_section(content, header_pattern):
+        """Extract content under a markdown header matching pattern."""
+        match = _re.search(
+            rf'^#{1,3}\s+.*{header_pattern}.*$\n(.*?)(?=^#{1,3}\s|\Z)',
+            content, _re.MULTILINE | _re.DOTALL | _re.IGNORECASE
+        )
+        return match.group(1).strip() if match else ""
+    
+    def _extract_table_rows(content, header_pattern):
+        """Extract rows from a markdown table under a header."""
+        section = _extract_section(content, header_pattern)
+        if not section:
+            return []
+        rows = []
+        for line in section.split('\n'):
+            line = line.strip()
+            if line.startswith('|') and not line.startswith('|--') and not line.startswith('| -'):
+                cells = [c.strip() for c in line.split('|')[1:-1]]
+                if cells and not all(c.startswith('-') for c in cells):
+                    rows.append(cells)
+        # Skip header row if present
+        if rows and len(rows) > 1:
+            return rows[1:]  # skip table header
+        return rows
+    
+    def _extract_bullet_items(content, header_pattern):
+        """Extract bullet list items from a section."""
+        section = _extract_section(content, header_pattern)
+        if not section:
+            return []
+        items = []
+        for line in section.split('\n'):
+            line = line.strip()
+            if line.startswith('- [') or line.startswith('- **'):
+                clean = _re.sub(r'^- \[.\]\s*', '', line)
+                clean = _re.sub(r'^- ', '', clean)
+                if clean and len(clean) > 5:
+                    items.append(clean)
+            elif line.startswith('- ') and len(line) > 10:
+                items.append(line[2:])
+        return items
+    
+    # --- 1. Deep-dive file (docs/intelligence/) ---
+    intel_file = INTELLIGENCE_FILES.get(slug)
+    if intel_file:
+        deep_path = os.path.join(intel_base, intel_file)
+        deep = _read_file(deep_path)
+        if deep:
+            brief["sources"].append(intel_file)
+            # Executive Summary
+            exec_sec = _extract_section(deep, r'Executive Summary')
+            if exec_sec:
+                # Take first 2 paragraphs
+                paras = [p.strip() for p in exec_sec.split('\n\n') if p.strip() and not p.strip().startswith('|')]
+                brief["executive_summary"] = '\n\n'.join(paras[:2]) if paras else None
+            
+            # KPIs from tables
+            for header in ['KPI Dashboard', 'Category Automation', 'Metricas']:
+                rows = _extract_table_rows(deep, header)
+                for row in rows:
+                    if len(row) >= 3:
+                        kpi = {"metric": row[0], "current": row[1], "target": row[2]}
+                        if len(row) >= 4:
+                            kpi["status"] = row[3]
+                        brief["kpis"].append(kpi)
+            
+            # Blockers / pain points
+            for header in ['Current blockers', 'Current pain points', 'Blockers']:
+                items = _extract_bullet_items(deep, header)
+                brief["risks_blockers"].extend(items)
+    
+    # --- 2. Project file (docs/trabalho/projetos/) ---
+    proj_file = PROJECT_INTEL_FILES.get(slug)
+    if proj_file:
+        proj_path = os.path.join(proj_base, proj_file)
+        proj = _read_file(proj_path)
+        if proj:
+            brief["sources"].append(proj_file)
+            
+            # Fallback executive summary from project file
+            if not brief["executive_summary"]:
+                paras = _re.split(r'\n\n+', proj)
+                for p in paras:
+                    p = p.strip()
+                    if p and not p.startswith('#') and not p.startswith('-') and not p.startswith('|') and not p.startswith('>') and len(p) > 50:
+                        brief["executive_summary"] = p[:500]
+                        break
+            
+            # Recent meetings
+            for header in ['Reunioes Recentes', 'Reuniões Recentes', 'Status Atual']:
+                section = _extract_section(proj, header)
+                if section:
+                    for line in section.split('\n'):
+                        line = line.strip()
+                        # Match "### Title (Date):" or "- **Title (Date)**:" patterns
+                        m = _re.match(r'^(?:###?\s+|\-\s+\*\*)(.*?)(?:\s*\(([^)]+)\))?(?:\*\*)?:\s*(.*)', line)
+                        if m:
+                            brief["recent_meetings"].append({
+                                "title": m.group(1).strip().strip('*'),
+                                "date": m.group(2) or "",
+                                "insight": m.group(3).strip()
+                            })
+                        elif line.startswith('- **') and ':' in line:
+                            parts = line.lstrip('- ').split(':', 1)
+                            title = parts[0].strip().strip('*')
+                            insight = parts[1].strip() if len(parts) > 1 else ""
+                            if title and len(title) > 5:
+                                brief["recent_meetings"].append({
+                                    "title": title, "date": "", "insight": insight
+                                })
+            
+            # Action items (- [ ] items)
+            for line in proj.split('\n'):
+                line = line.strip()
+                if line.startswith('- [ ]'):
+                    item = line[5:].strip()
+                    if item and len(item) > 5:
+                        brief["action_items"].append(item)
+            
+            # Next challenges
+            items = _extract_bullet_items(proj, r'Proximos Desafios|Proximas Acoes')
+            brief["next_challenges"].extend(items)
+            
+            # Key people from tables
+            for header in ['Pessoas Envolvidas', 'Time Atual']:
+                rows = _extract_table_rows(proj, header)
+                for row in rows:
+                    if row and row[0].strip().strip('*'):
+                        name = row[0].strip().strip('*')
+                        role = row[1].strip() if len(row) > 1 else ""
+                        if name and name != "Pessoa":
+                            brief["key_people"].append({"name": name, "role": role})
+    
+    # --- 3. 3TPM special: consolidate from multi-folder ---
+    if slug == "3tpm":
+        for key, filename in _3TPM_FILES.items():
+            fpath = os.path.join(proj_base, _3TPM_FOLDER, filename)
+            content = _read_file(fpath)
+            if not content:
+                continue
+            brief["sources"].append(f"3TPM/{filename}")
+            
+            if key == "status":
+                # KPIs from Metricas Atuais
+                rows = _extract_table_rows(content, r'Metricas Atuais')
+                for row in rows:
+                    if len(row) >= 3:
+                        brief["kpis"].append({"metric": row[0], "current": row[1], "target": row[2], "status": row[3] if len(row) > 3 else ""})
+                
+                # Blockers
+                rows = _extract_table_rows(content, r'Blockers Atuais')
+                for row in rows:
+                    if row and row[0] and '[A PESQUISAR]' not in row[0]:
+                        impact = row[1] if len(row) > 1 else ""
+                        brief["risks_blockers"].append(f"{row[0]} -- {impact}" if impact else row[0])
+                
+                # Risks
+                rows = _extract_table_rows(content, r'Riscos Ativos')
+                for row in rows:
+                    if row and row[0] and '[A PESQUISAR]' not in row[0]:
+                        prob = row[1] if len(row) > 1 else ""
+                        brief["risks_blockers"].append(f"{row[0]} (prob: {prob})" if prob else row[0])
+                
+                # Action items
+                rows = _extract_table_rows(content, r'Proximas Acoes')
+                for row in rows:
+                    if row and row[0] and '[A PESQUISAR]' not in row[0]:
+                        owner = row[1] if len(row) > 1 else ""
+                        brief["action_items"].append(f"{row[0]} ({owner})" if owner else row[0])
+                
+                # Em andamento items
+                rows = _extract_table_rows(content, r'em desenvolvimento')
+                for row in rows:
+                    if row and row[0] and '[A PESQUISAR]' not in row[0]:
+                        status = row[3] if len(row) > 3 else ""
+                        brief["action_items"].append(f"{row[0]} {status}".strip())
+            
+            elif key == "definition":
+                if not brief["executive_summary"]:
+                    sec = _extract_section(content, r'O que o Fabio explicou|O que e o 3TPM')
+                    if sec:
+                        paras = [p.strip() for p in sec.split('\n\n') if p.strip() and not p.strip().startswith('```')]
+                        brief["executive_summary"] = paras[0][:500] if paras else None
+            
+            elif key == "people":
+                rows = _extract_table_rows(content, r'Time Atual')
+                for row in rows:
+                    if row and row[0].strip().strip('*'):
+                        name = row[0].strip().strip('*')
+                        role = row[1].strip() if len(row) > 1 else ""
+                        if name and name != "Pessoa" and not any(p["name"] == name for p in brief["key_people"]):
+                            brief["key_people"].append({"name": name, "role": role})
+            
+            elif key == "roadmap":
+                items = _extract_bullet_items(content, r'Visao de Longo Prazo|Onde queremos chegar')
+                brief["next_challenges"].extend(items)
+                # Roadmap KPIs table
+                rows = _extract_table_rows(content, r'Onde queremos chegar')
+                for row in rows:
+                    if len(row) >= 3 and row[0] != "Aspecto":
+                        brief["kpis"].append({"metric": row[0], "current": row[1], "target": row[2], "status": ""})
+    
+    # Deduplicate
+    seen_kpis = set()
+    unique_kpis = []
+    for k in brief["kpis"]:
+        key = k["metric"].lower()
+        if key not in seen_kpis:
+            seen_kpis.add(key)
+            unique_kpis.append(k)
+    brief["kpis"] = unique_kpis
+    
+    brief["risks_blockers"] = list(dict.fromkeys(brief["risks_blockers"]))[:10]
+    brief["action_items"] = list(dict.fromkeys(brief["action_items"]))[:15]
+    brief["next_challenges"] = list(dict.fromkeys(brief["next_challenges"]))[:10]
+    brief["recent_meetings"] = brief["recent_meetings"][:10]
+    brief["key_people"] = brief["key_people"][:10]
+    
+    return brief
 
 def _generate_report_card(slug: str) -> dict:
     """Generate a weekly report card for a single project."""
@@ -2911,8 +3165,8 @@ def _generate_report_card(slug: str) -> dict:
     except Exception:
         pass
     
-    # --- Intelligence summary ---
-    intel = _get_intelligence_summary(slug)
+    # --- Executive Brief ---
+    executive_brief = _get_executive_brief(slug)
     
     # --- Recent notes from work project folder ---
     recent_notes = 0
@@ -2954,8 +3208,9 @@ def _generate_report_card(slug: str) -> dict:
         "meetings_this_week": meetings_this_week,
         "meetings_count": len(meetings_this_week),
         "confluence": confluence,
-        "intelligence_summary": intel["summary"],
-        "intelligence_file": intel["file"],
+        "executive_brief": executive_brief,
+        "intelligence_summary": executive_brief.get("executive_summary"),
+        "intelligence_file": INTELLIGENCE_FILES.get(slug),
         "recent_notes": recent_notes,
         "health": health,
         "health_reason": health_reason
