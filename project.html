@@ -163,14 +163,53 @@
                 </div>
             </section>
 
-            <!-- 5. Intelligence (collapsed, hidden if no data) -->
-            <section class="card collapsible-section intel-section" id="intel-section" style="margin-bottom: var(--spacing-lg); display: none;">
-                <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
-                    <h2>Intelligence</h2>
-                    <span class="collapse-indicator"></span>
+            <!-- 5. Executive Brief (open by default, hidden if no data) -->
+            <section class="card exec-brief-section" id="exec-brief-section" style="margin-bottom: var(--spacing-lg); display: none;">
+                <div class="section-header">
+                    <h2>Executive Brief</h2>
+                    <div id="exec-brief-sources" class="exec-brief-sources"></div>
                 </div>
-                <div class="collapsible-body" id="intel-content">
-                    <div id="intel-body"></div>
+                <div id="exec-brief-body">
+                    <!-- Summary -->
+                    <div id="exec-summary-block" class="exec-block" style="display:none;">
+                        <p id="exec-summary-text" class="exec-brief-summary"></p>
+                    </div>
+
+                    <!-- KPIs -->
+                    <div id="exec-kpis-block" class="exec-block" style="display:none;">
+                        <h3 class="exec-block-title">KPIs</h3>
+                        <div id="exec-kpis-row" class="exec-kpi-row"></div>
+                    </div>
+
+                    <!-- Risks & Blockers -->
+                    <div id="exec-risks-block" class="exec-block" style="display:none;">
+                        <h3 class="exec-block-title">Risks & Blockers</h3>
+                        <ul id="exec-risks-list" class="exec-risks"></ul>
+                    </div>
+
+                    <!-- Recent Meetings -->
+                    <div id="exec-meetings-block" class="exec-block" style="display:none;">
+                        <h3 class="exec-block-title">Recent Meetings</h3>
+                        <div id="exec-meetings-list" class="exec-meetings"></div>
+                    </div>
+
+                    <!-- Action Items -->
+                    <div id="exec-actions-block" class="exec-block" style="display:none;">
+                        <h3 class="exec-block-title">Action Items</h3>
+                        <ul id="exec-actions-list" class="exec-actions"></ul>
+                    </div>
+
+                    <!-- Key People -->
+                    <div id="exec-people-block" class="exec-block" style="display:none;">
+                        <h3 class="exec-block-title">Key People</h3>
+                        <div id="exec-people-list" class="exec-people"></div>
+                    </div>
+
+                    <!-- Next Challenges -->
+                    <div id="exec-challenges-block" class="exec-block" style="display:none;">
+                        <h3 class="exec-block-title">Next Challenges</h3>
+                        <ul id="exec-challenges-list" class="exec-challenges"></ul>
+                    </div>
                 </div>
             </section>
 
@@ -349,10 +388,10 @@
             '3TPM': '3tpm', '3tpm': '3tpm',
             'Catalog Admin': 'catalog-admin', 'Catalog': 'catalog-admin', 'CATALOG-ADMIN': 'catalog-admin',
             'Company Store': 'company-store', 'Company & Store': 'company-store', 'COMPANY-STORE': 'company-store',
-            'CMS DAM': 'cms-dam', 'CMS-DAM': 'cms-dam', 'CMS': 'cms-dam', 'DAM': 'cms-dam',
+            'Content': 'cms-dam', 'CMS DAM': 'cms-dam', 'CMS-DAM': 'cms-dam', 'CMS': 'cms-dam', 'DAM': 'cms-dam',
             'DAM - Documentação': 'cms-dam', 'CMS / DAM': 'cms-dam',
             'POCs IA': 'pocs-ia', 'POCS-IA': 'pocs-ia',
-            'Autonomy': 'autonomy', 'AUTONOMY-AUTOMATION': 'autonomy'
+            'Autonomy': 'autonomy', 'Autonomy & Automation': 'autonomy', 'AUTONOMY-AUTOMATION': 'autonomy'
         };
 
         function isWorkProject(name, cat) { return cat === 'trabalho' || !!WORK_PROJECT_SLUGS[name]; }
@@ -551,18 +590,8 @@
                     }
                 }
 
-                // Intelligence -- only show if real summary exists
-                const intelSection = document.getElementById('intel-section');
-                const intelBody = document.getElementById('intel-body');
-                if (rc.intelligence_summary) {
-                    intelSection.style.display = '';
-                    intelBody.innerHTML = `
-                        <div class="intel-source">Fonte: ${escapeHtml(rc.intelligence_file || 'Deep Dive')}</div>
-                        <p class="intel-summary">${escapeHtml(rc.intelligence_summary)}</p>
-                    `;
-                } else {
-                    intelSection.style.display = 'none';
-                }
+                // Executive Brief
+                renderExecutiveBrief(rc.executive_brief);
 
                 // Hide Reunioes section if empty and This Week already shows meetings
                 const reunioesList = document.getElementById('work-meetings-list');
@@ -571,6 +600,92 @@
                     document.getElementById('work-meetings-section').style.display = 'none';
                 }
             } catch (e) { console.error('Error loading report card:', e); }
+        }
+
+        function renderExecutiveBrief(brief) {
+            const section = document.getElementById('exec-brief-section');
+            if (!brief) { section.style.display = 'none'; return; }
+
+            const has = (arr) => Array.isArray(arr) && arr.length > 0;
+            const hasData = brief.executive_summary || has(brief.kpis) || has(brief.risks_blockers)
+                || has(brief.recent_meetings) || has(brief.action_items) || has(brief.key_people) || has(brief.next_challenges);
+
+            if (!hasData) { section.style.display = 'none'; return; }
+            section.style.display = '';
+
+            // Sources
+            const srcEl = document.getElementById('exec-brief-sources');
+            if (has(brief.sources)) {
+                srcEl.innerHTML = brief.sources.map(s => `<span class="exec-source-chip">${escapeHtml(s)}</span>`).join('');
+            }
+
+            // Summary
+            if (brief.executive_summary) {
+                document.getElementById('exec-summary-block').style.display = '';
+                document.getElementById('exec-summary-text').textContent = brief.executive_summary;
+            }
+
+            // KPIs
+            if (has(brief.kpis)) {
+                document.getElementById('exec-kpis-block').style.display = '';
+                document.getElementById('exec-kpis-row').innerHTML = brief.kpis.slice(0, 8).map(k => {
+                    const st = (k.status || '').toLowerCase();
+                    const cls = st.includes('critical') || st.includes('red') || st.includes('atrasad') ? 'exec-kpi-critical'
+                              : st.includes('ok') || st.includes('green') || st.includes('conclu') ? 'exec-kpi-ok' : '';
+                    return `<div class="exec-kpi-card ${cls}">
+                        <div class="exec-kpi-metric">${escapeHtml(k.metric)}</div>
+                        <div class="exec-kpi-value">${escapeHtml(k.current || '-')}</div>
+                        ${k.target ? `<div class="exec-kpi-target">Target: ${escapeHtml(k.target)}</div>` : ''}
+                    </div>`;
+                }).join('');
+            }
+
+            // Risks & Blockers
+            if (has(brief.risks_blockers)) {
+                document.getElementById('exec-risks-block').style.display = '';
+                document.getElementById('exec-risks-list').innerHTML = brief.risks_blockers.map(r =>
+                    `<li class="exec-risk-item">${escapeHtml(r)}</li>`
+                ).join('');
+            }
+
+            // Recent Meetings
+            if (has(brief.recent_meetings)) {
+                document.getElementById('exec-meetings-block').style.display = '';
+                document.getElementById('exec-meetings-list').innerHTML = brief.recent_meetings.map(m =>
+                    `<div class="exec-meeting-item">
+                        <span class="exec-meeting-title">${escapeHtml(m.title)}</span>
+                        ${m.date ? `<span class="exec-meeting-date">${escapeHtml(m.date)}</span>` : ''}
+                        ${m.insight ? `<span class="exec-meeting-insight">${escapeHtml(m.insight)}</span>` : ''}
+                    </div>`
+                ).join('');
+            }
+
+            // Action Items
+            if (has(brief.action_items)) {
+                document.getElementById('exec-actions-block').style.display = '';
+                document.getElementById('exec-actions-list').innerHTML = brief.action_items.map(a =>
+                    `<li class="exec-action-item">${escapeHtml(a)}</li>`
+                ).join('');
+            }
+
+            // Key People
+            if (has(brief.key_people)) {
+                document.getElementById('exec-people-block').style.display = '';
+                document.getElementById('exec-people-list').innerHTML = brief.key_people.map(p =>
+                    `<div class="exec-person">
+                        <span class="exec-person-name">${escapeHtml(p.name)}</span>
+                        ${p.role ? `<span class="exec-person-role">${escapeHtml(p.role)}</span>` : ''}
+                    </div>`
+                ).join('');
+            }
+
+            // Next Challenges
+            if (has(brief.next_challenges)) {
+                document.getElementById('exec-challenges-block').style.display = '';
+                document.getElementById('exec-challenges-list').innerHTML = brief.next_challenges.map(c =>
+                    `<li class="exec-challenge-item">${escapeHtml(c)}</li>`
+                ).join('');
+            }
         }
 
         function renderWorkSections(sections) {
