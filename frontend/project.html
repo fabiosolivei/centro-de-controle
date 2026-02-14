@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0d1117">
     <title>Projeto - Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=23">
+    <link rel="stylesheet" href="css/style.css?v=24">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -88,141 +88,130 @@
         </div>
 
         <!-- ========================================== -->
-        <!-- WORK PROJECT VIEW                          -->
+        <!-- WORK PROJECT VIEW (Spatial Status Page)     -->
         <!-- ========================================== -->
         <div id="work-project-view" style="display:none;">
 
-            <!-- 1. This Week (open by default) -->
-            <section class="card collapsible-section report-card-section" id="this-week-section" style="display:none; margin-bottom: var(--spacing-lg);">
-                <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
-                    <h2>Esta Semana</h2>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span id="rc-week-label" style="font-size:0.75rem;color:var(--text-muted);"></span>
-                        <span class="collapse-indicator open"></span>
-                    </div>
-                </div>
-                <div class="collapsible-body open" id="this-week-content">
-                    <div id="rc-meetings-list" class="rc-meetings-list" style="margin-bottom:var(--spacing-md);"></div>
-                    <div id="rc-confluence-row" class="rc-confluence-row"></div>
-                </div>
-            </section>
+            <!-- TAB BAR -->
+            <nav class="sp-tabs" role="tablist" aria-label="Project sections">
+                <button class="sp-tab sp-tab--active" role="tab" aria-selected="true" aria-controls="tab-overview" id="tab-btn-overview" data-tab="overview">Overview</button>
+                <button class="sp-tab" role="tab" aria-selected="false" aria-controls="tab-meetings" id="tab-btn-meetings" data-tab="meetings">Meetings <span class="sp-tab-badge" id="tab-meetings-badge"></span></button>
+                <button class="sp-tab" role="tab" aria-selected="false" aria-controls="tab-docs" id="tab-btn-docs" data-tab="docs">Docs & Knowledge <span class="sp-tab-badge" id="tab-docs-badge"></span></button>
+            </nav>
 
-            <!-- 2. Documentation (OPEN by default) -->
-            <section class="card collapsible-section" id="work-sections-card" style="margin-bottom: var(--spacing-lg);">
-                <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
-                    <h2>Documentacao</h2>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span class="badge" id="work-sections-count" style="font-size:0.7rem;"></span>
-                        <span class="collapse-indicator open"></span>
-                    </div>
-                </div>
-                <div class="collapsible-body open" id="work-sections-content">
-                    <div id="work-sections-list" class="sections-grid">
-                        <div class="empty-section">Carregando...</div>
-                    </div>
-                </div>
-            </section>
+            <!-- ===== OVERVIEW TAB ===== -->
+            <div class="sp-panel" id="tab-overview" role="tabpanel" aria-labelledby="tab-btn-overview">
 
-            <!-- 3. Meetings (collapsed) -->
-            <section class="card collapsible-section reference-section" id="work-meetings-section" style="margin-bottom: var(--spacing-lg);">
-                <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
-                    <h2>Reunioes</h2>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span class="badge badge-active" id="work-meetings-count" style="font-size:0.7rem;"></span>
-                        <span class="collapse-indicator"></span>
-                    </div>
-                </div>
-                <div class="collapsible-body" id="work-meetings-content">
-                    <div id="work-meetings-list">
-                        <div class="empty-section">Carregando...</div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- 4. Project Info (collapsed) -->
-            <section class="card collapsible-section reference-section" id="work-overview-section" style="margin-bottom: var(--spacing-lg);">
-                <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
-                    <h2>Informacoes do Projeto</h2>
-                    <span class="collapse-indicator"></span>
-                </div>
-                <div class="collapsible-body" id="work-overview-content">
-                    <div class="overview-grid">
-                        <div class="overview-card">
-                            <h3>Definicao</h3>
-                            <p id="work-definition">Carregando...</p>
+                <!-- Row 1: Executive Summary + Health & Pulse -->
+                <div class="sp-grid-2">
+                    <div class="sp-card sp-card--indigo" id="sp-summary-card">
+                        <div class="sp-card-header">
+                            <h3 class="sp-card-title">Executive Summary</h3>
+                            <div class="sp-sources" id="sp-sources"></div>
                         </div>
-                        <div class="overview-card">
-                            <h3>Contexto</h3>
-                            <p id="work-context">Carregando...</p>
+                        <p class="sp-summary-text" id="sp-summary-text">Loading...</p>
+                    </div>
+
+                    <div class="sp-card sp-card--health" id="sp-health-card">
+                        <div class="sp-card-header">
+                            <h3 class="sp-card-title">Health & Pulse</h3>
+                            <div class="sp-health-dot" id="sp-health-dot"></div>
                         </div>
-                        <div class="overview-card full-width">
-                            <h3>Status Atual</h3>
-                            <p id="work-current-status">Carregando...</p>
+                        <div class="sp-health-reason" id="sp-health-reason"></div>
+                        <div class="sp-confluence-chips" id="sp-confluence-chips"></div>
+                        <div class="sp-week-meetings" id="sp-week-meetings">
+                            <div class="sp-week-label" id="sp-week-label"></div>
+                            <div id="sp-week-list"></div>
                         </div>
                     </div>
                 </div>
-            </section>
 
-            <!-- 5. Executive Brief (open by default, hidden if no data) -->
-            <section class="card exec-brief-section" id="exec-brief-section" style="margin-bottom: var(--spacing-lg); display: none;">
-                <div class="section-header">
-                    <h2>Executive Brief</h2>
-                    <div id="exec-brief-sources" class="exec-brief-sources"></div>
+                <!-- Row 2: KPI Strip -->
+                <div class="sp-kpi-strip" id="sp-kpi-strip" style="display:none;">
+                    <div class="sp-kpi-scroll" id="sp-kpi-scroll"></div>
                 </div>
-                <div id="exec-brief-body">
-                    <!-- Summary -->
-                    <div id="exec-summary-block" class="exec-block" style="display:none;">
-                        <p id="exec-summary-text" class="exec-brief-summary"></p>
+
+                <!-- Row 3: Attention Required + Action Pipeline -->
+                <div class="sp-grid-2">
+                    <div class="sp-card sp-card--red" id="sp-risks-card" style="display:none;">
+                        <div class="sp-card-header">
+                            <h3 class="sp-card-title">Attention Required</h3>
+                            <span class="sp-count-badge sp-count-badge--red" id="sp-risks-count"></span>
+                        </div>
+                        <ul class="sp-list sp-list--red" id="sp-risks-list"></ul>
                     </div>
 
-                    <!-- KPIs -->
-                    <div id="exec-kpis-block" class="exec-block" style="display:none;">
-                        <h3 class="exec-block-title">KPIs</h3>
-                        <div id="exec-kpis-row" class="exec-kpi-row"></div>
-                    </div>
-
-                    <!-- Risks & Blockers -->
-                    <div id="exec-risks-block" class="exec-block" style="display:none;">
-                        <h3 class="exec-block-title">Risks & Blockers</h3>
-                        <ul id="exec-risks-list" class="exec-risks"></ul>
-                    </div>
-
-                    <!-- Recent Meetings -->
-                    <div id="exec-meetings-block" class="exec-block" style="display:none;">
-                        <h3 class="exec-block-title">Recent Meetings</h3>
-                        <div id="exec-meetings-list" class="exec-meetings"></div>
-                    </div>
-
-                    <!-- Action Items -->
-                    <div id="exec-actions-block" class="exec-block" style="display:none;">
-                        <h3 class="exec-block-title">Action Items</h3>
-                        <ul id="exec-actions-list" class="exec-actions"></ul>
-                    </div>
-
-                    <!-- Key People -->
-                    <div id="exec-people-block" class="exec-block" style="display:none;">
-                        <h3 class="exec-block-title">Key People</h3>
-                        <div id="exec-people-list" class="exec-people"></div>
-                    </div>
-
-                    <!-- Next Challenges -->
-                    <div id="exec-challenges-block" class="exec-block" style="display:none;">
-                        <h3 class="exec-block-title">Next Challenges</h3>
-                        <ul id="exec-challenges-list" class="exec-challenges"></ul>
+                    <div class="sp-card sp-card--action" id="sp-actions-card" style="display:none;">
+                        <div class="sp-card-header">
+                            <h3 class="sp-card-title">Action Pipeline</h3>
+                            <span class="sp-count-badge sp-count-badge--indigo" id="sp-actions-count"></span>
+                        </div>
+                        <ul class="sp-list sp-list--indigo" id="sp-actions-list"></ul>
                     </div>
                 </div>
-            </section>
 
-            <!-- 6. Cases (collapsed, hidden if empty) -->
-            <section class="card collapsible-section reference-section" id="work-cases-section" style="margin-bottom: var(--spacing-lg); display:none;">
-                <div class="collapsible-toggle" onclick="toggleCollapsible(this)">
-                    <h2>Cases</h2>
-                    <span class="collapse-indicator"></span>
+                <!-- Row 4: Team + Horizon -->
+                <div class="sp-grid-2">
+                    <div class="sp-card sp-card--cyan" id="sp-team-card" style="display:none;">
+                        <div class="sp-card-header">
+                            <h3 class="sp-card-title">Team</h3>
+                        </div>
+                        <div class="sp-people-grid" id="sp-people-list"></div>
+                    </div>
+
+                    <div class="sp-card sp-card--amber" id="sp-horizon-card" style="display:none;">
+                        <div class="sp-card-header">
+                            <h3 class="sp-card-title">Horizon</h3>
+                        </div>
+                        <ul class="sp-list sp-list--amber" id="sp-challenges-list"></ul>
+                    </div>
                 </div>
-                <div class="collapsible-body" id="work-cases-content">
-                    <div id="work-cases-list"></div>
+            </div>
+
+            <!-- ===== MEETINGS TAB ===== -->
+            <div class="sp-panel sp-panel--hidden" id="tab-meetings" role="tabpanel" aria-labelledby="tab-btn-meetings">
+                <div class="sp-timeline" id="sp-timeline">
+                    <div class="sp-empty-state">Loading meetings...</div>
                 </div>
-            </section>
+            </div>
+
+            <!-- ===== DOCS & KNOWLEDGE TAB ===== -->
+            <div class="sp-panel sp-panel--hidden" id="tab-docs" role="tabpanel" aria-labelledby="tab-btn-docs">
+                <!-- Project Identity -->
+                <div class="sp-identity" id="sp-identity" style="display:none;">
+                    <div class="sp-id-card" id="sp-id-definition" style="display:none;">
+                        <h4 class="sp-id-label">Definition</h4>
+                        <p class="sp-id-text" id="sp-id-def-text"></p>
+                    </div>
+                    <div class="sp-id-card" id="sp-id-context" style="display:none;">
+                        <h4 class="sp-id-label">Context</h4>
+                        <p class="sp-id-text" id="sp-id-ctx-text"></p>
+                    </div>
+                    <div class="sp-id-card" id="sp-id-status" style="display:none;">
+                        <h4 class="sp-id-label">Current Status</h4>
+                        <p class="sp-id-text" id="sp-id-st-text"></p>
+                    </div>
+                </div>
+
+                <!-- Documentation Grid -->
+                <div class="sp-docs-section" id="sp-docs-section">
+                    <div class="sp-section-header">
+                        <h3>Documentation</h3>
+                        <span class="sp-tab-badge" id="sp-docs-count"></span>
+                    </div>
+                    <div class="sp-docs-grid" id="sp-docs-grid">
+                        <div class="sp-empty-state">Loading...</div>
+                    </div>
+                </div>
+
+                <!-- Cases -->
+                <div class="sp-docs-section" id="sp-cases-section" style="display:none;">
+                    <div class="sp-section-header">
+                        <h3>Cases</h3>
+                    </div>
+                    <div class="sp-docs-grid" id="sp-cases-grid"></div>
+                </div>
+            </div>
 
             <!-- Doc Preview (shared for work) -->
             <section class="card" id="work-doc-preview-section" style="display:none; margin-bottom: var(--spacing-lg);">
@@ -507,41 +496,73 @@
             } catch (e) { console.error(e); return false; }
         }
 
+        // ===== TAB SYSTEM =====
+        let _workData = null;
+        let _reportCard = null;
+
+        function initTabs() {
+            document.querySelectorAll('.sp-tab').forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab.dataset.tab));
+                tab.addEventListener('keydown', (e) => {
+                    const tabs = [...document.querySelectorAll('.sp-tab')];
+                    const idx = tabs.indexOf(tab);
+                    if (e.key === 'ArrowRight') { e.preventDefault(); tabs[(idx + 1) % tabs.length].focus(); tabs[(idx + 1) % tabs.length].click(); }
+                    if (e.key === 'ArrowLeft') { e.preventDefault(); tabs[(idx - 1 + tabs.length) % tabs.length].focus(); tabs[(idx - 1 + tabs.length) % tabs.length].click(); }
+                });
+            });
+            // Restore last tab from hash or sessionStorage
+            const hash = window.location.hash.replace('#', '');
+            const saved = sessionStorage.getItem(`sp-tab-${currentWorkSlug}`);
+            if (hash && document.getElementById(`tab-${hash}`)) switchTab(hash);
+            else if (saved && document.getElementById(`tab-${saved}`)) switchTab(saved);
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.sp-tab').forEach(t => { t.classList.remove('sp-tab--active'); t.setAttribute('aria-selected', 'false'); });
+            document.querySelectorAll('.sp-panel').forEach(p => p.classList.add('sp-panel--hidden'));
+            const btn = document.getElementById(`tab-btn-${tabId}`);
+            const panel = document.getElementById(`tab-${tabId}`);
+            if (btn) { btn.classList.add('sp-tab--active'); btn.setAttribute('aria-selected', 'true'); }
+            if (panel) panel.classList.remove('sp-panel--hidden');
+            window.location.hash = tabId;
+            if (currentWorkSlug) sessionStorage.setItem(`sp-tab-${currentWorkSlug}`, tabId);
+        }
+
+        // ===== WORK PROJECT RENDERING =====
         function renderWorkView(data) {
             document.getElementById('work-project-view').style.display = 'block';
             document.getElementById('regular-project-view').style.display = 'none';
             document.getElementById('mba-project-view').style.display = 'none';
+            _workData = data;
 
-            // Hero chips from work data
+            // Hero chips
             const chips = [];
             const sCount = data.sections ? data.sections.length : 0;
             const mCount = data.meeting_notes ? data.meeting_notes.length : 0;
             const cCount = data.cases ? data.cases.length : 0;
-            if (sCount > 0) chips.push({ text: `📄 ${sCount} docs` });
-            if (mCount > 0) chips.push({ text: `📅 ${mCount} reunioes` });
-            if (cCount > 0) chips.push({ text: `📋 ${cCount} cases` });
+            if (sCount > 0) chips.push({ text: `${sCount} docs` });
+            if (mCount > 0) chips.push({ text: `${mCount} meetings` });
+            if (cCount > 0) chips.push({ text: `${cCount} cases` });
             if (data.meeting_notes && data.meeting_notes.length > 0) {
                 const last = data.meeting_notes[0];
                 const d = last.date || extractDateFromFilename(last.file);
-                if (d) chips.push({ text: `🕐 Ultima: ${formatMeetingDate(d)}`, muted: true });
+                if (d) chips.push({ text: `Last: ${formatMeetingDate(d)}`, muted: true });
             }
             setHeroChips(chips);
 
-            // Overview
-            const ov = data.overview || {};
-            const defText = ov.definition || '', ctxText = ov.context || '', stText = ov.current_status || '';
-            const defCard = document.getElementById('work-definition').closest('.overview-card');
-            const ctxCard = document.getElementById('work-context').closest('.overview-card');
-            const stCard = document.getElementById('work-current-status').closest('.overview-card');
-            if (defText) { document.getElementById('work-definition').textContent = defText; defCard.style.display = ''; } else defCard.style.display = 'none';
-            if (ctxText) { document.getElementById('work-context').textContent = ctxText; ctxCard.style.display = ''; } else ctxCard.style.display = 'none';
-            if (stText) { document.getElementById('work-current-status').textContent = stText; stCard.style.display = ''; } else stCard.style.display = 'none';
-            document.getElementById('work-overview-section').style.display = (!defText && !ctxText && !stText) ? 'none' : '';
+            // Tab badges
+            const mBadge = document.getElementById('tab-meetings-badge');
+            const dBadge = document.getElementById('tab-docs-badge');
+            if (mCount > 0) mBadge.textContent = mCount;
+            if (sCount > 0) dBadge.textContent = sCount;
 
-            renderWorkSections(data.sections || []);
-            renderWorkMeetings(data.meeting_notes || []);
-            if (data.cases && data.cases.length > 0) renderWorkCases(data.cases);
+            // Render Docs tab content (static data, always ready)
+            renderDocsTab(data);
 
+            // Init tabs
+            initTabs();
+
+            // Load report card (async enrichment)
             if (currentWorkSlug) loadReportCard(currentWorkSlug);
         }
 
@@ -549,193 +570,217 @@
             try {
                 const rc = await fetch(`${API_BASE}/work-projects/${slug}/report-card`).then(r => r.ok ? r.json() : null);
                 if (!rc) return;
+                _reportCard = rc;
 
-                // Health in hero card
                 setHeroHealth(rc.health);
-
-                // This Week section
-                const twSection = document.getElementById('this-week-section');
-                const hasMeetings = rc.meetings_this_week && rc.meetings_this_week.length > 0;
-                const c = rc.confluence || {};
-                const hasConf = c.current_sprint || c.epics_open || c.risks || c.bugs;
-
-                if (hasMeetings || hasConf) {
-                    twSection.style.display = '';
-                    document.getElementById('rc-week-label').textContent = rc.week ? `Semana de ${rc.week}` : '';
-
-                    const meetEl = document.getElementById('rc-meetings-list');
-                    if (hasMeetings) {
-                        meetEl.innerHTML = rc.meetings_this_week.map(m => `
-                            <div class="rc-meeting-item">
-                                <span class="rc-meeting-date">${m.date||''}</span>
-                                <span class="rc-meeting-title">${escapeHtml(m.title)}</span>
-                                ${m.summary ? `<span class="rc-meeting-summary">${escapeHtml(m.summary)}</span>` : ''}
-                            </div>
-                        `).join('');
-                    } else {
-                        meetEl.innerHTML = '<span class="text-muted">Nenhuma reuniao esta semana</span>';
-                    }
-
-                    const confEl = document.getElementById('rc-confluence-row');
-                    if (hasConf) {
-                        const chips = [];
-                        if (c.current_sprint) chips.push(`<span class="rc-chip">${escapeHtml(c.current_sprint)}</span>`);
-                        if (c.epics_open) chips.push(`<span class="rc-chip">${c.epics_open} open epics</span>`);
-                        if (c.epics_closed) chips.push(`<span class="rc-chip rc-chip-done">${c.epics_closed} closed</span>`);
-                        if (c.risks) chips.push(`<span class="rc-chip rc-chip-risk">${c.risks} risk${c.risks>1?'s':''}</span>`);
-                        if (c.bugs) chips.push(`<span class="rc-chip rc-chip-bug">${c.bugs} bug${c.bugs>1?'s':''}</span>`);
-                        confEl.innerHTML = chips.join('');
-                    } else {
-                        confEl.innerHTML = '';
-                    }
-                }
-
-                // Executive Brief
-                renderExecutiveBrief(rc.executive_brief);
-
-                // Hide Reunioes section if empty and This Week already shows meetings
-                const reunioesList = document.getElementById('work-meetings-list');
-                const hasFullMeetings = reunioesList && reunioesList.querySelector('.meeting-item');
-                if (!hasFullMeetings && hasMeetings) {
-                    document.getElementById('work-meetings-section').style.display = 'none';
-                }
+                renderOverviewTab(rc);
+                renderMeetingsTab(rc);
             } catch (e) { console.error('Error loading report card:', e); }
         }
 
-        function renderExecutiveBrief(brief) {
-            const section = document.getElementById('exec-brief-section');
-            if (!brief) { section.style.display = 'none'; return; }
-
+        // ===== OVERVIEW TAB =====
+        function renderOverviewTab(rc) {
+            const brief = rc.executive_brief || {};
             const has = (arr) => Array.isArray(arr) && arr.length > 0;
-            const hasData = brief.executive_summary || has(brief.kpis) || has(brief.risks_blockers)
-                || has(brief.recent_meetings) || has(brief.action_items) || has(brief.key_people) || has(brief.next_challenges);
-
-            if (!hasData) { section.style.display = 'none'; return; }
-            section.style.display = '';
-
-            // Sources
-            const srcEl = document.getElementById('exec-brief-sources');
-            if (has(brief.sources)) {
-                srcEl.innerHTML = brief.sources.map(s => `<span class="exec-source-chip">${escapeHtml(s)}</span>`).join('');
-            }
 
             // Summary
+            const summaryEl = document.getElementById('sp-summary-text');
             if (brief.executive_summary) {
-                document.getElementById('exec-summary-block').style.display = '';
-                document.getElementById('exec-summary-text').textContent = brief.executive_summary;
+                summaryEl.textContent = brief.executive_summary;
+            } else {
+                summaryEl.textContent = 'No executive summary available yet.';
+                summaryEl.classList.add('sp-text-muted');
+            }
+
+            // Sources
+            if (has(brief.sources)) {
+                document.getElementById('sp-sources').innerHTML = brief.sources.map(s =>
+                    `<span class="sp-source-chip">${escapeHtml(s)}</span>`
+                ).join('');
+            }
+
+            // Health dot + reason
+            const hColors = { green: '#22c55e', yellow: '#eab308', red: '#ef4444' };
+            const hLabels = { green: 'On Track', yellow: 'Attention', red: 'Critical' };
+            const hc = hColors[rc.health] || hColors.green;
+            document.getElementById('sp-health-dot').innerHTML =
+                `<span class="sp-dot" style="background:${hc};box-shadow:0 0 8px ${hc}60;"></span> ${hLabels[rc.health] || 'Unknown'}`;
+            document.getElementById('sp-health-reason').textContent = rc.health_reason || '';
+
+            // Confluence chips
+            const conf = rc.confluence || {};
+            const confChips = [];
+            if (conf.current_sprint) confChips.push(`<span class="sp-chip">${escapeHtml(conf.current_sprint)}</span>`);
+            if (conf.epics_open) confChips.push(`<span class="sp-chip">${conf.epics_open} epics open</span>`);
+            if (conf.epics_closed) confChips.push(`<span class="sp-chip sp-chip--green">${conf.epics_closed} closed</span>`);
+            if (conf.risks) confChips.push(`<span class="sp-chip sp-chip--red">${conf.risks} risk${conf.risks>1?'s':''}</span>`);
+            if (conf.bugs) confChips.push(`<span class="sp-chip sp-chip--red">${conf.bugs} bug${conf.bugs>1?'s':''}</span>`);
+            document.getElementById('sp-confluence-chips').innerHTML = confChips.join('');
+
+            // This week meetings in health panel
+            const weekMeetings = rc.meetings_this_week || [];
+            if (weekMeetings.length > 0) {
+                document.getElementById('sp-week-label').textContent = rc.week ? `Week of ${rc.week}` : 'This Week';
+                document.getElementById('sp-week-list').innerHTML = weekMeetings.slice(0, 5).map(m =>
+                    `<div class="sp-week-item">
+                        <span class="sp-week-date">${formatMeetingDate(m.date)}</span>
+                        <span class="sp-week-title">${escapeHtml(m.title)}</span>
+                    </div>`
+                ).join('');
+            } else {
+                document.getElementById('sp-week-label').textContent = '';
+                document.getElementById('sp-week-list').innerHTML = '<span class="sp-text-muted">No meetings this week</span>';
             }
 
             // KPIs
             if (has(brief.kpis)) {
-                document.getElementById('exec-kpis-block').style.display = '';
-                document.getElementById('exec-kpis-row').innerHTML = brief.kpis.slice(0, 8).map(k => {
+                document.getElementById('sp-kpi-strip').style.display = '';
+                document.getElementById('sp-kpi-scroll').innerHTML = brief.kpis.slice(0, 8).map(k => {
                     const st = (k.status || '').toLowerCase();
-                    const cls = st.includes('critical') || st.includes('red') || st.includes('atrasad') ? 'exec-kpi-critical'
-                              : st.includes('ok') || st.includes('green') || st.includes('conclu') ? 'exec-kpi-ok' : '';
-                    return `<div class="exec-kpi-card ${cls}">
-                        <div class="exec-kpi-metric">${escapeHtml(k.metric)}</div>
-                        <div class="exec-kpi-value">${escapeHtml(k.current || '-')}</div>
-                        ${k.target ? `<div class="exec-kpi-target">Target: ${escapeHtml(k.target)}</div>` : ''}
+                    const cls = st.includes('critical') || st.includes('red') || st.includes('atrasad') ? 'sp-kpi--red'
+                              : st.includes('ok') || st.includes('green') || st.includes('conclu') ? 'sp-kpi--green' : '';
+                    return `<div class="sp-kpi ${cls}">
+                        <div class="sp-kpi-label">${escapeHtml(k.metric)}</div>
+                        <div class="sp-kpi-value">${escapeHtml(k.current || '-')}</div>
+                        ${k.target ? `<div class="sp-kpi-target">${escapeHtml(k.target)}</div>` : ''}
                     </div>`;
                 }).join('');
             }
 
             // Risks & Blockers
             if (has(brief.risks_blockers)) {
-                document.getElementById('exec-risks-block').style.display = '';
-                document.getElementById('exec-risks-list').innerHTML = brief.risks_blockers.map(r =>
-                    `<li class="exec-risk-item">${escapeHtml(r)}</li>`
-                ).join('');
-            }
-
-            // Recent Meetings
-            if (has(brief.recent_meetings)) {
-                document.getElementById('exec-meetings-block').style.display = '';
-                document.getElementById('exec-meetings-list').innerHTML = brief.recent_meetings.map(m =>
-                    `<div class="exec-meeting-item">
-                        <span class="exec-meeting-title">${escapeHtml(m.title)}</span>
-                        ${m.date ? `<span class="exec-meeting-date">${escapeHtml(m.date)}</span>` : ''}
-                        ${m.insight ? `<span class="exec-meeting-insight">${escapeHtml(m.insight)}</span>` : ''}
-                    </div>`
+                document.getElementById('sp-risks-card').style.display = '';
+                document.getElementById('sp-risks-count').textContent = brief.risks_blockers.length;
+                document.getElementById('sp-risks-list').innerHTML = brief.risks_blockers.slice(0, 6).map(r =>
+                    `<li class="sp-list-item">${escapeHtml(r)}</li>`
                 ).join('');
             }
 
             // Action Items
             if (has(brief.action_items)) {
-                document.getElementById('exec-actions-block').style.display = '';
-                document.getElementById('exec-actions-list').innerHTML = brief.action_items.map(a =>
-                    `<li class="exec-action-item">${escapeHtml(a)}</li>`
+                document.getElementById('sp-actions-card').style.display = '';
+                document.getElementById('sp-actions-count').textContent = brief.action_items.length;
+                document.getElementById('sp-actions-list').innerHTML = brief.action_items.slice(0, 8).map(a =>
+                    `<li class="sp-list-item">${escapeHtml(a)}</li>`
                 ).join('');
             }
 
             // Key People
             if (has(brief.key_people)) {
-                document.getElementById('exec-people-block').style.display = '';
-                document.getElementById('exec-people-list').innerHTML = brief.key_people.map(p =>
-                    `<div class="exec-person">
-                        <span class="exec-person-name">${escapeHtml(p.name)}</span>
-                        ${p.role ? `<span class="exec-person-role">${escapeHtml(p.role)}</span>` : ''}
-                    </div>`
-                ).join('');
+                document.getElementById('sp-team-card').style.display = '';
+                document.getElementById('sp-people-list').innerHTML = brief.key_people.map(p => {
+                    const initials = p.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+                    return `<div class="sp-person">
+                        <div class="sp-person-avatar">${initials}</div>
+                        <div class="sp-person-name">${escapeHtml(p.name)}</div>
+                        ${p.role ? `<div class="sp-person-role">${escapeHtml(p.role)}</div>` : ''}
+                    </div>`;
+                }).join('');
             }
 
             // Next Challenges
             if (has(brief.next_challenges)) {
-                document.getElementById('exec-challenges-block').style.display = '';
-                document.getElementById('exec-challenges-list').innerHTML = brief.next_challenges.map(c =>
-                    `<li class="exec-challenge-item">${escapeHtml(c)}</li>`
+                document.getElementById('sp-horizon-card').style.display = '';
+                document.getElementById('sp-challenges-list').innerHTML = brief.next_challenges.slice(0, 6).map(c =>
+                    `<li class="sp-list-item">${escapeHtml(c)}</li>`
                 ).join('');
             }
         }
 
-        function renderWorkSections(sections) {
-            const container = document.getElementById('work-sections-list');
-            const badge = document.getElementById('work-sections-count');
+        // ===== MEETINGS TAB =====
+        function renderMeetingsTab(rc) {
+            const timeline = document.getElementById('sp-timeline');
+            const weekMeetings = rc.meetings_this_week || [];
+            const allMeetings = _workData ? (_workData.meeting_notes || []) : [];
+
+            // Combine and deduplicate by title
+            const seen = new Set();
+            const combined = [];
+            for (const m of weekMeetings) {
+                const key = (m.title || '').toLowerCase();
+                if (!seen.has(key)) { seen.add(key); combined.push({ title: m.title, date: m.date, summary: m.summary, source: 'week' }); }
+            }
+            for (const m of allMeetings) {
+                const key = (m.title || '').toLowerCase();
+                if (!seen.has(key)) { seen.add(key); combined.push({ title: m.title, date: m.date || extractDateFromFilename(m.file), preview: m.preview, file: m.file, source: 'notes' }); }
+            }
+
+            if (combined.length === 0) {
+                timeline.innerHTML = '<div class="sp-empty-state"><div class="sp-empty-icon">📅</div>No meetings recorded yet</div>';
+                return;
+            }
+
+            // Group by week
+            const groups = {};
+            combined.forEach(m => {
+                if (!m.date) return;
+                const d = new Date(m.date);
+                const monday = new Date(d);
+                monday.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1));
+                const weekKey = monday.toISOString().split('T')[0];
+                if (!groups[weekKey]) groups[weekKey] = [];
+                groups[weekKey].push(m);
+            });
+
+            const sortedWeeks = Object.keys(groups).sort().reverse();
+            timeline.innerHTML = sortedWeeks.map(week => `
+                <div class="sp-week-group">
+                    <div class="sp-week-header">Week of ${week}</div>
+                    ${groups[week].map(m => `
+                        <div class="sp-timeline-item${m.file ? ' sp-timeline-item--clickable' : ''}" ${m.file ? `onclick="openWorkFile('${m.file}')"` : ''}>
+                            <div class="sp-timeline-dot"></div>
+                            <div class="sp-timeline-content">
+                                <div class="sp-timeline-date">${formatMeetingDate(m.date)}</div>
+                                <div class="sp-timeline-title">${escapeHtml(m.title)}</div>
+                                ${m.summary || m.preview ? `<div class="sp-timeline-insight">${escapeHtml((m.summary || m.preview || '').substring(0, 150))}${(m.summary || m.preview || '').length > 150 ? '...' : ''}</div>` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `).join('');
+        }
+
+        // ===== DOCS & KNOWLEDGE TAB =====
+        function renderDocsTab(data) {
+            // Project Identity
+            const ov = data.overview || {};
+            const defText = ov.definition || '', ctxText = ov.context || '', stText = ov.current_status || '';
+            const hasIdentity = defText || ctxText || stText;
+            if (hasIdentity) {
+                document.getElementById('sp-identity').style.display = '';
+                if (defText) { document.getElementById('sp-id-definition').style.display = ''; document.getElementById('sp-id-def-text').textContent = defText; }
+                if (ctxText) { document.getElementById('sp-id-context').style.display = ''; document.getElementById('sp-id-ctx-text').textContent = ctxText; }
+                if (stText) { document.getElementById('sp-id-status').style.display = ''; document.getElementById('sp-id-st-text').textContent = stText; }
+            }
+
+            // Documentation grid
+            const sections = data.sections || [];
+            const docsCount = document.getElementById('sp-docs-count');
+            const docsGrid = document.getElementById('sp-docs-grid');
             if (sections.length === 0) {
-                container.innerHTML = '<div class="empty-section">Nenhuma secao de documentacao</div>';
-                badge.textContent = '';
-                return;
-            }
-            badge.textContent = `${sections.length} secoes`;
-            const icons = { context:'🎯', definition:'📋', history:'📜', architecture:'🏗️', people:'👥', timeline:'📅', status:'📍', roadmap:'🗺️', readme:'📖' };
-            container.innerHTML = sections.map(s => `
-                <div class="section-item" onclick="openWorkFile('${s.file}')">
-                    <div class="section-name">${icons[s.key]||'📄'} ${s.name}</div>
-                    <div class="section-summary">${s.summary || 'Clique para ver detalhes'}</div>
-                </div>
-            `).join('');
-        }
-
-        function renderWorkMeetings(meetings) {
-            const container = document.getElementById('work-meetings-list');
-            const badge = document.getElementById('work-meetings-count');
-            if (meetings.length === 0) {
-                container.innerHTML = '<div class="empty-section">Nenhuma nota de reuniao</div>';
-                badge.textContent = '';
-                return;
-            }
-            badge.textContent = `${meetings.length} reunioes`;
-            container.innerHTML = meetings.slice(0, 10).map(m => `
-                <div class="meeting-item" onclick="openWorkFile('${m.file}')">
-                    <div class="meeting-header">
-                        <span class="meeting-title">${escapeHtml(m.title)}</span>
-                        ${m.date ? `<span class="meeting-date">${formatMeetingDate(m.date)}</span>` : ''}
+                docsGrid.innerHTML = '<div class="sp-empty-state"><div class="sp-empty-icon">📄</div>No documentation sections</div>';
+                docsCount.textContent = '';
+            } else {
+                docsCount.textContent = sections.length;
+                docsGrid.innerHTML = sections.map(s => `
+                    <div class="sp-doc-tile" onclick="openWorkFile('${s.file}')">
+                        <div class="sp-doc-name">${escapeHtml(s.name)}</div>
+                        <div class="sp-doc-summary">${escapeHtml(s.summary || 'Click to view')}</div>
                     </div>
-                    <div class="meeting-preview">${escapeHtml(m.preview) || 'Clique para ver detalhes'}</div>
-                </div>
-            `).join('');
-        }
+                `).join('');
+            }
 
-        function renderWorkCases(cases) {
-            const section = document.getElementById('work-cases-section');
-            const container = document.getElementById('work-cases-list');
-            section.style.display = 'block';
-            container.innerHTML = cases.map(c => `
-                <div class="case-item" onclick="openWorkFile('${c.file}')">
-                    <div class="meeting-title">${escapeHtml(c.title)}</div>
-                    <div class="meeting-preview">${escapeHtml(c.summary)||''}</div>
-                </div>
-            `).join('');
+            // Cases
+            const cases = data.cases || [];
+            if (cases.length > 0) {
+                document.getElementById('sp-cases-section').style.display = '';
+                document.getElementById('sp-cases-grid').innerHTML = cases.map(c => `
+                    <div class="sp-doc-tile" onclick="openWorkFile('${c.file}')">
+                        <div class="sp-doc-name">${escapeHtml(c.title)}</div>
+                        <div class="sp-doc-summary">${escapeHtml(c.summary || '')}</div>
+                    </div>
+                `).join('');
+            }
         }
 
         async function openWorkFile(filePath) {
@@ -1095,6 +1140,12 @@
                 if ((docSection && docSection.style.display !== 'none') || (workSection && workSection.style.display !== 'none')) {
                     if (!document.getElementById('fullscreen-overlay').classList.contains('active')) openFullscreen();
                 }
+            }
+            // Number keys 1-3 for tab switching
+            if (!e.ctrlKey && !e.metaKey && !e.altKey && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+                if (e.key === '1') switchTab('overview');
+                if (e.key === '2') switchTab('meetings');
+                if (e.key === '3') switchTab('docs');
             }
         });
 
