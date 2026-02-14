@@ -554,7 +554,9 @@
             document.getElementById('mba-project-view').style.display = 'none';
             _workData = data;
 
-            // Tab badges (hero chips removed -- tab badges already show counts)
+            // Tab badges
+            const sCount = data.sections ? data.sections.length : 0;
+            const mCount = data.meeting_notes ? data.meeting_notes.length : 0;
             const mBadge = document.getElementById('tab-meetings-badge');
             const dBadge = document.getElementById('tab-docs-badge');
             if (mCount > 0) mBadge.textContent = mCount;
