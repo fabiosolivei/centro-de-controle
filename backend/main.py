@@ -2857,11 +2857,34 @@ def _get_executive_brief(slug: str) -> dict:
     
     def _extract_section(content, header_pattern):
         """Extract content under a markdown header matching pattern."""
-        match = _re.search(
-            rf'^#{1,3}\s+.*{header_pattern}.*$\n(.*?)(?=^#{1,3}\s|\Z)',
-            content, _re.MULTILINE | _re.DOTALL | _re.IGNORECASE
-        )
-        return match.group(1).strip() if match else ""
+        try:
+            # Find the header line
+            header_match = _re.search(
+                rf'^(#{{1,3}})\s+.*{header_pattern}.*$',
+                content, _re.MULTILINE | _re.IGNORECASE
+            )
+            if not header_match:
+                return ""
+            
+            # Get content after header until next same-or-higher-level header or EOF
+            start = header_match.end()
+            level = len(header_match.group(1))  # number of #
+            
+            # Find next header of same or higher level
+            next_header = _re.search(
+                rf'^#{{1,{level}}}\s+',
+                content[start:], _re.MULTILINE
+            )
+            
+            if next_header:
+                section = content[start:start + next_header.start()]
+            else:
+                section = content[start:]
+            
+            return section.strip()
+        except Exception:
+            pass
+        return ""
     
     def _extract_table_rows(content, header_pattern):
         """Extract rows from a markdown table under a header."""
@@ -2904,12 +2927,17 @@ def _get_executive_brief(slug: str) -> dict:
         deep = _read_file(deep_path)
         if deep:
             brief["sources"].append(intel_file)
-            # Executive Summary
-            exec_sec = _extract_section(deep, r'Executive Summary')
-            if exec_sec:
-                # Take first 2 paragraphs
-                paras = [p.strip() for p in exec_sec.split('\n\n') if p.strip() and not p.strip().startswith('|')]
-                brief["executive_summary"] = '\n\n'.join(paras[:2]) if paras else None
+            # Executive Summary - try multiple header patterns
+            for summary_header in ['Executive Summary', 'What is', 'O que e', 'Overview', 'Resumo']:
+                exec_sec = _extract_section(deep, summary_header)
+                if exec_sec:
+                    # Take first 2 non-table paragraphs
+                    paras = [p.strip() for p in exec_sec.split('\n\n') 
+                             if p.strip() and not p.strip().startswith('|') 
+                             and not p.strip().startswith('```') and not p.strip().startswith('>')]
+                    if paras:
+                        brief["executive_summary"] = '\n\n'.join(paras[:2])[:500]
+                        break
             
             # KPIs from tables
             for header in ['KPI Dashboard', 'Category Automation', 'Metricas']:
@@ -3034,10 +3062,16 @@ def _get_executive_brief(slug: str) -> dict:
             
             elif key == "definition":
                 if not brief["executive_summary"]:
-                    sec = _extract_section(content, r'O que o Fabio explicou|O que e o 3TPM')
-                    if sec:
-                        paras = [p.strip() for p in sec.split('\n\n') if p.strip() and not p.strip().startswith('```')]
-                        brief["executive_summary"] = paras[0][:500] if paras else None
+                    for def_header in ['O que e', 'Definicao', 'O que o Fabio']:
+                        sec = _extract_section(content, def_header)
+                        if sec:
+                            paras = [p.strip() for p in sec.split('\n\n') 
+                                     if p.strip() and not p.strip().startswith('```') 
+                                     and not p.strip().startswith('|') and not p.strip().startswith('>') 
+                                     and len(p.strip()) > 30]
+                            if paras:
+                                brief["executive_summary"] = paras[0][:500]
+                                break
             
             elif key == "people":
                 rows = _extract_table_rows(content, r'Time Atual')
