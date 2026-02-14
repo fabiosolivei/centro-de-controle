@@ -5525,6 +5525,9 @@ table {
     color: var(--text-secondary);
     line-height: 1.6;
 }
+.sp-id-text p { margin: 0 0 6px 0; }
+.sp-id-text p:last-child { margin-bottom: 0; }
+.sp-id-text strong { color: var(--text-primary); font-weight: 600; }
 
 /* ============================================
    WORK PROJECT PAGE — RESPONSIVE
