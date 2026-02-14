@@ -753,9 +753,9 @@
             const hasIdentity = defText || ctxText || stText;
             if (hasIdentity) {
                 document.getElementById('sp-identity').style.display = '';
-                if (defText) { document.getElementById('sp-id-definition').style.display = ''; document.getElementById('sp-id-def-text').textContent = defText; }
-                if (ctxText) { document.getElementById('sp-id-context').style.display = ''; document.getElementById('sp-id-ctx-text').textContent = ctxText; }
-                if (stText) { document.getElementById('sp-id-status').style.display = ''; document.getElementById('sp-id-st-text').textContent = stText; }
+                if (defText) { document.getElementById('sp-id-definition').style.display = ''; document.getElementById('sp-id-def-text').innerHTML = marked.parse(defText); }
+                if (ctxText) { document.getElementById('sp-id-context').style.display = ''; document.getElementById('sp-id-ctx-text').innerHTML = marked.parse(ctxText); }
+                if (stText) { document.getElementById('sp-id-status').style.display = ''; document.getElementById('sp-id-st-text').innerHTML = marked.parse(stText); }
             }
 
             // Documentation list
@@ -1140,6 +1140,16 @@
                     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleCollapsible(toggle); }
                 });
             });
+        });
+
+        // Close sprint drawer on click outside
+        document.addEventListener('click', (e) => {
+            const wrap = document.getElementById('ph-sprint-wrap');
+            const drawer = document.getElementById('ph-sprint-drawer');
+            if (wrap && drawer && !wrap.contains(e.target)) {
+                drawer.classList.remove('ph-sprint-drawer--open');
+                document.getElementById('ph-sprint-btn').setAttribute('aria-expanded', 'false');
+            }
         });
 
         // Keyboard shortcuts
