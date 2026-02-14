@@ -7,7 +7,7 @@
     <meta name="description" content="Centro de Controle - Dashboard do Fábio">
     <title>Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=23">
+    <link rel="stylesheet" href="css/style.css?v=22">
     <link rel="manifest" href="manifest.json">
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -436,7 +436,7 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="js/api.js?v=7"></script>
+    <script src="js/api.js?v=8"></script>
     <script>
         // ===========================================
         // GPM DASHBOARD - MAIN SCRIPT
@@ -472,6 +472,102 @@
         let _workAlerts = {};
         let _apiOnline = true;
 
+        // --- Helper renderers for aggregated /dashboard response ---
+        
+        function _renderMBAFromData(mbaData, isCache) {
+            if (!mbaData || !mbaData.turmas) {
+                document.getElementById('mba-pendentes').textContent = '-';
+                document.getElementById('mba-andamento').textContent = '-';
+                document.getElementById('mba-concluidas').textContent = '-';
+                return;
+            }
+            let pendentes = 0, andamento = 0, concluidas = 0;
+            const prazos = [];
+            (mbaData.turmas || []).forEach(turma => {
+                (turma.semanas || []).forEach(semana => {
+                    const aFazer = semana.atividades?.a_fazer || [];
+                    const fazendo = semana.atividades?.fazendo || [];
+                    const feito = semana.atividades?.feito || [];
+                    pendentes += aFazer.length;
+                    andamento += fazendo.length;
+                    concluidas += feito.length;
+                    aFazer.forEach(atv => {
+                        if (atv.data) prazos.push({ title: atv.titulo, data: atv.data, turma: turma.nome?.split(' - ')[0] || turma.tipo || '' });
+                    });
+                });
+            });
+            document.getElementById('mba-pendentes').textContent = pendentes;
+            document.getElementById('mba-andamento').textContent = andamento;
+            document.getElementById('mba-concluidas').textContent = concluidas;
+            _mbaDeadlines = prazos;
+            if (prazos.length > 0) {
+                const deadlinesHtml = prazos.slice(0, 2).map(d => {
+                    const isOverdue = parseMBADate(d.data) < new Date();
+                    return `<div style="padding: 8px; background: ${isOverdue ? 'rgba(239, 68, 68, 0.1)' : 'rgba(234, 179, 8, 0.1)'}; border-radius: 6px; margin-bottom: 4px; font-size: 0.875rem; border-left: 3px solid ${isOverdue ? '#ef4444' : 'transparent'};">
+                        ${isOverdue ? '⚠️' : '📅'} ${escapeHtml(d.title)} - ${d.data}${isOverdue ? ' <span style="color:#ef4444;font-weight:600;font-size:0.75rem;">ATRASADO</span>' : ''}
+                    </div>`;
+                }).join('');
+                document.getElementById('mba-deadlines').innerHTML = deadlinesHtml;
+            }
+            if (isCache) {
+                const headerRow = document.querySelector('.card:has(#mba-pendentes) .section-header-row');
+                if (headerRow && !headerRow.querySelector('.cache-badge')) {
+                    const badge = document.createElement('span');
+                    badge.className = 'cache-badge';
+                    badge.textContent = 'Dados em cache';
+                    badge.style.cssText = 'font-size:0.65rem;background:rgba(234,179,8,0.15);color:#eab308;padding:2px 6px;border-radius:4px;margin-left:auto;';
+                    headerRow.insertBefore(badge, headerRow.querySelector('.section-action'));
+                }
+            }
+        }
+
+        function _renderWorkStatus(summary) {
+            _workAlerts = summary;
+            document.getElementById('work-initiatives').textContent = summary.initiatives || 0;
+            document.getElementById('work-epics').textContent = summary.epics || 0;
+            document.getElementById('work-sprints').textContent = summary.sprints || 0;
+            const alertsContainer = document.getElementById('work-alerts');
+            let alertsHtml = '';
+            if (summary.risks > 0) {
+                alertsHtml += `<div style="padding: 8px; background: rgba(239, 68, 68, 0.1); border-radius: 6px; margin-bottom: 4px; font-size: 0.875rem; display: flex; align-items: center; gap: 8px;">
+                    <span>⚠️</span><span style="color: #f87171; font-weight: 600;">${summary.risks}</span><span>riscos ativos</span></div>`;
+            }
+            if (summary.bugs > 0) {
+                alertsHtml += `<div style="padding: 8px; background: rgba(245, 158, 11, 0.1); border-radius: 6px; margin-bottom: 4px; font-size: 0.875rem; display: flex; align-items: center; gap: 8px;">
+                    <span>🐛</span><span style="color: #fbbf24; font-weight: 600;">${summary.bugs}</span><span>bugs ativos</span></div>`;
+            }
+            if (summary.current_sprint) {
+                alertsHtml += `<div style="padding: 8px; background: rgba(99, 102, 241, 0.1); border-radius: 6px; font-size: 0.875rem;">
+                    🏃 <strong>${escapeHtml(summary.current_sprint)}</strong></div>`;
+            }
+            alertsContainer.innerHTML = alertsHtml || '<p style="color: var(--text-muted); font-size: 0.875rem;">Tudo em dia!</p>';
+        }
+
+        function _renderLifeOSFromData(messages) {
+            lifeOsMessages = Array.isArray(messages) ? messages : [];
+            renderLifeOS();
+        }
+
+        function _renderObsSummaryFromData(obs) {
+            const toolData = obs.tool_health;
+            const report = obs.last_report;
+            const el = document.getElementById('obs-tool-health');
+            if (el) {
+                if (toolData && toolData.success_rate != null) el.textContent = `${toolData.success_rate}%`;
+                else if (toolData && toolData.total > 0) el.textContent = '--';
+                else el.textContent = 'N/A';
+            }
+            const lastEvalEl = document.getElementById('obs-last-eval');
+            const summaryEl = document.getElementById('obs-report-summary');
+            if (report) {
+                if (lastEvalEl) lastEvalEl.textContent = report.report_date || '--';
+                if (summaryEl) summaryEl.textContent = report.summary || 'No summary';
+            } else {
+                if (lastEvalEl) lastEvalEl.textContent = 'None';
+                if (summaryEl) summaryEl.textContent = 'No reports yet';
+            }
+        }
+
         async function loadAllData() {
             // Health check first
             try {
@@ -483,6 +579,66 @@
             const banner = document.getElementById('offline-banner');
             if (banner) banner.style.display = _apiOnline ? 'none' : 'flex';
 
+            // --- Try aggregated /dashboard endpoint (single call, fast) ---
+            try {
+                const d = await apiRequest('/dashboard');
+                
+                // Tasks
+                tasks = Array.isArray(d.tasks) ? d.tasks : [];
+                renderTaskCounts();
+                renderUrgentTasks();
+                
+                // Projects
+                projects = Array.isArray(d.projects) ? d.projects : [];
+                
+                // Work projects + report cards
+                workProjects = (d.work_projects && d.work_projects.projects) || [];
+                if (d.report_cards && d.report_cards.cards) {
+                    reportCards = d.report_cards.cards;
+                }
+                renderPortfolio();
+                
+                // Calendar
+                _calendarEvents = Array.isArray(d.calendar_today) ? d.calendar_today : [];
+                renderAgenda(_calendarEvents);
+                
+                // MBA
+                if (d.mba_data && d.mba_data.turmas) {
+                    _renderMBAFromData(d.mba_data, false);
+                } else {
+                    _renderMBAFromData(getMBAStaticFallback(), true);
+                }
+                
+                // Confluence / Work Status
+                if (d.confluence_summary) {
+                    _renderWorkStatus(d.confluence_summary);
+                }
+                
+                // Weekly Brief
+                if (d.weekly_brief) {
+                    weeklyBriefData = d.weekly_brief;
+                    renderWeeklyBrief();
+                }
+                
+                // Scheduled messages (Life OS)
+                if (d.scheduled_messages) {
+                    _renderLifeOSFromData(d.scheduled_messages);
+                }
+                
+                // Obs summary
+                if (d.obs_summary) {
+                    _renderObsSummaryFromData(d.obs_summary);
+                }
+                
+                updateSummary();
+                buildPriorityPulse();
+                console.log(`[Dashboard] Loaded in single call`);
+                return;
+            } catch (e) {
+                console.warn('[Dashboard] Aggregate failed, falling back to individual calls:', e.message);
+            }
+
+            // --- Fallback: individual calls (existing logic, now with timeouts) ---
             try {
                 await Promise.all([
                     loadTasks(),
