@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0d1117">
     <title>Projeto - Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=24">
+    <link rel="stylesheet" href="css/style.css?v=25">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -36,19 +36,28 @@
 
         <!-- ===== HERO CARD ===== -->
         <div class="proj-hero" id="proj-hero">
-            <a href="./" class="proj-hero-back" id="back-btn">← Dashboard</a>
-            <div class="proj-hero-top">
-                <div class="proj-hero-info">
-                    <h1 id="project-name" class="proj-hero-title">Carregando...</h1>
-                    <div class="proj-hero-meta">
-                        <span id="project-category"></span>
-                        <span id="project-status" class="badge"></span>
-                        <span id="project-priority" class="badge" style="display:none;"></span>
-                    </div>
-                    <p id="project-description" class="proj-hero-desc"></p>
-                </div>
-                <div class="proj-hero-health" id="hero-health" style="display:none;"></div>
+            <div class="ph-top-row">
+                <a href="./" class="ph-back" id="back-btn">← Dashboard</a>
+                <div class="ph-health" id="hero-health" style="display:none;"></div>
             </div>
+            <div class="ph-main-row">
+                <h1 id="project-name" class="ph-title">Carregando...</h1>
+                <div class="ph-right" id="ph-right">
+                    <div class="ph-sprint-wrap" id="ph-sprint-wrap" style="display:none;">
+                        <button class="ph-sprint-btn" id="ph-sprint-btn" aria-expanded="false"></button>
+                        <div class="ph-sprint-drawer" id="ph-sprint-drawer"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Non-work meta (shown for MBA/regular projects) -->
+            <div class="ph-meta" id="ph-meta-nonwork" style="display:none;">
+                <span id="project-category"></span>
+                <span id="project-status" class="badge"></span>
+                <span id="project-priority" class="badge" style="display:none;"></span>
+                <p id="project-description" class="ph-desc"></p>
+            </div>
+            <!-- Project Switcher (work projects only) -->
+            <nav class="ph-switcher" id="ph-switcher" style="display:none;" aria-label="Switch project"></nav>
             <div class="proj-hero-chips" id="hero-chips" style="display:none;"></div>
         </div>
 
@@ -102,68 +111,47 @@
             <!-- ===== OVERVIEW TAB ===== -->
             <div class="sp-panel" id="tab-overview" role="tabpanel" aria-labelledby="tab-btn-overview">
 
-                <!-- Row 1: Executive Summary + Health & Pulse -->
-                <div class="sp-grid-2">
-                    <div class="sp-card sp-card--indigo" id="sp-summary-card">
-                        <div class="sp-card-header">
-                            <h3 class="sp-card-title">Executive Summary</h3>
-                            <div class="sp-sources" id="sp-sources"></div>
-                        </div>
-                        <p class="sp-summary-text" id="sp-summary-text">Loading...</p>
-                    </div>
-
-                    <div class="sp-card sp-card--health" id="sp-health-card">
-                        <div class="sp-card-header">
-                            <h3 class="sp-card-title">Health & Pulse</h3>
-                            <div class="sp-health-dot" id="sp-health-dot"></div>
-                        </div>
-                        <div class="sp-health-reason" id="sp-health-reason"></div>
-                        <div class="sp-confluence-chips" id="sp-confluence-chips"></div>
-                        <div class="sp-week-meetings" id="sp-week-meetings">
-                            <div class="sp-week-label" id="sp-week-label"></div>
-                            <div id="sp-week-list"></div>
-                        </div>
-                    </div>
+                <!-- This Week Meetings (compact row above the brief) -->
+                <div class="sp-week-bar" id="sp-week-bar" style="display:none;">
+                    <span class="sp-week-bar-label" id="sp-week-label"></span>
+                    <div class="sp-week-bar-list" id="sp-week-list"></div>
                 </div>
 
-                <!-- Row 2: KPI Strip -->
-                <div class="sp-kpi-strip" id="sp-kpi-strip" style="display:none;">
-                    <div class="sp-kpi-scroll" id="sp-kpi-scroll"></div>
-                </div>
-
-                <!-- Row 3: Attention Required + Action Pipeline -->
-                <div class="sp-grid-2" id="sp-row-attention" style="display:none;">
-                    <div class="sp-card sp-card--red" id="sp-risks-card" style="display:none;">
-                        <div class="sp-card-header">
-                            <h3 class="sp-card-title">Attention Required</h3>
-                            <span class="sp-count-badge sp-count-badge--red" id="sp-risks-count"></span>
-                        </div>
-                        <ul class="sp-list sp-list--red" id="sp-risks-list"></ul>
+                <!-- Unified Executive Brief -->
+                <div class="eb-card" id="eb-card">
+                    <div class="eb-header">
+                        <h3 class="eb-title">Executive Brief</h3>
+                        <div class="eb-sources" id="eb-sources"></div>
                     </div>
 
-                    <div class="sp-card sp-card--action" id="sp-actions-card" style="display:none;">
-                        <div class="sp-card-header">
-                            <h3 class="sp-card-title">Action Pipeline</h3>
-                            <span class="sp-count-badge sp-count-badge--indigo" id="sp-actions-count"></span>
-                        </div>
-                        <ul class="sp-list sp-list--indigo" id="sp-actions-list"></ul>
-                    </div>
-                </div>
+                    <!-- Summary -->
+                    <div class="eb-summary" id="eb-summary">Loading...</div>
 
-                <!-- Row 4: Team + Horizon -->
-                <div class="sp-grid-2" id="sp-row-team" style="display:none;">
-                    <div class="sp-card sp-card--cyan" id="sp-team-card" style="display:none;">
-                        <div class="sp-card-header">
-                            <h3 class="sp-card-title">Team</h3>
+                    <!-- KPIs -->
+                    <div class="eb-kpis" id="eb-kpis" style="display:none;"></div>
+
+                    <!-- Two-column: Risks | Actions -->
+                    <div class="eb-columns" id="eb-columns" style="display:none;">
+                        <div class="eb-col eb-col--risks" id="eb-risks-col" style="display:none;">
+                            <h4 class="eb-col-title eb-col-title--red">Risks & Blockers <span class="eb-col-count" id="eb-risks-count"></span></h4>
+                            <ul class="eb-list" id="eb-risks-list"></ul>
                         </div>
-                        <div class="sp-people-grid" id="sp-people-list"></div>
+                        <div class="eb-col eb-col--actions" id="eb-actions-col" style="display:none;">
+                            <h4 class="eb-col-title eb-col-title--indigo">Action Items <span class="eb-col-count" id="eb-actions-count"></span></h4>
+                            <ul class="eb-list" id="eb-actions-list"></ul>
+                        </div>
                     </div>
 
-                    <div class="sp-card sp-card--amber" id="sp-horizon-card" style="display:none;">
-                        <div class="sp-card-header">
-                            <h3 class="sp-card-title">Horizon</h3>
-                        </div>
-                        <ul class="sp-list sp-list--amber" id="sp-challenges-list"></ul>
+                    <!-- People -->
+                    <div class="eb-section" id="eb-people-section" style="display:none;">
+                        <h4 class="eb-section-title">Key People</h4>
+                        <div class="eb-people" id="eb-people-list"></div>
+                    </div>
+
+                    <!-- Next Challenges -->
+                    <div class="eb-section" id="eb-challenges-section" style="display:none;">
+                        <h4 class="eb-section-title">Next Challenges</h4>
+                        <ul class="eb-list eb-list--amber" id="eb-challenges-list"></ul>
                     </div>
                 </div>
             </div>
@@ -193,23 +181,18 @@
                     </div>
                 </div>
 
-                <!-- Documentation Grid -->
-                <div class="sp-docs-section" id="sp-docs-section">
-                    <div class="sp-section-header">
-                        <h3>Documentation</h3>
-                        <span class="sp-tab-badge" id="sp-docs-count"></span>
-                    </div>
-                    <div class="sp-docs-grid" id="sp-docs-grid">
+                <!-- Documentation List -->
+                <div class="dl-section" id="dl-docs-section">
+                    <h3 class="dl-heading">Documentation <span class="dl-count" id="dl-docs-count"></span></h3>
+                    <div class="dl-list" id="dl-docs-list">
                         <div class="sp-empty-state">Loading...</div>
                     </div>
                 </div>
 
                 <!-- Cases -->
-                <div class="sp-docs-section" id="sp-cases-section" style="display:none;">
-                    <div class="sp-section-header">
-                        <h3>Cases</h3>
-                    </div>
-                    <div class="sp-docs-grid" id="sp-cases-grid"></div>
+                <div class="dl-section" id="dl-cases-section" style="display:none;">
+                    <h3 class="dl-heading">Cases</h3>
+                    <div class="dl-list" id="dl-cases-list"></div>
                 </div>
             </div>
 
@@ -430,14 +413,20 @@
         }
 
         // ===== HERO CARD =====
+        // DB project ID -> work slug lookup (for project switcher)
+        const WORK_PROJECT_DB = [
+            { id: 1, name: 'Catalog', slug: 'catalog-admin' },
+            { id: 2, name: 'CMS', slug: 'cms-dam' },
+            { id: 3, name: 'DAM', slug: 'cms-dam' },
+        ];
+
         function renderHeroCard(project) {
             document.title = `${project.name} - Centro de Controle`;
             document.getElementById('project-name').textContent = project.name;
-            document.getElementById('project-description').textContent = project.description || '';
 
-            // Back button context
             const backBtn = document.getElementById('back-btn');
-            if (isWorkProject(project.name, project.category)) {
+            const isWork = isWorkProject(project.name, project.category);
+            if (isWork) {
                 backBtn.href = 'work';
                 backBtn.textContent = '← Work Status';
             } else if (project.category === 'mba') {
@@ -445,36 +434,66 @@
                 backBtn.textContent = '← MBA';
             }
 
-            // Category
-            const catIcons = { trabalho: '💼', mba: '🎓', pessoal: '👤', familia: '👨‍👩‍👧' };
-            document.getElementById('project-category').textContent =
-                (catIcons[project.category] || '📁') + ' ' + (project.category || 'Geral');
-
-            // Status
-            const statusEl = document.getElementById('project-status');
-            statusEl.textContent = project.status === 'active' ? 'Ativo' : project.status === 'paused' ? 'Pausado' : 'Concluido';
-            statusEl.className = 'badge ' + (project.status === 'active' ? 'badge-active' : 'badge-paused');
-
-            // Priority
-            const prioEl = document.getElementById('project-priority');
-            if (project.priority === 'high') {
-                prioEl.textContent = '🔥 Alta Prioridade';
-                prioEl.className = 'badge badge-high';
-                prioEl.style.display = 'inline';
+            if (isWork) {
+                // Work project: show project switcher, hide non-work meta
+                document.getElementById('ph-meta-nonwork').style.display = 'none';
+                renderProjectSwitcher(project);
+            } else {
+                // Non-work: show traditional meta
+                const meta = document.getElementById('ph-meta-nonwork');
+                meta.style.display = '';
+                const catIcons = { trabalho: '💼', mba: '🎓', pessoal: '👤', familia: '👨‍👩‍👧' };
+                document.getElementById('project-category').textContent =
+                    (catIcons[project.category] || '📁') + ' ' + (project.category || 'Geral');
+                const statusEl = document.getElementById('project-status');
+                statusEl.textContent = project.status === 'active' ? 'Ativo' : project.status === 'paused' ? 'Pausado' : 'Concluido';
+                statusEl.className = 'badge ' + (project.status === 'active' ? 'badge-active' : 'badge-paused');
+                const prioEl = document.getElementById('project-priority');
+                if (project.priority === 'high') { prioEl.textContent = '🔥 Alta Prioridade'; prioEl.className = 'badge badge-high'; prioEl.style.display = 'inline'; }
+                document.getElementById('project-description').textContent = project.description || '';
             }
         }
 
-        // Populate hero health badge (called async after report card loads)
-        function setHeroHealth(health) {
-            const el = document.getElementById('hero-health');
-            const colors = { green: '#22c55e', yellow: '#eab308', red: '#ef4444' };
-            const labels = { green: 'On Track', yellow: 'Atencao', red: 'Critico' };
-            const c = colors[health] || colors.green;
-            el.style.display = '';
-            el.innerHTML = `<span class="health-badge" style="background:${c}22;color:${c};border:1px solid ${c}44;">${labels[health] || health}</span>`;
+        function renderProjectSwitcher(currentProject) {
+            const nav = document.getElementById('ph-switcher');
+            nav.style.display = '';
+            const currentId = parseInt(projectId);
+            nav.innerHTML = WORK_PROJECT_DB
+                .filter(p => p.id !== currentId)
+                .map(p => `<a href="project?id=${p.id}" class="ph-switch-pill">${escapeHtml(p.name)}</a>`)
+                .join('');
         }
 
-        // Populate hero chips (called from work project render)
+        function setHeroHealth(health, reason) {
+            const el = document.getElementById('hero-health');
+            const colors = { green: '#22c55e', yellow: '#eab308', red: '#ef4444' };
+            const labels = { green: 'On Track', yellow: 'Attention', red: 'Critical' };
+            const c = colors[health] || colors.green;
+            el.style.display = '';
+            el.innerHTML = `<span class="ph-health-badge" style="background:${c}18;color:${c};border:1px solid ${c}33;">
+                <span class="ph-dot" style="background:${c};"></span>${labels[health] || health}${reason ? ` — ${escapeHtml(reason)}` : ''}
+            </span>`;
+        }
+
+        function setHeroSprint(conf) {
+            if (!conf || !conf.current_sprint) return;
+            const wrap = document.getElementById('ph-sprint-wrap');
+            const btn = document.getElementById('ph-sprint-btn');
+            const drawer = document.getElementById('ph-sprint-drawer');
+            wrap.style.display = '';
+            btn.textContent = conf.current_sprint + ' ▾';
+            btn.onclick = () => {
+                const open = drawer.classList.toggle('ph-sprint-drawer--open');
+                btn.setAttribute('aria-expanded', open);
+            };
+            const rows = [];
+            if (conf.initiatives) rows.push(`<div class="ph-sd-row"><span class="ph-sd-label">Initiatives</span><span class="ph-sd-val">${conf.initiatives}</span></div>`);
+            if (conf.epics_open || conf.epics_closed) rows.push(`<div class="ph-sd-row"><span class="ph-sd-label">Epics</span><span class="ph-sd-val">${conf.epics_open || 0} open${conf.epics_closed ? `, ${conf.epics_closed} closed` : ''}</span></div>`);
+            if (conf.risks) rows.push(`<div class="ph-sd-row ph-sd-row--red"><span class="ph-sd-label">Risks</span><span class="ph-sd-val">${conf.risks}</span></div>`);
+            if (conf.bugs) rows.push(`<div class="ph-sd-row ph-sd-row--red"><span class="ph-sd-label">Bugs</span><span class="ph-sd-val">${conf.bugs}</span></div>`);
+            drawer.innerHTML = rows.join('');
+        }
+
         function setHeroChips(chips) {
             const el = document.getElementById('hero-chips');
             if (chips.length > 0) {
@@ -572,9 +591,11 @@
                 if (!rc) return;
                 _reportCard = rc;
 
-                setHeroHealth(rc.health);
+                // Hero enrichments
+                setHeroHealth(rc.health, rc.health_reason);
+                setHeroSprint(rc.confluence);
 
-                // Enrich hero chips with meetings count if not already shown
+                // Enrich meetings badge
                 const weekMeetCount = (rc.meetings_this_week || []).length;
                 if (weekMeetCount > 0) {
                     const mBadge = document.getElementById('tab-meetings-badge');
@@ -586,125 +607,89 @@
             } catch (e) { console.error('Error loading report card:', e); }
         }
 
-        // ===== OVERVIEW TAB =====
+        // ===== OVERVIEW TAB (unified exec brief) =====
         function renderOverviewTab(rc) {
             const brief = rc.executive_brief || {};
             const has = (arr) => Array.isArray(arr) && arr.length > 0;
 
-            // Summary (render as markdown for bold/italic support)
-            const summaryEl = document.getElementById('sp-summary-text');
+            // This week meetings bar
+            const weekMeetings = rc.meetings_this_week || [];
+            if (weekMeetings.length > 0) {
+                document.getElementById('sp-week-bar').style.display = '';
+                document.getElementById('sp-week-label').textContent = rc.week ? `This Week (${rc.week})` : 'This Week';
+                document.getElementById('sp-week-list').innerHTML = weekMeetings.slice(0, 5).map(m =>
+                    `<span class="sp-week-pill"><span class="sp-week-pill-date">${formatMeetingDate(m.date)}</span> ${escapeHtml(m.title)}</span>`
+                ).join('');
+            }
+
+            // Summary
+            const summaryEl = document.getElementById('eb-summary');
             if (brief.executive_summary) {
                 summaryEl.innerHTML = marked.parse(brief.executive_summary);
             } else {
-                summaryEl.textContent = 'No executive summary available yet.';
-                summaryEl.classList.add('sp-text-muted');
+                summaryEl.innerHTML = '<span class="sp-text-muted">No executive summary available yet.</span>';
             }
 
             // Sources
             if (has(brief.sources)) {
-                document.getElementById('sp-sources').innerHTML = brief.sources.map(s =>
-                    `<span class="sp-source-chip">${escapeHtml(s)}</span>`
+                document.getElementById('eb-sources').innerHTML = brief.sources.map(s =>
+                    `<span class="eb-source-chip">${escapeHtml(s)}</span>`
                 ).join('');
-            }
-
-            // Health dot + reason
-            const hColors = { green: '#22c55e', yellow: '#eab308', red: '#ef4444' };
-            const hLabels = { green: 'On Track', yellow: 'Attention', red: 'Critical' };
-            const hc = hColors[rc.health] || hColors.green;
-            document.getElementById('sp-health-dot').innerHTML =
-                `<span class="sp-dot" style="background:${hc};box-shadow:0 0 8px ${hc}60;"></span> ${hLabels[rc.health] || 'Unknown'}`;
-            document.getElementById('sp-health-reason').textContent = rc.health_reason || '';
-
-            // Confluence chips
-            const conf = rc.confluence || {};
-            const confChips = [];
-            if (conf.current_sprint) confChips.push(`<span class="sp-chip">${escapeHtml(conf.current_sprint)}</span>`);
-            if (conf.epics_open) confChips.push(`<span class="sp-chip">${conf.epics_open} epics open</span>`);
-            if (conf.epics_closed) confChips.push(`<span class="sp-chip sp-chip--green">${conf.epics_closed} closed</span>`);
-            if (conf.risks) confChips.push(`<span class="sp-chip sp-chip--red">${conf.risks} risk${conf.risks>1?'s':''}</span>`);
-            if (conf.bugs) confChips.push(`<span class="sp-chip sp-chip--red">${conf.bugs} bug${conf.bugs>1?'s':''}</span>`);
-            document.getElementById('sp-confluence-chips').innerHTML = confChips.join('');
-
-            // This week meetings in health panel
-            const weekMeetings = rc.meetings_this_week || [];
-            if (weekMeetings.length > 0) {
-                document.getElementById('sp-week-label').textContent = rc.week ? `Week of ${rc.week}` : 'This Week';
-                document.getElementById('sp-week-list').innerHTML = weekMeetings.slice(0, 5).map(m =>
-                    `<div class="sp-week-item">
-                        <span class="sp-week-date">${formatMeetingDate(m.date)}</span>
-                        <span class="sp-week-title">${escapeHtml(m.title)}</span>
-                    </div>`
-                ).join('');
-            } else {
-                document.getElementById('sp-week-label').textContent = '';
-                document.getElementById('sp-week-list').innerHTML = '<span class="sp-text-muted">No meetings this week</span>';
             }
 
             // KPIs
             if (has(brief.kpis)) {
-                document.getElementById('sp-kpi-strip').style.display = '';
-                document.getElementById('sp-kpi-scroll').innerHTML = brief.kpis.slice(0, 8).map(k => {
+                const kpiEl = document.getElementById('eb-kpis');
+                kpiEl.style.display = '';
+                kpiEl.innerHTML = brief.kpis.slice(0, 8).map(k => {
                     const st = (k.status || '').toLowerCase();
-                    const cls = st.includes('critical') || st.includes('red') || st.includes('atrasad') ? 'sp-kpi--red'
-                              : st.includes('ok') || st.includes('green') || st.includes('conclu') ? 'sp-kpi--green' : '';
-                    return `<div class="sp-kpi ${cls}">
-                        <div class="sp-kpi-label">${escapeHtml(k.metric)}</div>
-                        <div class="sp-kpi-value">${escapeHtml(k.current || '-')}</div>
-                        ${k.target ? `<div class="sp-kpi-target">${escapeHtml(k.target)}</div>` : ''}
+                    const cls = st.includes('critical') || st.includes('red') || st.includes('atrasad') ? 'eb-kpi--red'
+                              : st.includes('ok') || st.includes('green') || st.includes('conclu') ? 'eb-kpi--green' : '';
+                    return `<div class="eb-kpi ${cls}">
+                        <div class="eb-kpi-label">${escapeHtml(k.metric)}</div>
+                        <div class="eb-kpi-value">${escapeHtml(k.current || '-')}</div>
+                        ${k.target ? `<div class="eb-kpi-target">${escapeHtml(k.target)}</div>` : ''}
                     </div>`;
                 }).join('');
             }
 
-            // Risks & Blockers
-            if (has(brief.risks_blockers)) {
-                document.getElementById('sp-row-attention').style.display = '';
-                document.getElementById('sp-risks-card').style.display = '';
-                document.getElementById('sp-risks-count').textContent = brief.risks_blockers.length;
-                document.getElementById('sp-risks-list').innerHTML = brief.risks_blockers.slice(0, 6).map(r =>
-                    `<li class="sp-list-item">${escapeHtml(r)}</li>`
-                ).join('');
-            }
-
-            // Action Items
-            if (has(brief.action_items)) {
-                document.getElementById('sp-row-attention').style.display = '';
-                document.getElementById('sp-actions-card').style.display = '';
-                document.getElementById('sp-actions-count').textContent = brief.action_items.length;
-                document.getElementById('sp-actions-list').innerHTML = brief.action_items.slice(0, 8).map(a =>
-                    `<li class="sp-list-item">${escapeHtml(a)}</li>`
-                ).join('');
+            // Risks & Actions columns
+            const hasRisks = has(brief.risks_blockers);
+            const hasActions = has(brief.action_items);
+            if (hasRisks || hasActions) {
+                document.getElementById('eb-columns').style.display = '';
+                if (hasRisks) {
+                    document.getElementById('eb-risks-col').style.display = '';
+                    document.getElementById('eb-risks-count').textContent = brief.risks_blockers.length;
+                    document.getElementById('eb-risks-list').innerHTML = brief.risks_blockers.slice(0, 6).map(r =>
+                        `<li class="eb-list-item eb-list-item--red">${escapeHtml(r)}</li>`
+                    ).join('');
+                }
+                if (hasActions) {
+                    document.getElementById('eb-actions-col').style.display = '';
+                    document.getElementById('eb-actions-count').textContent = brief.action_items.length;
+                    document.getElementById('eb-actions-list').innerHTML = brief.action_items.slice(0, 8).map(a =>
+                        `<li class="eb-list-item eb-list-item--indigo">${escapeHtml(a)}</li>`
+                    ).join('');
+                }
             }
 
             // Key People
             if (has(brief.key_people)) {
-                document.getElementById('sp-row-team').style.display = '';
-                document.getElementById('sp-team-card').style.display = '';
-                document.getElementById('sp-people-list').innerHTML = brief.key_people.map(p => {
+                document.getElementById('eb-people-section').style.display = '';
+                document.getElementById('eb-people-list').innerHTML = brief.key_people.map(p => {
                     const initials = p.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-                    return `<div class="sp-person">
-                        <div class="sp-person-avatar">${initials}</div>
-                        <div class="sp-person-name">${escapeHtml(p.name)}</div>
-                        ${p.role ? `<div class="sp-person-role">${escapeHtml(p.role)}</div>` : ''}
-                    </div>`;
+                    return `<span class="eb-person"><span class="eb-person-avatar">${initials}</span>${escapeHtml(p.name)}${p.role ? `<span class="eb-person-role">${escapeHtml(p.role)}</span>` : ''}</span>`;
                 }).join('');
             }
 
             // Next Challenges
             if (has(brief.next_challenges)) {
-                document.getElementById('sp-row-team').style.display = '';
-                document.getElementById('sp-horizon-card').style.display = '';
-                document.getElementById('sp-challenges-list').innerHTML = brief.next_challenges.slice(0, 6).map(c =>
-                    `<li class="sp-list-item">${escapeHtml(c)}</li>`
+                document.getElementById('eb-challenges-section').style.display = '';
+                document.getElementById('eb-challenges-list').innerHTML = brief.next_challenges.slice(0, 6).map(c =>
+                    `<li class="eb-list-item eb-list-item--amber">${escapeHtml(c)}</li>`
                 ).join('');
             }
-
-            // If only one card visible in a row, make it span full width
-            ['sp-row-attention', 'sp-row-team'].forEach(rowId => {
-                const row = document.getElementById(rowId);
-                if (!row || row.style.display === 'none') return;
-                const visibleCards = [...row.querySelectorAll('.sp-card')].filter(c => c.style.display !== 'none');
-                if (visibleCards.length === 1) visibleCards[0].classList.add('sp-card--full');
-            });
         }
 
         // ===== MEETINGS TAB =====
@@ -773,19 +758,24 @@
                 if (stText) { document.getElementById('sp-id-status').style.display = ''; document.getElementById('sp-id-st-text').textContent = stText; }
             }
 
-            // Documentation grid
+            // Documentation list
             const sections = data.sections || [];
-            const docsCount = document.getElementById('sp-docs-count');
-            const docsGrid = document.getElementById('sp-docs-grid');
+            const docsCount = document.getElementById('dl-docs-count');
+            const docsList = document.getElementById('dl-docs-list');
+            const icons = { context:'🎯', definition:'📋', history:'📜', architecture:'🏗️', people:'👥', timeline:'📅', status:'📍', roadmap:'🗺️', readme:'📖' };
             if (sections.length === 0) {
-                docsGrid.innerHTML = '<div class="sp-empty-state"><div class="sp-empty-icon">📄</div>No documentation sections</div>';
+                docsList.innerHTML = '<div class="sp-empty-state">No documentation sections</div>';
                 docsCount.textContent = '';
             } else {
                 docsCount.textContent = sections.length;
-                docsGrid.innerHTML = sections.map(s => `
-                    <div class="sp-doc-tile" onclick="openWorkFile('${s.file}')">
-                        <div class="sp-doc-name">${escapeHtml(s.name)}</div>
-                        <div class="sp-doc-summary">${escapeHtml(s.summary || 'Click to view')}</div>
+                docsList.innerHTML = sections.map(s => `
+                    <div class="dl-item" onclick="openWorkFile('${s.file}')">
+                        <span class="dl-icon">${icons[s.key] || '📄'}</span>
+                        <div class="dl-item-body">
+                            <div class="dl-item-name">${escapeHtml(s.name)}</div>
+                            ${s.summary ? `<div class="dl-item-summary">${escapeHtml(s.summary)}</div>` : ''}
+                        </div>
+                        <span class="dl-arrow">›</span>
                     </div>
                 `).join('');
             }
@@ -793,11 +783,15 @@
             // Cases
             const cases = data.cases || [];
             if (cases.length > 0) {
-                document.getElementById('sp-cases-section').style.display = '';
-                document.getElementById('sp-cases-grid').innerHTML = cases.map(c => `
-                    <div class="sp-doc-tile" onclick="openWorkFile('${c.file}')">
-                        <div class="sp-doc-name">${escapeHtml(c.title)}</div>
-                        <div class="sp-doc-summary">${escapeHtml(c.summary || '')}</div>
+                document.getElementById('dl-cases-section').style.display = '';
+                document.getElementById('dl-cases-list').innerHTML = cases.map(c => `
+                    <div class="dl-item" onclick="openWorkFile('${c.file}')">
+                        <span class="dl-icon">📋</span>
+                        <div class="dl-item-body">
+                            <div class="dl-item-name">${escapeHtml(c.title)}</div>
+                            ${c.summary ? `<div class="dl-item-summary">${escapeHtml(c.summary)}</div>` : ''}
+                        </div>
+                        <span class="dl-arrow">›</span>
                     </div>
                 `).join('');
             }

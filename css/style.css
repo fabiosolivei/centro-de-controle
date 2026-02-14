@@ -4496,84 +4496,158 @@ table {
 }
 
 /* ============================================
-   PROJECT PAGE — HERO CARD
+   PROJECT PAGE — HERO CARD (v2)
    ============================================ */
 
 .proj-hero {
     background: var(--bg-glass);
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: var(--radius-lg);
-    padding: var(--spacing-lg);
+    padding: var(--spacing-md) var(--spacing-lg);
     margin-bottom: var(--spacing-lg);
     position: relative;
 }
 
-.proj-hero-back {
-    display: inline-block;
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    text-decoration: none;
-    margin-bottom: var(--spacing-md);
-    transition: color var(--transition-fast);
-}
-
-.proj-hero-back:hover {
-    color: var(--text-primary);
-}
-
-.proj-hero-top {
+.ph-top-row {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.ph-back {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+.ph-back:hover { color: var(--text-primary); }
+
+.ph-health { flex-shrink: 0; }
+
+.ph-health-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.ph-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+}
+
+.ph-main-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: var(--spacing-md);
 }
 
-.proj-hero-info {
-    flex: 1;
-    min-width: 0;
-}
-
-.proj-hero-title {
-    font-size: 1.6rem;
+.ph-title {
+    font-size: 1.5rem;
     font-weight: 700;
-    margin: 0 0 6px 0;
-    line-height: 1.2;
+    margin: 0;
+    line-height: 1.3;
 }
 
-.proj-hero-meta {
+.ph-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    flex-shrink: 0;
+}
+
+/* Sprint Expandable */
+.ph-sprint-wrap { position: relative; }
+
+.ph-sprint-btn {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: var(--text-secondary);
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-family: inherit;
+}
+.ph-sprint-btn:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+
+.ph-sprint-drawer {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 220px;
+    background: var(--bg-card);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-sm);
+    z-index: 50;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+.ph-sprint-drawer--open { display: block; }
+
+.ph-sd-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 8px;
+    font-size: 0.8rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.ph-sd-row:last-child { border-bottom: none; }
+.ph-sd-label { color: var(--text-muted); }
+.ph-sd-val { color: var(--text-primary); font-weight: 500; }
+.ph-sd-row--red .ph-sd-val { color: #f87171; }
+
+/* Non-work meta (for MBA/regular projects) */
+.ph-meta {
     display: flex;
     gap: var(--spacing-sm);
     color: var(--text-muted);
     font-size: 0.8rem;
     flex-wrap: wrap;
-    margin-bottom: 8px;
+    margin-top: 6px;
     align-items: center;
 }
+.ph-meta .badge { padding: 2px 10px; border-radius: var(--radius-full); font-size: 0.7rem; font-weight: 600; }
+.ph-desc { color: var(--text-secondary); font-size: 0.85rem; margin: 4px 0 0; }
 
-.proj-hero-meta .badge {
-    padding: 2px 10px;
+/* Project Switcher */
+.ph-switcher {
+    display: flex;
+    gap: 6px;
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.ph-switch-pill {
+    font-size: 0.72rem;
+    padding: 3px 12px;
     border-radius: var(--radius-full);
-    font-size: 0.7rem;
-    font-weight: 600;
+    background: rgba(255,255,255,0.04);
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+    border: 1px solid rgba(255,255,255,0.06);
 }
+.ph-switch-pill:hover { background: rgba(99,102,241,0.15); color: var(--accent-primary); border-color: rgba(99,102,241,0.3); }
 
-.proj-hero-desc {
-    color: var(--text-secondary);
-    font-size: 0.875rem;
-    margin: 0;
-    line-height: 1.5;
-}
-
-.proj-hero-health {
-    flex-shrink: 0;
-}
-
+/* Hero chips (kept for non-work) */
 .proj-hero-chips {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: var(--spacing-md);
-    padding-top: var(--spacing-md);
+    margin-top: var(--spacing-sm);
+    padding-top: var(--spacing-sm);
     border-top: 1px solid rgba(255,255,255,0.06);
 }
 
@@ -4997,7 +5071,7 @@ table {
 .case-item:hover { background: var(--bg-card-hover); }
 
 /* ============================================
-   SPATIAL STATUS PAGE — TAB BAR
+   TAB BAR
    ============================================ */
 
 .sp-tabs {
@@ -5026,11 +5100,7 @@ table {
 
 .sp-tab:hover { color: var(--text-secondary); }
 .sp-tab:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: -2px; border-radius: 4px; }
-
-.sp-tab--active {
-    color: var(--accent-primary);
-    border-bottom-color: var(--accent-primary);
-}
+.sp-tab--active { color: var(--accent-primary); border-bottom-color: var(--accent-primary); }
 
 .sp-tab-badge {
     font-size: 0.7rem;
@@ -5041,105 +5111,99 @@ table {
     margin-left: 4px;
     vertical-align: middle;
 }
-
-.sp-tab--active .sp-tab-badge {
-    background: rgba(99,102,241,0.2);
-    color: var(--accent-primary);
-}
+.sp-tab--active .sp-tab-badge { background: rgba(99,102,241,0.2); color: var(--accent-primary); }
 
 /* ============================================
-   SPATIAL STATUS PAGE — PANELS
+   PANELS
    ============================================ */
 
-.sp-panel {
-    animation: sp-fadeIn 0.2s ease;
-}
+.sp-panel { animation: sp-fadeIn 0.2s ease; }
+.sp-panel--hidden { display: none !important; }
+@keyframes sp-fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-.sp-panel--hidden {
-    display: none !important;
-}
-
-@keyframes sp-fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+.sp-text-muted { color: var(--text-muted); font-style: italic; font-size: 0.85rem; }
+.sp-empty-state { text-align: center; padding: var(--spacing-xl) var(--spacing-lg); color: var(--text-muted); font-size: 0.9rem; }
 
 /* ============================================
-   SPATIAL STATUS PAGE — GRID
+   THIS-WEEK MEETINGS BAR (above exec brief)
    ============================================ */
 
-.sp-grid-2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-md);
+.sp-week-bar {
+    background: var(--bg-card);
+    border-radius: var(--radius-md);
+    padding: 10px var(--spacing-md);
     margin-bottom: var(--spacing-md);
+    border: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    overflow-x: auto;
 }
 
-/* When a card should span full width (set via JS) */
-.sp-card--full { grid-column: 1 / -1; }
+.sp-week-bar-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.sp-week-bar-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+}
+
+.sp-week-pill {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    padding: 4px 12px;
+    border-radius: var(--radius-full);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.sp-week-pill-date {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    margin-right: 4px;
+}
 
 /* ============================================
-   SPATIAL STATUS PAGE — CARDS
+   EXECUTIVE BRIEF (unified card)
    ============================================ */
 
-.sp-card {
+.eb-card {
     background: var(--bg-card);
     border-radius: var(--radius-lg);
     padding: var(--spacing-lg);
     border: 1px solid rgba(255,255,255,0.06);
-    border-left: 3px solid rgba(255,255,255,0.1);
-    transition: border-color var(--transition-fast);
+    border-left: 3px solid #6366f1;
 }
 
-.sp-card--indigo { border-left-color: #6366f1; }
-.sp-card--health { border-left-color: #22c55e; }
-.sp-card--red { border-left-color: #ef4444; }
-.sp-card--action { border-left-color: #818cf8; }
-.sp-card--cyan { border-left-color: #06b6d4; }
-.sp-card--amber { border-left-color: #f59e0b; }
-
-.sp-card-header {
+.eb-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: var(--spacing-md);
 }
 
-.sp-card-title {
+.eb-title {
     font-size: 0.8rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--text-muted);
+    margin: 0;
 }
 
-/* ============================================
-   SPATIAL STATUS PAGE — SUMMARY
-   ============================================ */
-
-.sp-summary-text {
-    font-size: 0.95rem;
-    line-height: 1.7;
-    color: var(--text-secondary);
-}
-
-.sp-summary-text p { margin: 0 0 8px 0; }
-.sp-summary-text p:last-child { margin-bottom: 0; }
-.sp-summary-text strong { color: var(--text-primary); font-weight: 600; }
-
-.sp-text-muted {
-    color: var(--text-muted);
-    font-style: italic;
-    font-size: 0.85rem;
-}
-
-.sp-sources {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-}
-
-.sp-source-chip {
+.eb-sources { display: flex; gap: 4px; flex-wrap: wrap; }
+.eb-source-chip {
     font-size: 0.65rem;
     background: rgba(99,102,241,0.15);
     color: #a5b4fc;
@@ -5147,236 +5211,181 @@ table {
     border-radius: var(--radius-full);
 }
 
-/* ============================================
-   SPATIAL STATUS PAGE — HEALTH
-   ============================================ */
-
-.sp-health-dot {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.sp-dot {
-    display: inline-block;
-    width: 10px;
-    height: 10px;
-    border-radius: 50%;
-}
-
-.sp-health-reason {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-    margin-bottom: var(--spacing-sm);
-}
-
-.sp-confluence-chips {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-bottom: var(--spacing-md);
-}
-
-.sp-chip {
-    font-size: 0.72rem;
-    background: rgba(255,255,255,0.06);
+/* Summary */
+.eb-summary {
+    font-size: 0.92rem;
+    line-height: 1.7;
     color: var(--text-secondary);
-    padding: 3px 10px;
-    border-radius: var(--radius-full);
-    border: 1px solid rgba(255,255,255,0.08);
-}
-
-.sp-chip--green { background: rgba(34,197,94,0.12); color: #4ade80; border-color: rgba(34,197,94,0.2); }
-.sp-chip--red { background: rgba(239,68,68,0.12); color: #f87171; border-color: rgba(239,68,68,0.2); }
-
-.sp-week-meetings {
-    border-top: 1px solid rgba(255,255,255,0.06);
-    padding-top: var(--spacing-sm);
-}
-
-.sp-week-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-muted);
-    margin-bottom: 6px;
-}
-
-.sp-week-item {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    padding: 4px 0;
-    font-size: 0.82rem;
-}
-
-.sp-week-date {
-    color: var(--text-muted);
-    font-size: 0.72rem;
-    flex-shrink: 0;
-    width: 42px;
-}
-
-.sp-week-title {
-    color: var(--text-secondary);
-}
-
-/* ============================================
-   SPATIAL STATUS PAGE — KPIs
-   ============================================ */
-
-.sp-kpi-strip {
     margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
 }
+.eb-summary p { margin: 0 0 8px 0; }
+.eb-summary p:last-child { margin-bottom: 0; }
+.eb-summary strong { color: var(--text-primary); font-weight: 600; }
+.eb-summary ul, .eb-summary ol { margin: 4px 0 8px 0; padding-left: 20px; }
+.eb-summary li { margin-bottom: 4px; }
 
-.sp-kpi-scroll {
+/* KPIs (inline row inside brief) */
+.eb-kpis {
     display: flex;
     gap: var(--spacing-sm);
     overflow-x: auto;
-    padding-bottom: 4px;
+    padding-bottom: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
     -webkit-overflow-scrolling: touch;
 }
 
-.sp-kpi {
+.eb-kpi {
     flex: 1 1 0;
-    min-width: 120px;
-    background: var(--bg-card);
+    min-width: 110px;
+    background: rgba(255,255,255,0.03);
     border-radius: var(--radius-md);
-    padding: var(--spacing-md);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-top: 3px solid rgba(255,255,255,0.1);
+    padding: 10px var(--spacing-md);
+    border-top: 3px solid rgba(255,255,255,0.08);
     text-align: center;
 }
+.eb-kpi--green { border-top-color: #22c55e; }
+.eb-kpi--red { border-top-color: #ef4444; }
 
-.sp-kpi--green { border-top-color: #22c55e; }
-.sp-kpi--red { border-top-color: #ef4444; }
-
-.sp-kpi-label {
-    font-size: 0.68rem;
+.eb-kpi-label {
+    font-size: 0.66rem;
     font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     color: var(--text-muted);
-    margin-bottom: 4px;
+    margin-bottom: 2px;
 }
-
-.sp-kpi-value {
-    font-size: 1.3rem;
+.eb-kpi-value {
+    font-size: 1.15rem;
     font-weight: 700;
     font-family: 'JetBrains Mono', monospace;
     color: var(--text-primary);
 }
+.eb-kpi-target { font-size: 0.65rem; color: var(--text-muted); margin-top: 1px; }
 
-.sp-kpi-target {
-    font-size: 0.68rem;
-    color: var(--text-muted);
-    margin-top: 2px;
+/* Two-column: Risks | Actions */
+.eb-columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-lg);
+    margin-bottom: var(--spacing-md);
+    padding-bottom: var(--spacing-md);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
-/* ============================================
-   SPATIAL STATUS PAGE — LISTS
-   ============================================ */
-
-.sp-count-badge {
-    font-size: 0.72rem;
+.eb-col-title {
+    font-size: 0.75rem;
     font-weight: 600;
-    padding: 2px 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin: 0 0 var(--spacing-sm) 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.eb-col-title--red { color: #f87171; }
+.eb-col-title--indigo { color: #a5b4fc; }
+
+.eb-col-count {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 1px 7px;
     border-radius: var(--radius-full);
+    background: rgba(255,255,255,0.08);
+    color: var(--text-muted);
 }
 
-.sp-count-badge--red { background: rgba(239,68,68,0.15); color: #f87171; }
-.sp-count-badge--indigo { background: rgba(99,102,241,0.15); color: #a5b4fc; }
-
-.sp-list {
+.eb-list {
     list-style: none;
     padding: 0;
     margin: 0;
 }
 
-.sp-list-item {
-    padding: 8px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.04);
-    font-size: 0.85rem;
+.eb-list-item {
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    font-size: 0.84rem;
     color: var(--text-secondary);
     line-height: 1.5;
     position: relative;
-    padding-left: 16px;
+    padding-left: 14px;
 }
+.eb-list-item:last-child { border-bottom: none; }
 
-.sp-list-item::before {
+.eb-list-item::before {
     content: '';
     position: absolute;
     left: 0;
-    top: 14px;
-    width: 6px;
-    height: 6px;
+    top: 13px;
+    width: 5px;
+    height: 5px;
     border-radius: 50%;
     background: rgba(255,255,255,0.15);
 }
+.eb-list-item--red::before { background: #f87171; }
+.eb-list-item--indigo::before { background: #818cf8; }
+.eb-list-item--amber::before { background: #fbbf24; }
 
-.sp-list--red .sp-list-item::before { background: #f87171; }
-.sp-list--indigo .sp-list-item::before { background: #818cf8; }
-.sp-list--amber .sp-list-item::before { background: #fbbf24; }
+/* People (inline) */
+.eb-section { margin-bottom: var(--spacing-md); }
+.eb-section:last-child { margin-bottom: 0; }
 
-.sp-list-item:last-child { border-bottom: none; }
+.eb-section-title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin: 0 0 var(--spacing-sm) 0;
+}
 
-/* ============================================
-   SPATIAL STATUS PAGE — PEOPLE
-   ============================================ */
-
-.sp-people-grid {
+.eb-people {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--spacing-md);
+    gap: 8px;
 }
 
-.sp-person {
-    display: flex;
+.eb-person {
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
-    min-width: 140px;
+    gap: 6px;
+    background: rgba(255,255,255,0.04);
+    padding: 4px 12px 4px 4px;
+    border-radius: var(--radius-full);
+    font-size: 0.82rem;
+    color: var(--text-primary);
+    border: 1px solid rgba(255,255,255,0.06);
 }
 
-.sp-person-avatar {
-    width: 36px;
-    height: 36px;
+.eb-person-avatar {
+    width: 26px;
+    height: 26px;
     border-radius: 50%;
     background: linear-gradient(135deg, #06b6d4, #818cf8);
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.72rem;
+    font-size: 0.6rem;
     font-weight: 700;
     color: white;
-    flex-shrink: 0;
 }
 
-.sp-person-name {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--text-primary);
-}
-
-.sp-person-role {
-    font-size: 0.72rem;
+.eb-person-role {
+    font-size: 0.7rem;
     color: var(--text-muted);
+    margin-left: 2px;
 }
 
 /* ============================================
-   SPATIAL STATUS PAGE — TIMELINE (Meetings)
+   TIMELINE (Meetings Tab)
    ============================================ */
 
-.sp-timeline {
-    position: relative;
-}
+.sp-timeline { position: relative; }
 
-.sp-week-group {
-    margin-bottom: var(--spacing-xl);
-}
+.sp-week-group { margin-bottom: var(--spacing-xl); }
 
 .sp-week-header {
     font-size: 0.72rem;
@@ -5398,7 +5407,6 @@ table {
     margin-left: 5px;
     padding-left: var(--spacing-lg);
 }
-
 .sp-timeline-item--clickable { cursor: pointer; }
 .sp-timeline-item--clickable:hover .sp-timeline-title { color: var(--accent-primary); }
 
@@ -5413,36 +5421,82 @@ table {
     border: 2px solid var(--bg-primary);
 }
 
-.sp-timeline-content {
-    flex: 1;
-    min-width: 0;
+.sp-timeline-content { flex: 1; min-width: 0; }
+.sp-timeline-date { font-size: 0.72rem; color: var(--text-muted); font-weight: 500; margin-bottom: 2px; }
+.sp-timeline-title { font-size: 0.9rem; font-weight: 500; color: var(--text-primary); transition: color var(--transition-fast); }
+.sp-timeline-insight { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; line-height: 1.5; }
+
+/* ============================================
+   DOCS LIST (replaces tile grid)
+   ============================================ */
+
+.dl-section { margin-bottom: var(--spacing-xl); }
+
+.dl-heading {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--spacing-md) 0;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
 }
 
-.sp-timeline-date {
-    font-size: 0.72rem;
+.dl-count {
+    font-size: 0.68rem;
+    background: rgba(255,255,255,0.08);
     color: var(--text-muted);
+    padding: 1px 7px;
+    border-radius: var(--radius-full);
+}
+
+.dl-list { display: flex; flex-direction: column; gap: 2px; }
+
+.dl-item {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: 12px var(--spacing-md);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border-left: 3px solid transparent;
+}
+.dl-item:hover {
+    background: rgba(255,255,255,0.03);
+    border-left-color: var(--accent-primary);
+}
+
+.dl-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+.dl-item-body { flex: 1; min-width: 0; }
+
+.dl-item-name {
+    font-size: 0.88rem;
     font-weight: 500;
+    color: var(--text-primary);
     margin-bottom: 2px;
 }
 
-.sp-timeline-title {
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: var(--text-primary);
-    transition: color var(--transition-fast);
-}
-
-.sp-timeline-insight {
-    font-size: 0.8rem;
+.dl-item-summary {
+    font-size: 0.78rem;
     color: var(--text-muted);
-    margin-top: 4px;
-    line-height: 1.5;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* ============================================
-   SPATIAL STATUS PAGE — DOCS & KNOWLEDGE
-   ============================================ */
+.dl-arrow {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+}
+.dl-item:hover .dl-arrow { opacity: 1; }
 
+/* Project Identity (kept for Docs tab) */
 .sp-identity {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -5472,102 +5526,29 @@ table {
     line-height: 1.6;
 }
 
-.sp-section-header {
-    display: flex;
-    align-items: center;
-    gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-md);
-}
-
-.sp-section-header h3 {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.sp-docs-section {
-    margin-bottom: var(--spacing-xl);
-}
-
-.sp-docs-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: var(--spacing-sm);
-}
-
-.sp-doc-tile {
-    background: var(--bg-card);
-    border-radius: var(--radius-md);
-    padding: var(--spacing-md);
-    border: 1px solid rgba(255,255,255,0.06);
-    cursor: pointer;
-    transition: all var(--transition-fast);
-}
-
-.sp-doc-tile:hover {
-    background: var(--bg-card-hover);
-    border-color: rgba(99,102,241,0.3);
-}
-
-.sp-doc-name {
-    font-size: 0.85rem;
-    font-weight: 500;
-    color: var(--text-primary);
-    margin-bottom: 4px;
-}
-
-.sp-doc-summary {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    line-height: 1.4;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
 /* ============================================
-   SPATIAL STATUS PAGE — EMPTY STATES
-   ============================================ */
-
-.sp-empty-state {
-    text-align: center;
-    padding: var(--spacing-xl) var(--spacing-lg);
-    color: var(--text-muted);
-    font-size: 0.9rem;
-}
-
-.sp-empty-icon {
-    font-size: 2rem;
-    margin-bottom: var(--spacing-sm);
-    opacity: 0.5;
-}
-
-/* ============================================
-   SPATIAL STATUS PAGE — RESPONSIVE
+   WORK PROJECT PAGE — RESPONSIVE
    ============================================ */
 
 @media (max-width: 767px) {
-    .sp-grid-2 { grid-template-columns: 1fr; }
-    .sp-kpi-scroll { flex-wrap: nowrap; }
-    .sp-kpi { min-width: 100px; }
     .sp-tabs { gap: 0; }
     .sp-tab { padding: 10px 14px; font-size: 0.82rem; }
-    .sp-card { padding: var(--spacing-md); }
     .sp-identity { grid-template-columns: 1fr; }
-    .sp-docs-grid { grid-template-columns: 1fr; }
-    .sp-people-grid { gap: var(--spacing-sm); }
-    .sp-person { min-width: 120px; }
+    .eb-columns { grid-template-columns: 1fr; gap: var(--spacing-md); }
+    .eb-kpis { flex-wrap: nowrap; }
+    .eb-kpi { min-width: 100px; }
+    .ph-main-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .ph-title { font-size: 1.25rem; }
+    .ph-sprint-drawer { right: auto; left: 0; }
+    .sp-week-bar { flex-direction: column; align-items: flex-start; }
 }
 
 @media (min-width: 768px) and (max-width: 1199px) {
-    .sp-grid-2 { grid-template-columns: 1fr; }
-    .sp-docs-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+    .eb-columns { grid-template-columns: 1fr 1fr; }
 }
 
 @media (min-width: 1200px) {
-    .sp-grid-2 { grid-template-columns: 1fr 1fr; }
-    .sp-docs-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+    .eb-columns { grid-template-columns: 1fr 1fr; }
 }
 
 /* ============================================
@@ -5575,9 +5556,7 @@ table {
    ============================================ */
 
 @media (max-width: 767px) {
-    .proj-hero { padding: var(--spacing-md); }
-    .proj-hero-title { font-size: 1.25rem; }
-    .proj-hero-top { flex-direction: column; }
+    .proj-hero { padding: var(--spacing-sm) var(--spacing-md); }
     .project-stats { grid-template-columns: repeat(2, 1fr); }
     .project-sections { gap: var(--spacing-md); }
     .task-item-project { flex-wrap: wrap; gap: var(--spacing-sm); }
