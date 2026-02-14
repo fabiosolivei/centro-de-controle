@@ -5544,6 +5544,11 @@ table {
     .ph-title { font-size: 1.25rem; }
     .ph-sprint-drawer { right: auto; left: 0; }
     .sp-week-bar { flex-direction: column; align-items: flex-start; }
+    .eb-header { flex-direction: column; align-items: flex-start; gap: 6px; }
+    .eb-kpis { flex-wrap: nowrap; }
+    .eb-kpi { min-width: 100px; }
+    .eb-people { gap: 6px; }
+    .eb-person { font-size: 0.78rem; }
 }
 
 @media (min-width: 768px) and (max-width: 1199px) {
