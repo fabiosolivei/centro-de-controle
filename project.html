@@ -554,22 +554,7 @@
             document.getElementById('mba-project-view').style.display = 'none';
             _workData = data;
 
-            // Hero chips
-            const chips = [];
-            const sCount = data.sections ? data.sections.length : 0;
-            const mCount = data.meeting_notes ? data.meeting_notes.length : 0;
-            const cCount = data.cases ? data.cases.length : 0;
-            if (sCount > 0) chips.push({ text: `${sCount} docs` });
-            if (mCount > 0) chips.push({ text: `${mCount} meetings` });
-            if (cCount > 0) chips.push({ text: `${cCount} cases` });
-            if (data.meeting_notes && data.meeting_notes.length > 0) {
-                const last = data.meeting_notes[0];
-                const d = last.date || extractDateFromFilename(last.file);
-                if (d) chips.push({ text: `Last: ${formatMeetingDate(d)}`, muted: true });
-            }
-            setHeroChips(chips);
-
-            // Tab badges
+            // Tab badges (hero chips removed -- tab badges already show counts)
             const mBadge = document.getElementById('tab-meetings-badge');
             const dBadge = document.getElementById('tab-docs-badge');
             if (mCount > 0) mBadge.textContent = mCount;
