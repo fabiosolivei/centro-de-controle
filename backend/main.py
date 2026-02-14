@@ -72,12 +72,13 @@ logger = logging.getLogger("centro-de-controle")
 # Quiet down noisy uvicorn access logs (we log requests ourselves)
 logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
-# Calendar integration
+# Calendar integration (with server-side day cache)
 from calendar_integration import (
     get_today_events as cal_get_today_events,
     get_week_events as cal_get_week_events,
     get_events_for_date as cal_get_events_for_date,
-    fetch_calendar_events
+    fetch_calendar_events,
+    invalidate_calendar_cache,
 )
 
 # ============================================
@@ -2083,6 +2084,173 @@ async def update_mba_data(data: dict):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao salvar dados: {str(e)}")
+
+# ============================================
+# AGGREGATED DASHBOARD ENDPOINT (single call)
+# ============================================
+
+@app.get("/api/dashboard")
+async def get_dashboard():
+    """
+    Aggregated dashboard data — single call replaces 6+ parallel frontend calls.
+    All data sources are local (SQLite + filesystem + cached calendar), so this is fast.
+    """
+    result = {}
+
+    # --- Tasks (SQLite — instant) ---
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM tasks ORDER BY priority DESC, created_at DESC")
+        result["tasks"] = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+    except Exception:
+        result["tasks"] = []
+
+    # --- Projects (SQLite — instant) ---
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM projects ORDER BY priority DESC, updated_at DESC")
+        result["projects"] = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+    except Exception:
+        result["projects"] = []
+
+    # --- Calendar today (cached for the day) ---
+    try:
+        result["calendar_today"] = cal_get_today_events()
+    except Exception:
+        result["calendar_today"] = []
+
+    # --- Work projects (filesystem — fast) ---
+    try:
+        projects = []
+        for slug, config in WORK_PROJECTS_MAP.items():
+            if config["type"] == "multi":
+                folder_path = os.path.join(WORK_PROJECTS_PATH, config["folder"])
+                exists = os.path.exists(folder_path)
+                name = config["folder"]
+            else:
+                file_path = os.path.join(WORK_PROJECTS_PATH, config["file"])
+                exists = os.path.exists(file_path)
+                name = config["file"].replace('.md', '')
+            projects.append({"slug": slug, "name": name, "type": config["type"], "exists": exists})
+        result["work_projects"] = {"projects": projects}
+    except Exception:
+        result["work_projects"] = {"projects": []}
+
+    # --- Confluence summary (SQLite — instant) ---
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM confluence_sprints WHERE is_current = 1 LIMIT 1")
+        current_sprint = cursor.fetchone()
+        if not current_sprint:
+            cursor.execute("SELECT * FROM confluence_sprints ORDER BY sprint_number DESC LIMIT 1")
+            current_sprint = cursor.fetchone()
+        cursor.execute("SELECT COUNT(*) as count FROM confluence_initiatives")
+        total_initiatives = cursor.fetchone()['count']
+        cursor.execute("SELECT COUNT(*) as count FROM confluence_epics")
+        total_epics = cursor.fetchone()['count']
+        cursor.execute("SELECT COUNT(*) as count FROM confluence_sprints")
+        total_sprints = cursor.fetchone()['count']
+        cursor.execute("SELECT COUNT(*) as count FROM confluence_risks WHERE status != 'Done'")
+        active_risks = cursor.fetchone()['count']
+        cursor.execute("SELECT COUNT(*) as count FROM confluence_bugs WHERE status NOT IN ('Done', 'Closed')")
+        active_bugs = cursor.fetchone()['count']
+        conn.close()
+        result["confluence_summary"] = {
+            "initiatives": total_initiatives, "epics": total_epics,
+            "sprints": total_sprints, "risks": active_risks, "bugs": active_bugs,
+            "current_sprint": current_sprint['sprint_name'] if current_sprint else None
+        }
+    except Exception:
+        result["confluence_summary"] = {"initiatives": 0, "epics": 0, "sprints": 0, "risks": 0, "bugs": 0, "current_sprint": None}
+
+    # --- MBA data (JSON file — fast) ---
+    try:
+        data_path = get_adalove_data_path()
+        if data_path and os.path.exists(data_path):
+            with open(data_path, 'r', encoding='utf-8') as f:
+                result["mba_data"] = json.load(f)
+        else:
+            result["mba_data"] = None
+    except Exception:
+        result["mba_data"] = None
+
+    # --- Weekly brief (SQLite — instant) ---
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM weekly_briefs ORDER BY week_start DESC LIMIT 1")
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            brief = dict(row)
+            for field in ["action_items_urgent", "action_items_important", "decisions", "energy_check", "reminders"]:
+                if brief.get(field) and isinstance(brief[field], str):
+                    try:
+                        brief[field] = json.loads(brief[field])
+                    except:
+                        pass
+            result["weekly_brief"] = brief
+        else:
+            result["weekly_brief"] = None
+    except Exception:
+        result["weekly_brief"] = None
+
+    # --- Scheduled messages / Life OS (SQLite — instant) ---
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM scheduled_messages WHERE is_active = 1 ORDER BY time ASC")
+        result["scheduled_messages"] = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+    except Exception:
+        result["scheduled_messages"] = []
+
+    # --- Obs summary: tool health + last report (SQLite — instant) ---
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT COUNT(*) as total,
+                   SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as success,
+                   ROUND(100.0 * SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) / MAX(COUNT(*), 1), 1) as success_rate
+            FROM tool_calls WHERE timestamp >= datetime('now', '-1 days')
+        """)
+        tool_row = cursor.fetchone()
+        cursor.execute("SELECT * FROM daily_reports ORDER BY report_date DESC LIMIT 1")
+        report_row = cursor.fetchone()
+        conn.close()
+        result["obs_summary"] = {
+            "tool_health": dict(tool_row) if tool_row else None,
+            "last_report": dict(report_row) if report_row else None,
+        }
+    except Exception:
+        result["obs_summary"] = {"tool_health": None, "last_report": None}
+
+    # --- Work project report cards (cached 30 min on backend) ---
+    try:
+        import time as _t
+        now = _t.time()
+        if _report_cards_cache["data"] and now < _report_cards_cache["expires"]:
+            result["report_cards"] = _report_cards_cache["data"]
+        else:
+            cards = {}
+            for slug in PROJECT_KEYWORDS:
+                try:
+                    cards[slug] = _generate_report_card(slug)
+                except Exception:
+                    cards[slug] = {"error": "failed"}
+            result["report_cards"] = {"cards": cards, "generated_at": datetime.utcnow().isoformat()}
+    except Exception:
+        result["report_cards"] = {"cards": {}}
+
+    result["timestamp"] = datetime.now().isoformat()
+    return result
+
 
 # ============================================
 # HEALTH CHECK

@@ -1,7 +1,7 @@
 /**
  * Centro de Controle - API Client
  * Comunicação com o backend FastAPI
- * Performance optimized with caching and parallel loading
+ * Performance optimized with caching, timeouts, and stale-while-revalidate
  */
 
 // Detectar se está rodando no GitHub Pages ou localmente
@@ -13,8 +13,11 @@ const API_BASE = (isGitHubPages)
     ? 'https://srv1315519.hstgr.cloud/api'  // VPS Backend HTTPS
     : '/api';  // Local ou servido pela própria VPS
 
+// Global request timeout (4 seconds)
+const API_TIMEOUT_MS = 4000;
+
 // ============================================
-// CACHE SYSTEM
+// CACHE SYSTEM (Memory + localStorage SWR)
 // ============================================
 
 const APICache = {
@@ -23,14 +26,18 @@ const APICache = {
         '/today': 60000,           // 1 minuto
         '/tasks': 30000,           // 30 segundos
         '/projects': 60000,        // 1 minuto
+        '/dashboard': 120000,      // 2 minutos
         '/calendar/today': 120000, // 2 minutos
         '/reminders': 30000,       // 30 segundos
         '/notes': 60000,           // 1 minuto
         '/mba/stats': 300000,      // 5 minutos
+        '/mba/data': 300000,       // 5 minutos
         '/confluence/summary': 300000, // 5 minutos
+        '/work-projects': 300000,  // 5 minutos
         '/work-projects/report-cards': 300000, // 5 minutos
     },
     
+    // --- In-memory layer ---
     get(key) {
         const cached = this.data.get(key);
         if (!cached) return null;
@@ -47,6 +54,8 @@ const APICache = {
             value,
             expires: Date.now() + ttl
         });
+        // Persist to localStorage for SWR on next page load
+        this._persistToStorage(key, value);
     },
     
     invalidate(pattern) {
@@ -59,21 +68,57 @@ const APICache = {
     
     clear() {
         this.data.clear();
+    },
+    
+    // --- localStorage persistence layer (Stale-While-Revalidate) ---
+    _storagePrefix: 'cc_cache_',
+    
+    _persistToStorage(key, value) {
+        try {
+            const storageKey = this._storagePrefix + key;
+            localStorage.setItem(storageKey, JSON.stringify({
+                data: value,
+                timestamp: Date.now()
+            }));
+        } catch (e) {
+            // localStorage full or unavailable — ignore
+        }
+    },
+    
+    getStale(key) {
+        try {
+            const storageKey = this._storagePrefix + key;
+            const raw = localStorage.getItem(storageKey);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || !parsed.data) return null;
+            return { data: parsed.data, age: Date.now() - (parsed.timestamp || 0) };
+        } catch (e) {
+            return null;
+        }
+    },
+    
+    clearStorage() {
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && k.startsWith(this._storagePrefix)) keys.push(k);
+        }
+        keys.forEach(k => localStorage.removeItem(k));
     }
 };
 
 /**
- * Helper para fazer requisições à API (com cache)
+ * Helper para fazer requisições à API (com cache, timeout, SWR)
  */
 async function apiRequest(endpoint, options = {}) {
     const url = `${API_BASE}${endpoint}`;
     const isGET = !options.method || options.method === 'GET';
     
-    // Check cache for GET requests
+    // 1. Check in-memory cache for GET requests
     if (isGET) {
         const cached = APICache.get(endpoint);
         if (cached) {
-            console.log(`[Cache HIT] ${endpoint}`);
             return cached;
         }
     }
@@ -84,7 +129,11 @@ async function apiRequest(endpoint, options = {}) {
         },
     };
     
+    // Merge options; add timeout if caller didn't provide a signal
     const config = { ...defaultOptions, ...options };
+    if (!config.signal) {
+        config.signal = AbortSignal.timeout(API_TIMEOUT_MS);
+    }
     
     try {
         const response = await fetch(url, config);
@@ -96,7 +145,7 @@ async function apiRequest(endpoint, options = {}) {
         
         const data = await response.json();
         
-        // Cache GET responses
+        // Cache GET responses (memory + localStorage)
         if (isGET) {
             APICache.set(endpoint, data);
         } else {
@@ -106,10 +155,26 @@ async function apiRequest(endpoint, options = {}) {
             if (endpoint.includes('/reminders')) APICache.invalidate('/reminders');
             if (endpoint.includes('/notes')) APICache.invalidate('/notes');
             APICache.invalidate('/today');
+            APICache.invalidate('/dashboard');
         }
         
         return data;
     } catch (error) {
+        // 2. On network error/timeout: try localStorage stale data (SWR fallback)
+        if (isGET) {
+            const stale = APICache.getStale(endpoint);
+            if (stale) {
+                const ageSec = Math.round(stale.age / 1000);
+                console.warn(`[SWR fallback] ${endpoint} — using stale data (${ageSec}s old)`);
+                // Put stale data back in memory cache with short TTL
+                APICache.data.set(endpoint, {
+                    value: stale.data,
+                    expires: Date.now() + 15000  // 15s grace for stale
+                });
+                return stale.data;
+            }
+        }
+        
         // Suppress expected 404s for endpoints with known fallbacks
         const SILENT_404_ENDPOINTS = ['/mba/data', '/mba/stats', '/work-projects/'];
         const isSilent = SILENT_404_ENDPOINTS.some(e => endpoint.startsWith(e)) 

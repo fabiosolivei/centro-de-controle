@@ -2,9 +2,12 @@
 Calendar integration module - fetch events from multiple sources:
 1. CALENDARIO.md (atualizado pela Nova) - PRINCIPAL
 2. Google Calendar iCal (fallback)
+
+Aggressive caching: fetches external data once, serves from cache all day.
 """
 import os
 import re
+import time
 import requests
 from datetime import datetime, timedelta, date
 from typing import List, Dict, Optional
@@ -16,6 +19,20 @@ try:
 except ImportError:
     ICAL_AVAILABLE = False
     print("⚠️ icalendar not installed. iCal sync disabled.")
+
+# ============================================
+# SERVER-SIDE CALENDAR CACHE
+# Fetch once per day, serve from cache instantly.
+# ============================================
+_calendar_cache = {
+    "today_events": None,
+    "today_date": None,       # Which date was cached
+    "week_events": None,
+    "week_date": None,
+    "all_events": None,       # Raw iCal/calendario events for date lookups
+    "all_date": None,
+    "last_fetch_ts": 0,       # Unix timestamp of last external fetch
+}
 
 # Caminho do arquivo da Nova
 CALENDARIO_MD_PATHS = [
@@ -189,64 +206,89 @@ def fetch_calendar_events(days_ahead: int = 7) -> List[Dict]:
         return []
 
 
+def _fetch_all_events() -> List[Dict]:
+    """
+    Internal: fetch all events from CALENDARIO.md or iCal.
+    Cached for the entire day — only re-fetches if the date changed
+    or if explicitly invalidated.
+    """
+    today_str = datetime.now().date().isoformat()
+    
+    # Return cached if same day and data exists
+    if (_calendar_cache["all_events"] is not None 
+            and _calendar_cache["all_date"] == today_str):
+        return _calendar_cache["all_events"]
+    
+    # 1. Try CALENDARIO.md first (primary source)
+    calendario_events = parse_calendario_md()
+    if calendario_events:
+        _calendar_cache["all_events"] = calendario_events
+        _calendar_cache["all_date"] = today_str
+        _calendar_cache["last_fetch_ts"] = time.time()
+        return calendario_events
+    
+    # 2. Fallback to iCal (this is the slow call — only happens once per day)
+    ical_events = fetch_calendar_events(days_ahead=14)
+    _calendar_cache["all_events"] = ical_events
+    _calendar_cache["all_date"] = today_str
+    _calendar_cache["last_fetch_ts"] = time.time()
+    return ical_events
+
+
+def invalidate_calendar_cache():
+    """Force next call to re-fetch from source."""
+    _calendar_cache["all_events"] = None
+    _calendar_cache["all_date"] = None
+    _calendar_cache["today_events"] = None
+    _calendar_cache["today_date"] = None
+    _calendar_cache["week_events"] = None
+    _calendar_cache["week_date"] = None
+
+
 def get_today_events() -> List[Dict]:
     """
-    Get today's events - prioriza CALENDARIO.md da Nova
+    Get today's events - cached for the day.
     """
-    today = datetime.now().date().isoformat()
+    today_str = datetime.now().date().isoformat()
     
-    # 1. Tentar CALENDARIO.md primeiro (fonte principal)
-    calendario_events = parse_calendario_md()
-    today_events = [e for e in calendario_events if e['date'] == today]
+    if (_calendar_cache["today_events"] is not None
+            and _calendar_cache["today_date"] == today_str):
+        return _calendar_cache["today_events"]
     
-    if today_events:
-        return today_events
+    all_events = _fetch_all_events()
+    today_events = [e for e in all_events if e['date'] == today_str]
     
-    # 2. Fallback para iCal
-    ical_events = fetch_calendar_events(days_ahead=1)
-    return [e for e in ical_events if e['date'] == today]
+    _calendar_cache["today_events"] = today_events
+    _calendar_cache["today_date"] = today_str
+    return today_events
 
 
 def get_week_events() -> Dict[str, List[Dict]]:
     """
-    Get this week's events grouped by day
-    Prioriza CALENDARIO.md da Nova
+    Get this week's events grouped by day - cached for the day.
     """
-    # 1. Tentar CALENDARIO.md primeiro
-    calendario_events = parse_calendario_md()
+    today_str = datetime.now().date().isoformat()
     
-    if calendario_events:
-        grouped = {}
-        for event in calendario_events:
-            event_date = event['date']
-            if event_date not in grouped:
-                grouped[event_date] = []
-            grouped[event_date].append(event)
-        return grouped
+    if (_calendar_cache["week_events"] is not None
+            and _calendar_cache["week_date"] == today_str):
+        return _calendar_cache["week_events"]
     
-    # 2. Fallback para iCal
-    ical_events = fetch_calendar_events(days_ahead=7)
+    all_events = _fetch_all_events()
     grouped = {}
-    for event in ical_events:
+    for event in all_events:
         event_date = event['date']
         if event_date not in grouped:
             grouped[event_date] = []
         grouped[event_date].append(event)
     
+    _calendar_cache["week_events"] = grouped
+    _calendar_cache["week_date"] = today_str
     return grouped
 
 
 def get_events_for_date(target_date: str) -> List[Dict]:
-    """Get events for a specific date (YYYY-MM-DD format)"""
-    # 1. Tentar CALENDARIO.md primeiro
-    calendario_events = parse_calendario_md()
-    date_events = [e for e in calendario_events if e['date'] == target_date]
-    
-    if date_events:
-        return date_events
-    
-    # 2. Fallback para iCal
-    all_events = fetch_calendar_events(days_ahead=14)
+    """Get events for a specific date (YYYY-MM-DD format) - uses daily cache."""
+    all_events = _fetch_all_events()
     return [e for e in all_events if e['date'] == target_date]
 
 
