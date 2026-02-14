@@ -132,7 +132,7 @@
                 </div>
 
                 <!-- Row 3: Attention Required + Action Pipeline -->
-                <div class="sp-grid-2">
+                <div class="sp-grid-2" id="sp-row-attention" style="display:none;">
                     <div class="sp-card sp-card--red" id="sp-risks-card" style="display:none;">
                         <div class="sp-card-header">
                             <h3 class="sp-card-title">Attention Required</h3>
@@ -151,7 +151,7 @@
                 </div>
 
                 <!-- Row 4: Team + Horizon -->
-                <div class="sp-grid-2">
+                <div class="sp-grid-2" id="sp-row-team" style="display:none;">
                     <div class="sp-card sp-card--cyan" id="sp-team-card" style="display:none;">
                         <div class="sp-card-header">
                             <h3 class="sp-card-title">Team</h3>
@@ -573,6 +573,14 @@
                 _reportCard = rc;
 
                 setHeroHealth(rc.health);
+
+                // Enrich hero chips with meetings count if not already shown
+                const weekMeetCount = (rc.meetings_this_week || []).length;
+                if (weekMeetCount > 0) {
+                    const mBadge = document.getElementById('tab-meetings-badge');
+                    if (!mBadge.textContent) mBadge.textContent = weekMeetCount;
+                }
+
                 renderOverviewTab(rc);
                 renderMeetingsTab(rc);
             } catch (e) { console.error('Error loading report card:', e); }
@@ -583,10 +591,10 @@
             const brief = rc.executive_brief || {};
             const has = (arr) => Array.isArray(arr) && arr.length > 0;
 
-            // Summary
+            // Summary (render as markdown for bold/italic support)
             const summaryEl = document.getElementById('sp-summary-text');
             if (brief.executive_summary) {
-                summaryEl.textContent = brief.executive_summary;
+                summaryEl.innerHTML = marked.parse(brief.executive_summary);
             } else {
                 summaryEl.textContent = 'No executive summary available yet.';
                 summaryEl.classList.add('sp-text-muted');
@@ -649,6 +657,7 @@
 
             // Risks & Blockers
             if (has(brief.risks_blockers)) {
+                document.getElementById('sp-row-attention').style.display = '';
                 document.getElementById('sp-risks-card').style.display = '';
                 document.getElementById('sp-risks-count').textContent = brief.risks_blockers.length;
                 document.getElementById('sp-risks-list').innerHTML = brief.risks_blockers.slice(0, 6).map(r =>
@@ -658,6 +667,7 @@
 
             // Action Items
             if (has(brief.action_items)) {
+                document.getElementById('sp-row-attention').style.display = '';
                 document.getElementById('sp-actions-card').style.display = '';
                 document.getElementById('sp-actions-count').textContent = brief.action_items.length;
                 document.getElementById('sp-actions-list').innerHTML = brief.action_items.slice(0, 8).map(a =>
@@ -667,6 +677,7 @@
 
             // Key People
             if (has(brief.key_people)) {
+                document.getElementById('sp-row-team').style.display = '';
                 document.getElementById('sp-team-card').style.display = '';
                 document.getElementById('sp-people-list').innerHTML = brief.key_people.map(p => {
                     const initials = p.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
@@ -680,11 +691,20 @@
 
             // Next Challenges
             if (has(brief.next_challenges)) {
+                document.getElementById('sp-row-team').style.display = '';
                 document.getElementById('sp-horizon-card').style.display = '';
                 document.getElementById('sp-challenges-list').innerHTML = brief.next_challenges.slice(0, 6).map(c =>
                     `<li class="sp-list-item">${escapeHtml(c)}</li>`
                 ).join('');
             }
+
+            // If only one card visible in a row, make it span full width
+            ['sp-row-attention', 'sp-row-team'].forEach(rowId => {
+                const row = document.getElementById(rowId);
+                if (!row || row.style.display === 'none') return;
+                const visibleCards = [...row.querySelectorAll('.sp-card')].filter(c => c.style.display !== 'none');
+                if (visibleCards.length === 1) visibleCards[0].classList.add('sp-card--full');
+            });
         }
 
         // ===== MEETINGS TAB =====
