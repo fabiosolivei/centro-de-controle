@@ -5075,6 +5075,9 @@ table {
     margin-bottom: var(--spacing-md);
 }
 
+/* When a card should span full width (set via JS) */
+.sp-card--full { grid-column: 1 / -1; }
+
 /* ============================================
    SPATIAL STATUS PAGE — CARDS
    ============================================ */
@@ -5119,6 +5122,10 @@ table {
     line-height: 1.7;
     color: var(--text-secondary);
 }
+
+.sp-summary-text p { margin: 0 0 8px 0; }
+.sp-summary-text p:last-child { margin-bottom: 0; }
+.sp-summary-text strong { color: var(--text-primary); font-weight: 600; }
 
 .sp-text-muted {
     color: var(--text-muted);
