@@ -1942,10 +1942,7 @@ async def get_mba_data():
     data_path = get_adalove_data_path()
     
     if not data_path or not os.path.exists(data_path):
-        raise HTTPException(
-            status_code=404, 
-            detail="Dados do Adalove não encontrados. Execute a sincronização primeiro."
-        )
+        return {"turmas": [], "status": "not_synced", "message": "Dados do Adalove não disponíveis. Execute a sincronização."}
     
     try:
         with open(data_path, 'r', encoding='utf-8') as f:

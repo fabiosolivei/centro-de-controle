@@ -16,7 +16,7 @@
     /* Text - Named colors for consistency */
     --text-primary: #ffffff;
     --text-secondary: #a0aec0;
-    --text-muted: #718096;
+    --text-muted: #7d8da0;
     
     /* Accent Colors - Rich palette */
     --accent-primary: #6366f1;
@@ -6018,8 +6018,8 @@ details[open] > .mt-prep-toggle::before { content: '▾ '; }
    ============================================ */
 
 @media (max-width: 767px) {
-    .sp-tabs { gap: 0; }
-    .sp-tab { padding: 10px 14px; font-size: 0.82rem; }
+    .sp-tabs { gap: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .sp-tab { padding: 10px 14px; font-size: 0.82rem; min-height: 44px; white-space: nowrap; }
     .sp-identity { grid-template-columns: 1fr; }
     .eb-columns { grid-template-columns: 1fr; gap: var(--spacing-md); }
     .eb-kpis { flex-wrap: nowrap; }
@@ -6029,13 +6029,17 @@ details[open] > .mt-prep-toggle::before { content: '▾ '; }
     .ph-sprint-drawer { right: auto; left: 0; }
     .sp-week-bar { flex-direction: column; align-items: flex-start; }
     .eb-header { flex-direction: column; align-items: flex-start; gap: 6px; }
-    .eb-kpis { flex-wrap: nowrap; }
-    .eb-kpi { min-width: 100px; }
     .eb-people { gap: 6px; }
     .eb-person { font-size: 0.78rem; }
     .mt-insight-item { flex-direction: column; gap: 2px; }
     .mt-prep-card { padding: var(--spacing-md); }
     .mt-prep-header { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .eb-meeting-tab { min-height: 44px; padding: 8px 14px; }
+    .eb-card { padding: var(--spacing-md); }
+    .eb-section { padding: var(--spacing-sm) 0; }
+    .brief-crud-check, .brief-crud-remove { min-width: 44px; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
+    .ph-switcher { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; padding-bottom: 4px; }
+    .ph-switch-pill { min-height: 36px; white-space: nowrap; }
 }
 
 @media (min-width: 768px) and (max-width: 1199px) {
@@ -6580,7 +6584,7 @@ details[open] > .mt-prep-toggle::before { content: '▾ '; }
 /* Footer for project page */
 .footer {
     text-align: center;
-    padding: 24px 16px;
+    padding: 24px 16px 80px;
     color: var(--text-muted);
     font-size: 0.75rem;
     border-top: 1px solid var(--border-color);

@@ -7,11 +7,13 @@
     <meta name="description" content="Centro de Controle - Dashboard do Fábio">
     <title>Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=30">
+    <link rel="stylesheet" href="css/style.css?v=31">
     <link rel="manifest" href="manifest.json">
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://srv1315519.hstgr.cloud" crossorigin>
+    <link rel="dns-prefetch" href="https://srv1315519.hstgr.cloud">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <!-- Auth Check -->
     <script>
@@ -236,39 +238,32 @@
             
             <!-- RIGHT COLUMN: Portfolio + Updates -->
             <div class="today-column">
-                <!-- Work Portfolio -->
+                <!-- Work Portfolio + Status (merged) -->
                 <section class="card">
                     <div class="section-header-row">
-                        <h2 class="section-title">💼 Projetos Trabalho</h2>
-                        <span class="section-action" style="visibility:hidden;">Ver detalhes</span>
+                        <h2 class="section-title">💼 Work</h2>
+                        <a class="section-action" href="work">Status</a>
                     </div>
                     <div class="portfolio-grid" id="portfolio-grid">
                         <div class="skeleton skeleton-list" style="height:100px;"></div>
                     </div>
-                </section>
-                
-                <!-- Work Status (Confluence) -->
-                <section class="card">
-                    <div class="section-header-row">
-                        <h2 class="section-title">📊 Work Status</h2>
-                        <a class="section-action" href="work">Ver detalhes</a>
-                    </div>
-                    <div class="kanban-mini" id="work-status-mini">
-                        <div class="kanban-mini-col todo">
-                            <div class="kanban-mini-count" id="work-initiatives">-</div>
-                            <div class="kanban-mini-label">Initiatives</div>
+                    <div class="work-status-inline" id="work-status-inline" style="margin-top:var(--spacing-sm);padding-top:var(--spacing-sm);border-top:1px solid rgba(255,255,255,0.06);">
+                        <div class="kanban-mini" id="work-status-mini" style="margin-bottom:0;">
+                            <div class="kanban-mini-col todo">
+                                <div class="kanban-mini-count" id="work-initiatives">-</div>
+                                <div class="kanban-mini-label">Initiatives</div>
+                            </div>
+                            <div class="kanban-mini-col doing">
+                                <div class="kanban-mini-count" id="work-epics">-</div>
+                                <div class="kanban-mini-label">Epics</div>
+                            </div>
+                            <div class="kanban-mini-col done">
+                                <div class="kanban-mini-count" id="work-sprints">-</div>
+                                <div class="kanban-mini-label">Sprints</div>
+                            </div>
                         </div>
-                        <div class="kanban-mini-col doing">
-                            <div class="kanban-mini-count" id="work-epics">-</div>
-                            <div class="kanban-mini-label">Epics</div>
+                        <div id="work-alerts" style="margin-top: var(--spacing-sm);">
                         </div>
-                        <div class="kanban-mini-col done">
-                            <div class="kanban-mini-count" id="work-sprints">-</div>
-                            <div class="kanban-mini-label">Sprints</div>
-                        </div>
-                    </div>
-                    <div id="work-alerts" style="margin-top: var(--spacing-md);">
-                        <!-- Work alerts (risks/bugs) shown here -->
                     </div>
                 </section>
                 

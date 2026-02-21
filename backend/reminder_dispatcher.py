@@ -12,6 +12,7 @@ Cron:
   * * * * * cd /root/Nova/openclaw-workspace/projects/centro-de-controle/backend && python3 reminder_dispatcher.py >> /tmp/reminder_dispatcher.log 2>&1
 """
 
+import json
 import os
 import sqlite3
 import subprocess
@@ -41,6 +42,57 @@ if os.path.exists(env_file):
             if "=" in line and not line.startswith("#"):
                 key, value = line.strip().split("=", 1)
                 os.environ.setdefault(key.strip(), value.strip())
+
+
+BUTTON_LAYOUTS = {
+    "morning_energy": [
+        [
+            {"text": "1", "callback_data": "life_os:morning_energy:1"},
+            {"text": "2", "callback_data": "life_os:morning_energy:2"},
+            {"text": "3", "callback_data": "life_os:morning_energy:3"},
+            {"text": "4", "callback_data": "life_os:morning_energy:4"},
+            {"text": "5", "callback_data": "life_os:morning_energy:5"},
+        ]
+    ],
+    "morning_routine": [
+        [
+            {"text": "\U0001f48a Medicacao", "callback_data": "life_os:morning_routine:medicacao"},
+            {"text": "\U0001f3cb\ufe0f Academia", "callback_data": "life_os:morning_routine:academia"},
+        ],
+        [
+            {"text": "\U0001f3c3 Corrida", "callback_data": "life_os:morning_routine:corrida"},
+            {"text": "\U0001f964 Shake matinal", "callback_data": "life_os:morning_routine:shake"},
+        ],
+    ],
+    "lunch_break": [
+        [{"text": "\U0001f37d\ufe0f Saindo pro almoco", "callback_data": "life_os:lunch_break:done"}]
+    ],
+    "wins_journal": [
+        [
+            {"text": "\u270d\ufe0f Registrar wins", "callback_data": "life_os:wins_journal:log"},
+            {"text": "\u23ed\ufe0f Pular hoje", "callback_data": "life_os:wins_journal:skip"},
+        ]
+    ],
+    "work_stop": [
+        [
+            {"text": "\u2705 Ja parei", "callback_data": "life_os:work_stop:stopped"},
+            {"text": "\u23f0 30 min", "callback_data": "life_os:work_stop:30min"},
+            {"text": "\U0001f3e0 Ja estava off", "callback_data": "life_os:work_stop:already_off"},
+        ]
+    ],
+    "evening_wind_down": [
+        [
+            {"text": "\U0001f9d8 Meditei", "callback_data": "life_os:evening_wind_down:done"},
+            {"text": "\u23ed\ufe0f Pular hoje", "callback_data": "life_os:evening_wind_down:skip"},
+        ]
+    ],
+    "wednesday_mba": [
+        [
+            {"text": "\u26a0\ufe0f Sim, tem deadline", "callback_data": "life_os:wednesday_mba:has_deadline"},
+            {"text": "\u2705 Tudo ok", "callback_data": "life_os:wednesday_mba:ok"},
+        ]
+    ],
+}
 
 
 def get_db():
@@ -92,6 +144,32 @@ def send_telegram_direct(text: str) -> bool:
     except Exception as e:
         print(f"  Telegram API error: {e}")
         return False
+
+
+def send_telegram_with_buttons(text: str, buttons: list) -> bool:
+    """Send message with inline keyboard buttons via Telegram Bot API directly.
+    OpenClaw CLI doesn't support reply_markup, so we always use the Bot API."""
+    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    if not bot_token:
+        print(f"  No TELEGRAM_BOT_TOKEN, falling back to plain text")
+        return send_telegram_message(text)
+
+    try:
+        import httpx
+        url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+        response = httpx.post(url, json={
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": text,
+            "parse_mode": "Markdown",
+            "reply_markup": {"inline_keyboard": buttons},
+        }, timeout=10)
+        if response.status_code == 200:
+            return True
+        print(f"  Telegram buttons API error {response.status_code}: {response.text[:200]}")
+        return send_telegram_message(text)
+    except Exception as e:
+        print(f"  Telegram buttons error: {e}, falling back to plain text")
+        return send_telegram_message(text)
 
 
 def process_one_time_reminders():
@@ -172,7 +250,9 @@ def process_scheduled_messages():
         text = f"{category_prefix} {msg['message']}"
         
         print(f"  Sending scheduled: {msg['name']} ({current_time})")
-        if send_telegram_message(text):
+        buttons = BUTTON_LAYOUTS.get(msg['name'])
+        success = send_telegram_with_buttons(text, buttons) if buttons else send_telegram_message(text)
+        if success:
             cursor.execute(
                 "UPDATE scheduled_messages SET last_sent_at = ? WHERE id = ?",
                 (now.isoformat(), msg['id'])

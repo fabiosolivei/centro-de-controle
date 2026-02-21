@@ -826,8 +826,8 @@
             const host = window.location.hostname;
             if (['localhost', '127.0.0.1'].includes(host)) {
                 return {
-                    langfuse: 'http://localhost:3100',
-                    langfuseHealth: 'http://localhost:3100/api/public/health',
+                    langfuse: 'http://localhost:3100/langfuse',
+                    langfuseHealth: 'http://localhost:3100/langfuse/api/public/health',
                     grafana: 'http://localhost:3001',
                     grafanaHealth: 'http://localhost:3001/api/health',
                     grafanaEmbed: 'http://localhost:3001'
