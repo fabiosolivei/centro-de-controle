@@ -315,9 +315,15 @@ def init_db():
             action_items TEXT,
             source TEXT DEFAULT 'notion',
             notion_url TEXT,
+            structured_content TEXT,
             synced_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    # Migration: add structured_content if missing
+    try:
+        cursor.execute("SELECT structured_content FROM meeting_notes LIMIT 1")
+    except Exception:
+        cursor.execute("ALTER TABLE meeting_notes ADD COLUMN structured_content TEXT")
     
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS sibling_inbox (
@@ -3179,18 +3185,27 @@ def _generate_report_card(slug: str) -> dict:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT id, title, date, summary FROM meeting_notes WHERE date >= ? ORDER BY date DESC",
+            "SELECT id, title, date, summary, structured_content, notion_url FROM meeting_notes WHERE date >= ? ORDER BY date DESC",
             (seven_days_ago,)
         )
         for row in cursor.fetchall():
             title = row["title"] or ""
             summary = row["summary"] or ""
             if _matches_keywords(title + " " + summary, keywords):
-                meetings_this_week.append({
+                entry = {
+                    "id": row["id"],
                     "title": title,
                     "date": row["date"],
-                    "summary": (summary[:150] + "...") if len(summary) > 150 else summary
-                })
+                    "summary": (summary[:150] + "...") if len(summary) > 150 else summary,
+                    "notion_url": row["notion_url"] or "",
+                }
+                sc = row["structured_content"]
+                if sc:
+                    try:
+                        entry["structured"] = json.loads(sc)
+                    except Exception:
+                        pass
+                meetings_this_week.append(entry)
         conn.close()
     except Exception:
         pass
@@ -4384,10 +4399,12 @@ async def push_meetings(request: Request):
     synced = 0
     for m in meetings:
         try:
+            sc = m.get("structured_content")
+            sc_json = json.dumps(sc, ensure_ascii=False) if isinstance(sc, dict) else sc
             conn.execute("""
                 INSERT OR REPLACE INTO meeting_notes
-                (id, title, date, project, summary, participants, action_items, source, notion_url, synced_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (id, title, date, project, summary, participants, action_items, source, notion_url, structured_content, synced_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 m.get("id", f"atlas-{datetime.now().timestamp()}"),
                 m.get("title", ""),
@@ -4398,6 +4415,7 @@ async def push_meetings(request: Request):
                 m.get("action_items", ""),
                 m.get("source", "atlas"),
                 m.get("notion_url", ""),
+                sc_json,
                 datetime.now().isoformat()
             ))
             synced += 1
@@ -4409,6 +4427,49 @@ async def push_meetings(request: Request):
     conn.close()
     
     return {"status": "ok", "meetings_synced": synced}
+
+
+@app.get("/api/meeting-notes/{meeting_id}")
+async def get_meeting_note(meeting_id: str):
+    """Return a single meeting note with structured content if available."""
+    conn = get_db()
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM meeting_notes WHERE id = ?", (meeting_id,))
+    row = cursor.fetchone()
+    conn.close()
+    if not row:
+        raise HTTPException(status_code=404, detail="Meeting not found")
+    result = dict(row)
+    if result.get("structured_content"):
+        try:
+            result["structured"] = json.loads(result["structured_content"])
+        except Exception:
+            result["structured"] = None
+    return result
+
+
+@app.post("/api/meeting-notes/{meeting_id}/structured")
+async def update_meeting_structured(meeting_id: str, request: Request):
+    """Store parsed structured content for a meeting."""
+    verify_atlas_key(request)
+    body = await request.json()
+    structured_json = json.dumps(body, ensure_ascii=False)
+
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM meeting_notes WHERE id = ?", (meeting_id,))
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(status_code=404, detail="Meeting not found")
+
+    cursor.execute(
+        "UPDATE meeting_notes SET structured_content = ? WHERE id = ?",
+        (structured_json, meeting_id)
+    )
+    conn.commit()
+    conn.close()
+    return {"status": "ok", "meeting_id": meeting_id}
 
 
 @app.post("/api/sync/push/mba")

@@ -136,13 +136,14 @@
                         <div class="eb-dates-list" id="eb-dates-list"></div>
                     </div>
 
-                    <!-- Last 3 Meetings -->
+                    <!-- Last Meetings (horizontal tabs) -->
                     <div class="eb-section" id="eb-meetings-section" style="display:none;">
                         <div class="eb-section-header">
                             <h4 class="eb-section-title">Last Meetings</h4>
                             <button class="eb-link-btn" id="eb-meetings-more" onclick="switchTab('meetings')">Ver mais &rarr;</button>
                         </div>
-                        <div class="eb-meetings-list" id="eb-meetings-list"></div>
+                        <div class="eb-meeting-tabs" id="eb-meeting-tabs"></div>
+                        <div class="eb-meeting-detail" id="eb-meeting-detail"></div>
                     </div>
 
                     <!-- Decisions -->
@@ -151,7 +152,7 @@
                         <ul class="eb-list eb-list--indigo" id="eb-decisions-list"></ul>
                     </div>
 
-                    <!-- To-dos (reminder-item style) -->
+                    <!-- To-dos (LEMBRETES style) -->
                     <div class="eb-section" id="eb-todos-section" style="display:none;">
                         <h4 class="eb-section-title">To-Dos</h4>
                         <div class="eb-todos-list" id="eb-todos-list"></div>
@@ -660,24 +661,18 @@
                 ).join('');
             }
 
-            // Last 3 Meetings
+            // Last Meetings (horizontal tabs)
             if (has(brief.recent_meetings)) {
                 document.getElementById('eb-meetings-section').style.display = '';
-                document.getElementById('eb-meetings-list').innerHTML = brief.recent_meetings.slice(0, 3).map(m => {
-                    const peopleHtml = (m.people || []).map(p => {
-                        const name = typeof p === 'string' ? p : p.name || '';
-                        const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-                        return `<span class="eb-person eb-person--sm"><span class="eb-person-avatar eb-person-avatar--sm">${initials}</span>${escapeHtml(name)}</span>`;
-                    }).join('');
-                    return `<div class="eb-meeting-card">
-                        <div class="eb-meeting-header">
-                            <span class="eb-meeting-date">${escapeHtml(formatDateShort(m.date))}</span>
-                            <span class="eb-meeting-title">${escapeHtml(m.title)}</span>
-                        </div>
-                        ${m.brief ? `<div class="eb-meeting-brief">${escapeHtml(m.brief)}</div>` : ''}
-                        ${peopleHtml ? `<div class="eb-meeting-people">${peopleHtml}</div>` : ''}
-                    </div>`;
-                }).join('');
+                window._ebMeetings = brief.recent_meetings.slice(0, 5);
+                const tabsEl = document.getElementById('eb-meeting-tabs');
+                tabsEl.innerHTML = window._ebMeetings.map((m, i) =>
+                    `<button class="eb-meeting-tab${i === 0 ? ' eb-meeting-tab--active' : ''}" data-idx="${i}" onclick="selectMeetingTab(${i})">
+                        <span class="eb-mt-date">${escapeHtml(formatDateShort(m.date))}</span>
+                        <span class="eb-mt-title">${escapeHtml(m.title)}</span>
+                    </button>`
+                ).join('');
+                selectMeetingTab(0);
             }
 
             // Decisions
@@ -692,20 +687,21 @@
                 ).join('');
             }
 
-            // To-Dos (reminder-item style)
+            // To-Dos (LEMBRETES style with tags)
             if (has(brief.todos)) {
                 document.getElementById('eb-todos-section').style.display = '';
                 document.getElementById('eb-todos-list').innerHTML = brief.todos.map(t => {
-                    const prCls = t.priority === 'high' ? 'data-priority="high"' : t.priority === 'urgent' ? 'data-priority="urgent"' : '';
-                    return `<div class="reminder-item" ${prCls}>
-                        <div class="reminder-check ${t.is_done ? 'reminder-check--done' : ''}"></div>
-                        <div class="reminder-content">
-                            <div class="reminder-title ${t.is_done ? 'reminder-title--done' : ''}">${escapeHtml(t.title)}</div>
-                            <div class="reminder-time">
-                                ${t.priority ? `<span class="eb-todo-priority eb-todo-priority--${t.priority}">${escapeHtml(t.priority)}</span>` : ''}
-                                ${t.due_date ? escapeHtml(formatDateShort(t.due_date)) : ''}
-                            </div>
-                        </div>
+                    const doneClass = t.is_done ? ' brief-item-completed' : '';
+                    const accentClass = t.priority === 'high' ? ' brief-action-important' : t.priority === 'urgent' ? ' eb-todo-urgent' : ' brief-action-reminder';
+                    const tags = (t.tags || []).map(tag =>
+                        `<span class="brief-action-deadline">${escapeHtml(tag)}</span>`
+                    ).join('');
+                    const priorityTag = (!t.tags || t.tags.length === 0) && t.priority
+                        ? `<span class="brief-action-deadline">${escapeHtml(t.priority.toUpperCase())}</span>` : '';
+                    return `<div class="brief-action-item${accentClass}${doneClass}">
+                        <span class="eb-todo-check${t.is_done ? ' eb-todo-check--done' : ''}">&#10003;</span>
+                        <span class="brief-action-text">${escapeHtml(t.title)}</span>
+                        ${tags}${priorityTag}
                     </div>`;
                 }).join('');
             }
@@ -751,6 +747,57 @@
                 const d = new Date(dateStr + (dateStr.includes('T') ? '' : 'T00:00:00'));
                 return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             } catch { return dateStr; }
+        }
+
+        // ===== MEETING TAB SELECTION (for horizontal tabs) =====
+        function selectMeetingTab(idx) {
+            const meetings = window._ebMeetings || [];
+            if (!meetings[idx]) return;
+            document.querySelectorAll('.eb-meeting-tab').forEach(t => t.classList.remove('eb-meeting-tab--active'));
+            const activeBtn = document.querySelector(`.eb-meeting-tab[data-idx="${idx}"]`);
+            if (activeBtn) activeBtn.classList.add('eb-meeting-tab--active');
+            renderMeetingDetail(meetings[idx]);
+        }
+
+        function renderMeetingDetail(m) {
+            const el = document.getElementById('eb-meeting-detail');
+            if (!el) return;
+            const s = m.structured || {};
+            const notionLink = m.notion_url ? `<a href="${m.notion_url}" target="_blank" class="eb-md-notion-link">Open in Notion</a>` : '';
+            const peopleBadges = (s.key_people || m.people || []).map(p => {
+                const name = typeof p === 'string' ? p : p.name || '';
+                const role = typeof p === 'object' ? p.role || '' : '';
+                const contribution = typeof p === 'object' ? p.contribution || '' : '';
+                const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+                const tooltip = [role, contribution].filter(Boolean).join(' — ');
+                return `<span class="eb-person eb-person--sm" title="${escapeHtml(tooltip)}"><span class="eb-person-avatar eb-person-avatar--sm">${initials}</span>${escapeHtml(name)}</span>`;
+            }).join('');
+            const objectivesList = (s.objectives || []).map(o => `<li>${escapeHtml(o)}</li>`).join('');
+            const decisionsList = (s.decisions || []).map(d => {
+                const text = typeof d === 'string' ? d : d.text || '';
+                const rationale = typeof d === 'object' && d.rationale ? ` <span class="eb-md-rationale">${escapeHtml(d.rationale)}</span>` : '';
+                return `<li>${escapeHtml(text)}${rationale}</li>`;
+            }).join('');
+            const contextHtml = s.context ? marked.parse(s.context) : '';
+            const nextStepsList = (s.next_steps || []).map(ns => {
+                const action = typeof ns === 'string' ? ns : ns.action || '';
+                const owner = typeof ns === 'object' && ns.owner ? `<span class="brief-action-deadline">${escapeHtml(ns.owner)}</span>` : '';
+                return `<div class="brief-action-item brief-action-reminder"><span class="brief-action-text">${escapeHtml(action)}</span>${owner}</div>`;
+            }).join('');
+            const summaryHtml = s.summary || m.brief || m.summary || '';
+            const hasSections = peopleBadges || objectivesList || decisionsList || contextHtml || nextStepsList;
+
+            el.innerHTML = `
+                <h5 class="eb-md-title">${escapeHtml(m.title)}</h5>
+                <div class="eb-md-meta">${escapeHtml(formatDateShort(m.date))} ${notionLink}</div>
+                ${summaryHtml && !hasSections ? `<div class="eb-md-section"><div class="eb-md-content">${marked.parse(summaryHtml)}</div></div>` : ''}
+                ${peopleBadges ? `<div class="eb-md-section"><div class="eb-md-label">KEY PEOPLE</div><div class="eb-md-people">${peopleBadges}</div></div>` : ''}
+                ${objectivesList ? `<div class="eb-md-section"><div class="eb-md-label">OBJECTIVES</div><ul class="eb-md-list">${objectivesList}</ul></div>` : ''}
+                ${decisionsList ? `<div class="eb-md-section"><div class="eb-md-label">DECISIONS</div><ul class="eb-md-list eb-md-list--indigo">${decisionsList}</ul></div>` : ''}
+                ${contextHtml ? `<div class="eb-md-section"><div class="eb-md-label">CONTEXT</div><div class="eb-md-content">${contextHtml}</div></div>` : ''}
+                ${nextStepsList ? `<div class="eb-md-section"><div class="eb-md-label">NEXT STEPS</div>${nextStepsList}</div>` : ''}
+                ${!hasSections && !summaryHtml ? '<div class="eb-md-empty">Run /update-executive-briefs to parse structured meeting data.</div>' : ''}
+            `;
         }
 
         // ===== MEETINGS TAB =====
@@ -859,34 +906,64 @@
                 return;
             }
 
-            // Group past meetings by week
-            const groups = {};
-            past.forEach(m => {
-                if (!m.date) return;
-                const d = new Date(m.date + 'T00:00:00');
-                const monday = new Date(d);
-                monday.setDate(d.getDate() - d.getDay() + (d.getDay() === 0 ? -6 : 1));
-                const weekKey = monday.toISOString().split('T')[0];
-                if (!groups[weekKey]) groups[weekKey] = [];
-                groups[weekKey].push(m);
-            });
+            // Past meetings: horizontal tabs + detail panel
+            window._mtMeetings = past;
+            const tabsHtml = past.map((m, i) =>
+                `<button class="eb-meeting-tab${i === 0 ? ' eb-meeting-tab--active' : ''}" data-mt-idx="${i}" onclick="selectMtTab(${i})">
+                    <span class="eb-mt-date">${formatMeetingDate(m.date)}</span>
+                    <span class="eb-mt-title">${escapeHtml(m.title)}</span>
+                </button>`
+            ).join('');
+            timeline.innerHTML = `
+                <div class="eb-meeting-tabs">${tabsHtml}</div>
+                <div class="eb-meeting-detail" id="mt-detail-panel"></div>
+            `;
+            if (past.length > 0) selectMtTab(0);
+        }
 
-            const sortedWeeks = Object.keys(groups).sort().reverse();
-            timeline.innerHTML = sortedWeeks.map(week => `
-                <div class="sp-week-group">
-                    <div class="sp-week-header">Week of ${week}</div>
-                    ${groups[week].map(m => `
-                        <div class="sp-timeline-item${m.file ? ' sp-timeline-item--clickable' : ''}" ${m.file ? `onclick="openWorkFile('${m.file}')"` : ''}>
-                            <div class="sp-timeline-dot"></div>
-                            <div class="sp-timeline-content">
-                                <div class="sp-timeline-date">${formatMeetingDate(m.date)}</div>
-                                <div class="sp-timeline-title">${escapeHtml(m.title)}</div>
-                                ${m.summary || m.preview ? `<div class="sp-timeline-insight">${escapeHtml((m.summary || m.preview || '').substring(0, 200))}${(m.summary || m.preview || '').length > 200 ? '...' : ''}</div>` : ''}
-                            </div>
-                        </div>
-                    `).join('')}
-                </div>
-            `).join('');
+        function selectMtTab(idx) {
+            const meetings = window._mtMeetings || [];
+            if (!meetings[idx]) return;
+            document.querySelectorAll('[data-mt-idx]').forEach(t => t.classList.remove('eb-meeting-tab--active'));
+            const btn = document.querySelector(`[data-mt-idx="${idx}"]`);
+            if (btn) btn.classList.add('eb-meeting-tab--active');
+            const m = meetings[idx];
+            const el = document.getElementById('mt-detail-panel');
+            if (!el) return;
+            const s = m.structured || {};
+            const notionUrl = m.notion_url || '';
+            const notionLink = notionUrl ? `<a href="${notionUrl}" target="_blank" class="eb-md-notion-link">Open in Notion</a>` : '';
+            const fileLink = m.file ? `<a href="#" onclick="openWorkFile('${m.file}');return false;" class="eb-md-notion-link">Open File</a>` : '';
+            const peopleBadges = (s.key_people || []).map(p => {
+                const name = typeof p === 'string' ? p : p.name || '';
+                const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+                const role = typeof p === 'object' ? p.role || '' : '';
+                return `<span class="eb-person eb-person--sm" title="${escapeHtml(role)}"><span class="eb-person-avatar eb-person-avatar--sm">${initials}</span>${escapeHtml(name)}</span>`;
+            }).join('');
+            const objectivesList = (s.objectives || []).map(o => `<li>${escapeHtml(o)}</li>`).join('');
+            const decisionsList = (s.decisions || []).map(d => {
+                const text = typeof d === 'string' ? d : d.text || '';
+                return `<li>${escapeHtml(text)}</li>`;
+            }).join('');
+            const contextHtml = s.context ? marked.parse(s.context) : '';
+            const nextStepsList = (s.next_steps || []).map(ns => {
+                const action = typeof ns === 'string' ? ns : ns.action || '';
+                const owner = typeof ns === 'object' && ns.owner ? `<span class="brief-action-deadline">${escapeHtml(ns.owner)}</span>` : '';
+                return `<div class="brief-action-item brief-action-reminder"><span class="brief-action-text">${escapeHtml(action)}</span>${owner}</div>`;
+            }).join('');
+            const hasSections = peopleBadges || objectivesList || decisionsList || contextHtml || nextStepsList;
+            const summaryText = s.summary || m.summary || m.preview || '';
+            el.innerHTML = `
+                <h5 class="eb-md-title">${escapeHtml(m.title)}</h5>
+                <div class="eb-md-meta">${escapeHtml(formatMeetingDate(m.date))} ${notionLink || fileLink}</div>
+                ${summaryText && !hasSections ? `<div class="eb-md-section"><div class="eb-md-content">${marked.parse(summaryText)}</div></div>` : ''}
+                ${peopleBadges ? `<div class="eb-md-section"><div class="eb-md-label">KEY PEOPLE</div><div class="eb-md-people">${peopleBadges}</div></div>` : ''}
+                ${objectivesList ? `<div class="eb-md-section"><div class="eb-md-label">OBJECTIVES</div><ul class="eb-md-list">${objectivesList}</ul></div>` : ''}
+                ${decisionsList ? `<div class="eb-md-section"><div class="eb-md-label">DECISIONS</div><ul class="eb-md-list eb-md-list--indigo">${decisionsList}</ul></div>` : ''}
+                ${contextHtml ? `<div class="eb-md-section"><div class="eb-md-label">CONTEXT</div><div class="eb-md-content">${contextHtml}</div></div>` : ''}
+                ${nextStepsList ? `<div class="eb-md-section"><div class="eb-md-label">NEXT STEPS</div>${nextStepsList}</div>` : ''}
+                ${!hasSections && !summaryText ? '<div class="eb-md-empty">No structured content yet.</div>' : ''}
+            `;
         }
 
         // ===== DOCS & KNOWLEDGE TAB =====

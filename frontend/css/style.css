@@ -5492,6 +5492,124 @@ table {
 .eb-person--sm { font-size: 0.72rem; padding: 2px 8px 2px 2px; }
 .eb-person-avatar--sm { width: 20px; height: 20px; font-size: 0.5rem; }
 
+/* Horizontal Meeting Tabs */
+.eb-meeting-tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+    margin-bottom: 12px;
+}
+.eb-meeting-tabs::-webkit-scrollbar { display: none; }
+.eb-meeting-tab {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 14px;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: rgba(255,255,255,0.02);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    text-align: left;
+    min-width: 120px;
+    max-width: 200px;
+}
+.eb-meeting-tab:hover { background: rgba(99,102,241,0.06); border-color: rgba(99,102,241,0.3); }
+.eb-meeting-tab--active {
+    background: rgba(99,102,241,0.1);
+    border-color: var(--accent-primary);
+    box-shadow: 0 2px 8px rgba(99,102,241,0.15);
+}
+.eb-mt-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--text-muted);
+}
+.eb-meeting-tab--active .eb-mt-date { color: var(--accent-primary); }
+.eb-mt-title {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 170px;
+}
+.eb-meeting-tab--active .eb-mt-title { color: var(--text-primary); }
+
+/* Meeting Detail Panel */
+.eb-meeting-detail {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+}
+.eb-md-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 4px;
+}
+.eb-md-meta {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.eb-md-notion-link {
+    color: var(--accent-primary);
+    text-decoration: none;
+    font-size: 0.72rem;
+}
+.eb-md-notion-link:hover { text-decoration: underline; }
+.eb-md-section { margin-bottom: 12px; }
+.eb-md-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+}
+.eb-md-people { display: flex; flex-wrap: wrap; gap: 6px; }
+.eb-md-list {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--text-secondary);
+}
+.eb-md-list--indigo li { border-left: 2px solid rgba(99,102,241,0.35); padding-left: 8px; margin-bottom: 4px; list-style: none; }
+.eb-md-content { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; }
+.eb-md-content p { margin: 0 0 6px; }
+.eb-md-rationale { font-size: 0.72rem; color: var(--text-muted); font-style: italic; }
+.eb-md-empty { font-size: 0.8rem; color: var(--text-muted); padding: 12px 0; }
+
+/* Todo check in executive brief */
+.eb-todo-check {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    color: transparent;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+.eb-todo-check:hover { color: #10b981; border-color: #10b981; background: rgba(16,185,129,0.1); }
+.eb-todo-check--done { color: #10b981; border-color: #10b981; opacity: 0.4; }
+.eb-todo-urgent { border-left-color: #ef4444; background: rgba(239,68,68,0.05); }
+
 /* Decisions */
 .eb-decision-date {
     font-family: 'JetBrains Mono', monospace;
