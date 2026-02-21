@@ -7,16 +7,18 @@
     <meta name="description" content="Project detail - Centro de Controle">
     <title>Projeto - Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=30">
+    <link rel="stylesheet" href="css/style.css?v=31">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://srv1315519.hstgr.cloud" crossorigin>
+    <link rel="dns-prefetch" href="https://srv1315519.hstgr.cloud">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script>
         if (!sessionStorage.getItem('auth_token')) {
             window.location.href = 'login';
         }
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
 </head>
 <body>
     <a href="#main-content" class="skip-link">Pular para o conteudo</a>
@@ -129,7 +131,7 @@
                     <!-- Status -->
                     <div class="eb-section" id="eb-status-section">
                         <h4 class="eb-section-title">Status</h4>
-                        <div class="eb-status-text" id="eb-status-text">Loading...</div>
+                        <div class="eb-status-text" id="eb-status-text" aria-live="polite">Loading...</div>
                     </div>
 
                     <!-- Important Dates -->
@@ -150,7 +152,7 @@
 
                     <!-- Decisions (collapsed by default) -->
                     <div class="eb-section eb-collapsible" id="eb-decisions-section" style="display:none;">
-                        <h4 class="eb-section-title eb-collapse-toggle" onclick="this.parentElement.classList.toggle('eb-collapsed')" role="button" tabindex="0">
+                        <h4 class="eb-section-title eb-collapse-toggle" onclick="this.parentElement.classList.toggle('eb-collapsed')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" role="button" tabindex="0" aria-expanded="true">
                             Decisions <span class="eb-collapse-icon">&#x25BC;</span>
                         </h4>
                         <ul class="eb-list eb-list--indigo eb-collapse-body" id="eb-decisions-list"></ul>
@@ -176,7 +178,7 @@
 
                     <!-- Key People (collapsed by default) -->
                     <div class="eb-section eb-collapsible eb-collapsed" id="eb-people-section" style="display:none;">
-                        <h4 class="eb-section-title eb-collapse-toggle" onclick="this.parentElement.classList.toggle('eb-collapsed')" role="button" tabindex="0">
+                        <h4 class="eb-section-title eb-collapse-toggle" onclick="this.parentElement.classList.toggle('eb-collapsed')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" role="button" tabindex="0" aria-expanded="false">
                             Key People <span class="eb-collapse-icon">&#x25BC;</span>
                         </h4>
                         <div class="eb-people eb-collapse-body" id="eb-people-list"></div>
@@ -500,6 +502,7 @@
             { id: 3, name: 'Content (DAM)', slug: 'cms-dam' },
             { id: 8, name: 'Autonomy & Automation', slug: 'autonomy' },
             { id: 9, name: 'POCs IA', slug: 'pocs-ia' },
+            { id: 10, name: 'Company Store', slug: 'company-store' },
         ];
 
         const DISPLAY_NAMES = {
@@ -798,10 +801,10 @@
                 const priorityTag = (!t.tags || t.tags.length === 0) && t.priority
                     ? `<span class="brief-action-deadline">${escapeHtml(t.priority.toUpperCase())}</span>` : '';
                 return `<div class="brief-action-item${accentClass}${doneClass}">
-                    <span class="brief-crud-check" onclick="ebTodoToggle(${i})" title="${t.is_done ? 'Undo' : 'Complete'}">&#10003;</span>
+                    <span class="brief-crud-check" onclick="ebTodoToggle(${i})" title="${t.is_done ? 'Undo' : 'Complete'}" role="button" tabindex="0" aria-label="${t.is_done ? 'Reabrir' : 'Completar'}: ${escapeHtml(t.title)}" onkeydown="if(event.key==='Enter')this.click()">&#10003;</span>
                     <span class="brief-action-text">${escapeHtml(t.title)}</span>
                     ${tags}${priorityTag}
-                    <span class="brief-crud-remove" onclick="ebTodoRemove(${i})" title="Remove">&minus;</span>
+                    <span class="brief-crud-remove" onclick="ebTodoRemove(${i})" title="Remove" role="button" tabindex="0" aria-label="Remover: ${escapeHtml(t.title)}" onkeydown="if(event.key==='Enter')this.click()">&minus;</span>
                 </div>`;
             }).join('');
             if (todos.length === 0) {
