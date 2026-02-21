@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0d1117">
+    <meta name="description" content="Project detail - Centro de Controle">
     <title>Projeto - Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=29">
+    <link rel="stylesheet" href="css/style.css?v=30">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -18,9 +19,10 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Pular para o conteudo</a>
     <header class="header">
         <div class="header-content">
-            <h1 class="logo">Centro de Controle</h1>
+            <span class="logo" role="banner">Centro de Controle</span>
             <nav class="header-nav">
                 <a href="./" class="nav-link" aria-label="Dashboard">Dashboard</a>
                 <a href="mba" class="nav-link" aria-label="MBA">MBA</a>
@@ -32,7 +34,7 @@
         </div>
     </header>
 
-    <main class="main-content" style="display: block;">
+    <main class="main-content" id="main-content" style="display: block;">
 
         <!-- ===== HERO CARD ===== -->
         <div class="proj-hero" id="proj-hero">
@@ -146,10 +148,12 @@
                         <div class="eb-meeting-detail" id="eb-meeting-detail"></div>
                     </div>
 
-                    <!-- Decisions -->
-                    <div class="eb-section" id="eb-decisions-section" style="display:none;">
-                        <h4 class="eb-section-title">Decisions</h4>
-                        <ul class="eb-list eb-list--indigo" id="eb-decisions-list"></ul>
+                    <!-- Decisions (collapsed by default) -->
+                    <div class="eb-section eb-collapsible" id="eb-decisions-section" style="display:none;">
+                        <h4 class="eb-section-title eb-collapse-toggle" onclick="this.parentElement.classList.toggle('eb-collapsed')" role="button" tabindex="0">
+                            Decisions <span class="eb-collapse-icon">&#x25BC;</span>
+                        </h4>
+                        <ul class="eb-list eb-list--indigo eb-collapse-body" id="eb-decisions-list"></ul>
                     </div>
 
                     <!-- To-dos (LEMBRETES style, matching dashboard) -->
@@ -170,10 +174,12 @@
                         <div class="eb-upcoming-list" id="eb-upcoming-list"></div>
                     </div>
 
-                    <!-- Key People -->
-                    <div class="eb-section" id="eb-people-section" style="display:none;">
-                        <h4 class="eb-section-title">Key People</h4>
-                        <div class="eb-people" id="eb-people-list"></div>
+                    <!-- Key People (collapsed by default) -->
+                    <div class="eb-section eb-collapsible eb-collapsed" id="eb-people-section" style="display:none;">
+                        <h4 class="eb-section-title eb-collapse-toggle" onclick="this.parentElement.classList.toggle('eb-collapsed')" role="button" tabindex="0">
+                            Key People <span class="eb-collapse-icon">&#x25BC;</span>
+                        </h4>
+                        <div class="eb-people eb-collapse-body" id="eb-people-list"></div>
                     </div>
                 </div>
             </div>
@@ -383,7 +389,8 @@
 
         const urlParams = new URLSearchParams(window.location.search);
         projectId = urlParams.get('id');
-        if (!projectId) window.location.href = 'index.html';
+        const slugParam = urlParams.get('slug');
+        if (!projectId && !slugParam) window.location.href = 'index.html';
 
         // ===== WORK PROJECT SLUG MAPPING =====
         const WORK_PROJECT_SLUGS = {
@@ -417,6 +424,10 @@
 
         // ===== MAIN ENTRY POINT =====
         async function loadProjectWithWorkCheck() {
+            // Slug-based routing: load work project directly
+            if (slugParam && !projectId) {
+                return await loadWorkProjectBySlug(slugParam);
+            }
             try {
                 const response = await fetch(`${API_BASE}/projects/${projectId}/full`);
                 if (!response.ok) throw new Error('Projeto nao encontrado');
@@ -438,21 +449,69 @@
                 renderRegularProject(project);
             } catch (error) {
                 console.error(error);
-                document.getElementById('project-name').textContent = 'Projeto nao encontrado';
+                // Try slug fallback from WORK_PROJECT_DB
+                const dbEntry = WORK_PROJECT_DB.find(p => p.id === parseInt(projectId));
+                if (dbEntry) {
+                    return await loadWorkProjectBySlug(dbEntry.slug, dbEntry.name);
+                }
+                renderErrorState();
             }
+        }
+
+        async function loadWorkProjectBySlug(slug, displayName) {
+            currentWorkSlug = slug;
+            try {
+                const resp = await fetch(`${API_BASE}/work-projects/${slug}`);
+                if (!resp.ok) { renderErrorState(); return; }
+                workProjectData = await resp.json();
+                const rawName = displayName || workProjectData.name || slug;
+                const name = DISPLAY_NAMES[rawName] || rawName;
+                document.title = `${name} - Centro de Controle`;
+                document.getElementById('project-name').textContent = name;
+                document.getElementById('back-btn').href = 'work';
+                document.getElementById('back-btn').textContent = '\u2190 Work Status';
+                renderProjectSwitcher({ name, id: parseInt(projectId) || 0 });
+                renderWorkView(workProjectData);
+            } catch (e) { console.error(e); renderErrorState(); }
+        }
+
+        function renderErrorState() {
+            document.getElementById('project-name').textContent = 'Projeto nao encontrado';
+            const hero = document.getElementById('proj-hero');
+            const errorHtml = `<div class="eb-card" style="margin-top:16px;">
+                <p style="color:var(--text-secondary);margin-bottom:16px;">Este projeto nao foi encontrado ou nao esta configurado.</p>
+                <h4 class="eb-section-title" style="margin-bottom:12px;">Projetos disponíveis</h4>
+                <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                    ${WORK_PROJECT_DB.filter((p, i, arr) => arr.findIndex(x => x.slug === p.slug) === i).map(p =>
+                        `<a href="project?id=${p.id}" class="ph-switch-pill">${escapeHtml(p.name)}</a>`
+                    ).join('')}
+                    <a href="./" class="ph-switch-pill">Dashboard</a>
+                    <a href="work" class="ph-switch-pill">Work Status</a>
+                </div>
+            </div>`;
+            hero.insertAdjacentHTML('beforeend', errorHtml);
         }
 
         // ===== HERO CARD =====
         // DB project ID -> work slug lookup (for project switcher)
         const WORK_PROJECT_DB = [
-            { id: 1, name: 'Catalog', slug: '3tpm' },
-            { id: 2, name: 'CMS', slug: 'cms-dam' },
-            { id: 3, name: 'DAM', slug: 'cms-dam' },
+            { id: 1, name: 'Catalog & 3TPM', slug: '3tpm' },
+            { id: 2, name: 'Content (CMS)', slug: 'cms-dam' },
+            { id: 3, name: 'Content (DAM)', slug: 'cms-dam' },
+            { id: 8, name: 'Autonomy & Automation', slug: 'autonomy' },
+            { id: 9, name: 'POCs IA', slug: 'pocs-ia' },
         ];
 
+        const DISPLAY_NAMES = {
+            'Catalog': 'Catalog & 3TPM', 'Catalog Admin': 'Catalog & 3TPM', '3TPM': 'Catalog & 3TPM',
+            'CMS': 'Content (CMS+DAM)', 'DAM': 'Content (CMS+DAM)', 'DAM - Documentação': 'Content (CMS+DAM)',
+            'Content': 'Content (CMS+DAM)',
+        };
+
         function renderHeroCard(project) {
-            document.title = `${project.name} - Centro de Controle`;
-            document.getElementById('project-name').textContent = project.name;
+            const displayName = DISPLAY_NAMES[project.name] || project.name;
+            document.title = `${displayName} - Centro de Controle`;
+            document.getElementById('project-name').textContent = displayName;
 
             const backBtn = document.getElementById('back-btn');
             const isWork = isWorkProject(project.name, project.category);
@@ -645,12 +704,13 @@
                 document.getElementById('eb-updated').textContent = `Updated ${ago}`;
             }
 
-            // Status
+            // Status (truncated with expand for ADHD friendliness)
             const statusEl = document.getElementById('eb-status-text');
-            if (brief.status_summary) {
-                statusEl.innerHTML = marked.parse(brief.status_summary);
-            } else if (brief.executive_summary) {
-                statusEl.innerHTML = marked.parse(brief.executive_summary);
+            const statusText = brief.status_summary || brief.executive_summary || '';
+            if (statusText) {
+                const parsed = marked.parse(statusText);
+                statusEl.innerHTML = `<div class="eb-status-truncated">${parsed}</div>
+                    <button class="eb-status-expand" onclick="this.previousElementSibling.classList.toggle('eb-status-expanded');this.textContent=this.previousElementSibling.classList.contains('eb-status-expanded')?'Show less \u25B2':'Show more \u25BC';">Show more &#x25BC;</button>`;
             } else {
                 statusEl.innerHTML = '<span class="sp-text-muted">No status available. Run /update-executive-briefs to populate.</span>';
             }
@@ -681,9 +741,11 @@
                 selectMeetingTab(0);
             }
 
-            // Decisions
+            // Decisions (start collapsed if >5 items)
             if (has(brief.decisions)) {
-                document.getElementById('eb-decisions-section').style.display = '';
+                const decSection = document.getElementById('eb-decisions-section');
+                decSection.style.display = '';
+                if (brief.decisions.length > 5) decSection.classList.add('eb-collapsed');
                 document.getElementById('eb-decisions-list').innerHTML = brief.decisions.map(d =>
                     `<li class="eb-list-item eb-list-item--indigo">
                         <span class="eb-decision-date">${escapeHtml(formatDateShort(d.date))}</span>
@@ -768,13 +830,30 @@
             if (!todos[idx]) return;
             todos[idx].is_done = !todos[idx].is_done;
             _ebTodoPush(todos);
+            showToast(todos[idx].is_done ? 'Concluído ✓' : 'Reaberto');
         }
 
         function ebTodoRemove(idx) {
+            if (!confirm('Remover este to-do?')) return;
             const brief = (workProjectData || {}).executive_brief || {};
             const todos = brief.todos || [];
             todos.splice(idx, 1);
             _ebTodoPush(todos);
+            showToast('Removido');
+        }
+
+        function showToast(message) {
+            let toast = document.getElementById('ux-toast');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'ux-toast';
+                toast.className = 'ux-toast';
+                document.body.appendChild(toast);
+            }
+            toast.textContent = message;
+            toast.classList.add('ux-toast--visible');
+            clearTimeout(toast._timer);
+            toast._timer = setTimeout(() => toast.classList.remove('ux-toast--visible'), 2000);
         }
 
         function ebTodoShowAdd() {
@@ -813,9 +892,18 @@
         function formatDateShort(dateStr) {
             if (!dateStr) return '';
             try {
-                const d = new Date(dateStr + (dateStr.includes('T') ? '' : 'T00:00:00'));
-                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-            } catch { return dateStr; }
+                const raw = dateStr.trim();
+                let d;
+                if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+                    const [y,m,day] = raw.split('T')[0].split('-');
+                    d = new Date(parseInt(y), parseInt(m)-1, parseInt(day));
+                } else {
+                    d = new Date(raw);
+                }
+                if (isNaN(d.getTime())) return raw || 'TBD';
+                const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+                return `${d.getDate()} ${months[d.getMonth()]}`;
+            } catch { return dateStr || 'TBD'; }
         }
 
         // ===== MEETING TAB SELECTION (for horizontal tabs) =====
@@ -1473,6 +1561,9 @@
         // ===== START =====
         loadProjectWithWorkCheck();
     </script>
+    <footer class="footer" role="contentinfo">
+        <span class="footer-text">Centro de Controle</span>
+    </footer>
     <script src="js/mobile-nav.js?v=7"></script>
 </body>
 </html>
