@@ -7,7 +7,7 @@
     <meta name="description" content="Centro de Controle - Dashboard do Fábio">
     <title>Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=22">
+    <link rel="stylesheet" href="css/style.css?v=30">
     <link rel="manifest" href="manifest.json">
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -769,10 +769,25 @@
                 'CMS DAM': 'cms-dam', 'CMS-DAM': 'cms-dam', 'CMS / DAM': 'cms-dam',
                 'CMS': 'cms-dam', 'DAM': 'cms-dam', 'DAM - Documentação': 'cms-dam',
                 'POCs IA': 'pocs-ia', 'POCS-IA': 'pocs-ia',
-                'Autonomy': 'autonomy', 'AUTONOMY-AUTOMATION': 'autonomy'
+                'Autonomy': 'autonomy', 'Autonomy & Automation': 'autonomy', 'AUTONOMY-AUTOMATION': 'autonomy'
             };
             
-            container.innerHTML = workDbProjects.map(project => {
+            const DISPLAY_NAMES = {
+                'Catalog': 'Catalog & 3TPM', 'Catalog Admin': 'Catalog & 3TPM', '3TPM': 'Catalog & 3TPM',
+                'CMS': 'Content (CMS+DAM)', 'DAM': 'Content (CMS+DAM)', 'DAM - Documentação': 'Content (CMS+DAM)',
+                'Content': 'Content (CMS+DAM)',
+            };
+            
+            // Deduplicate projects that map to the same slug (e.g. CMS + DAM -> cms-dam)
+            const seenSlugs = new Set();
+            const dedupedProjects = workDbProjects.filter(p => {
+                const s = NAME_TO_SLUG[p.name] || p.name.toLowerCase().replace(/\s+/g, '-');
+                if (seenSlugs.has(s)) return false;
+                seenSlugs.add(s);
+                return true;
+            });
+            
+            container.innerHTML = dedupedProjects.map(project => {
                 const slug = NAME_TO_SLUG[project.name] || project.name.toLowerCase().replace(/\s+/g, '-');
                 const rc = reportCards[slug];
                 
@@ -800,7 +815,7 @@
                 <div class="portfolio-card ${project.priority === 'high' ? 'high-priority' : ''}" 
                      onclick="window.location.href='project.html?id=${project.id}'">
                     <div class="portfolio-info">
-                        <div class="portfolio-name">${healthDot}${escapeHtml(project.name)}</div>
+                        <div class="portfolio-name">${healthDot}${escapeHtml(DISPLAY_NAMES[project.name] || project.name)}</div>
                         <div class="portfolio-status">
                             ${project.status === 'active' ? '🟢 Ativo' : project.status === 'paused' ? '🟡 Pausado' : '✅ Concluído'}
                         </div>
