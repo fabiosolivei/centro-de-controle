@@ -117,41 +117,56 @@
                     <div class="sp-week-bar-list" id="sp-week-list"></div>
                 </div>
 
-                <!-- Unified Executive Brief -->
+                <!-- Executive Brief v2 -->
                 <div class="eb-card" id="eb-card">
                     <div class="eb-header">
                         <h3 class="eb-title">Executive Brief</h3>
-                        <div class="eb-sources" id="eb-sources"></div>
+                        <span class="eb-updated" id="eb-updated"></span>
                     </div>
 
-                    <!-- Summary -->
-                    <div class="eb-summary" id="eb-summary">Loading...</div>
-
-                    <!-- KPIs -->
-                    <div class="eb-kpis" id="eb-kpis" style="display:none;"></div>
-
-                    <!-- Two-column: Risks | Actions -->
-                    <div class="eb-columns" id="eb-columns" style="display:none;">
-                        <div class="eb-col eb-col--risks" id="eb-risks-col" style="display:none;">
-                            <h4 class="eb-col-title eb-col-title--red">Risks & Blockers <span class="eb-col-count" id="eb-risks-count"></span></h4>
-                            <ul class="eb-list" id="eb-risks-list"></ul>
-                        </div>
-                        <div class="eb-col eb-col--actions" id="eb-actions-col" style="display:none;">
-                            <h4 class="eb-col-title eb-col-title--indigo">Action Items <span class="eb-col-count" id="eb-actions-count"></span></h4>
-                            <ul class="eb-list" id="eb-actions-list"></ul>
-                        </div>
+                    <!-- Status -->
+                    <div class="eb-section" id="eb-status-section">
+                        <h4 class="eb-section-title">Status</h4>
+                        <div class="eb-status-text" id="eb-status-text">Loading...</div>
                     </div>
 
-                    <!-- People -->
+                    <!-- Important Dates -->
+                    <div class="eb-section" id="eb-dates-section" style="display:none;">
+                        <h4 class="eb-section-title">Important Dates</h4>
+                        <div class="eb-dates-list" id="eb-dates-list"></div>
+                    </div>
+
+                    <!-- Last 3 Meetings -->
+                    <div class="eb-section" id="eb-meetings-section" style="display:none;">
+                        <div class="eb-section-header">
+                            <h4 class="eb-section-title">Last Meetings</h4>
+                            <button class="eb-link-btn" id="eb-meetings-more" onclick="switchTab('meetings')">Ver mais &rarr;</button>
+                        </div>
+                        <div class="eb-meetings-list" id="eb-meetings-list"></div>
+                    </div>
+
+                    <!-- Decisions -->
+                    <div class="eb-section" id="eb-decisions-section" style="display:none;">
+                        <h4 class="eb-section-title">Decisions</h4>
+                        <ul class="eb-list eb-list--indigo" id="eb-decisions-list"></ul>
+                    </div>
+
+                    <!-- To-dos (reminder-item style) -->
+                    <div class="eb-section" id="eb-todos-section" style="display:none;">
+                        <h4 class="eb-section-title">To-Dos</h4>
+                        <div class="eb-todos-list" id="eb-todos-list"></div>
+                    </div>
+
+                    <!-- Upcoming Meetings -->
+                    <div class="eb-section" id="eb-upcoming-section" style="display:none;">
+                        <h4 class="eb-section-title">Upcoming Meetings</h4>
+                        <div class="eb-upcoming-list" id="eb-upcoming-list"></div>
+                    </div>
+
+                    <!-- Key People -->
                     <div class="eb-section" id="eb-people-section" style="display:none;">
                         <h4 class="eb-section-title">Key People</h4>
                         <div class="eb-people" id="eb-people-list"></div>
-                    </div>
-
-                    <!-- Next Challenges -->
-                    <div class="eb-section" id="eb-challenges-section" style="display:none;">
-                        <h4 class="eb-section-title">Next Challenges</h4>
-                        <ul class="eb-list eb-list--amber" id="eb-challenges-list"></ul>
                     </div>
                 </div>
             </div>
@@ -366,10 +381,10 @@
         // ===== WORK PROJECT SLUG MAPPING =====
         const WORK_PROJECT_SLUGS = {
             '3TPM': '3tpm', '3tpm': '3tpm',
-            'Catalog Admin': 'catalog-admin', 'Catalog': 'catalog-admin', 'CATALOG-ADMIN': 'catalog-admin',
+            'Catalog & 3TPM': '3tpm', 'Catalog Admin': '3tpm', 'Catalog': '3tpm', 'CATALOG-ADMIN': '3tpm',
             'Company Store': 'company-store', 'Company & Store': 'company-store', 'COMPANY-STORE': 'company-store',
-            'Content': 'cms-dam', 'CMS DAM': 'cms-dam', 'CMS-DAM': 'cms-dam', 'CMS': 'cms-dam', 'DAM': 'cms-dam',
-            'DAM - Documentação': 'cms-dam', 'CMS / DAM': 'cms-dam',
+            'Content': 'cms-dam', 'Content (CMS + DAM)': 'cms-dam', 'CMS DAM': 'cms-dam', 'CMS-DAM': 'cms-dam',
+            'CMS': 'cms-dam', 'DAM': 'cms-dam', 'DAM - Documentação': 'cms-dam', 'CMS / DAM': 'cms-dam',
             'POCs IA': 'pocs-ia', 'POCS-IA': 'pocs-ia',
             'Autonomy': 'autonomy', 'Autonomy & Automation': 'autonomy', 'AUTONOMY-AUTOMATION': 'autonomy'
         };
@@ -423,7 +438,7 @@
         // ===== HERO CARD =====
         // DB project ID -> work slug lookup (for project switcher)
         const WORK_PROJECT_DB = [
-            { id: 1, name: 'Catalog', slug: 'catalog-admin' },
+            { id: 1, name: 'Catalog', slug: '3tpm' },
             { id: 2, name: 'CMS', slug: 'cms-dam' },
             { id: 3, name: 'DAM', slug: 'cms-dam' },
         ];
@@ -602,7 +617,7 @@
             } catch (e) { console.error('Error loading report card:', e); }
         }
 
-        // ===== OVERVIEW TAB (unified exec brief) =====
+        // ===== OVERVIEW TAB (executive brief v2) =====
         function renderOverviewTab(rc) {
             const brief = rc.executive_brief || {};
             const has = (arr) => Array.isArray(arr) && arr.length > 0;
@@ -617,74 +632,125 @@
                 ).join('');
             }
 
-            // Summary
-            const summaryEl = document.getElementById('eb-summary');
-            if (brief.executive_summary) {
-                summaryEl.innerHTML = marked.parse(brief.executive_summary);
-            } else {
-                summaryEl.innerHTML = '<span class="sp-text-muted">No executive summary available yet.</span>';
+            // Updated timestamp
+            if (brief.updated_at) {
+                const ago = timeAgo(brief.updated_at);
+                document.getElementById('eb-updated').textContent = `Updated ${ago}`;
             }
 
-            // Sources
-            if (has(brief.sources)) {
-                document.getElementById('eb-sources').innerHTML = brief.sources.map(s =>
-                    `<span class="eb-source-chip">${escapeHtml(s)}</span>`
+            // Status
+            const statusEl = document.getElementById('eb-status-text');
+            if (brief.status_summary) {
+                statusEl.innerHTML = marked.parse(brief.status_summary);
+            } else if (brief.executive_summary) {
+                statusEl.innerHTML = marked.parse(brief.executive_summary);
+            } else {
+                statusEl.innerHTML = '<span class="sp-text-muted">No status available. Run /update-executive-briefs to populate.</span>';
+            }
+
+            // Important Dates
+            if (has(brief.important_dates)) {
+                document.getElementById('eb-dates-section').style.display = '';
+                document.getElementById('eb-dates-list').innerHTML = brief.important_dates.map(d =>
+                    `<div class="eb-date-item">
+                        <span class="eb-date-badge">${escapeHtml(formatDateShort(d.date))}</span>
+                        <span class="eb-date-label">${escapeHtml(d.label)}</span>
+                        ${d.type ? `<span class="eb-date-type">${escapeHtml(d.type)}</span>` : ''}
+                    </div>`
                 ).join('');
             }
 
-            // KPIs
-            if (has(brief.kpis)) {
-                const kpiEl = document.getElementById('eb-kpis');
-                kpiEl.style.display = '';
-                kpiEl.innerHTML = brief.kpis.slice(0, 8).map(k => {
-                    const st = (k.status || '').toLowerCase();
-                    const cls = st.includes('critical') || st.includes('red') || st.includes('atrasad') ? 'eb-kpi--red'
-                              : st.includes('ok') || st.includes('green') || st.includes('conclu') ? 'eb-kpi--green' : '';
-                    return `<div class="eb-kpi ${cls}">
-                        <div class="eb-kpi-label">${escapeHtml(k.metric)}</div>
-                        <div class="eb-kpi-value">${escapeHtml(k.current || '-')}</div>
-                        ${k.target ? `<div class="eb-kpi-target">${escapeHtml(k.target)}</div>` : ''}
+            // Last 3 Meetings
+            if (has(brief.recent_meetings)) {
+                document.getElementById('eb-meetings-section').style.display = '';
+                document.getElementById('eb-meetings-list').innerHTML = brief.recent_meetings.slice(0, 3).map(m => {
+                    const peopleHtml = (m.people || []).map(p => {
+                        const name = typeof p === 'string' ? p : p.name || '';
+                        const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+                        return `<span class="eb-person eb-person--sm"><span class="eb-person-avatar eb-person-avatar--sm">${initials}</span>${escapeHtml(name)}</span>`;
+                    }).join('');
+                    return `<div class="eb-meeting-card">
+                        <div class="eb-meeting-header">
+                            <span class="eb-meeting-date">${escapeHtml(formatDateShort(m.date))}</span>
+                            <span class="eb-meeting-title">${escapeHtml(m.title)}</span>
+                        </div>
+                        ${m.brief ? `<div class="eb-meeting-brief">${escapeHtml(m.brief)}</div>` : ''}
+                        ${peopleHtml ? `<div class="eb-meeting-people">${peopleHtml}</div>` : ''}
                     </div>`;
                 }).join('');
             }
 
-            // Risks & Actions columns
-            const hasRisks = has(brief.risks_blockers);
-            const hasActions = has(brief.action_items);
-            if (hasRisks || hasActions) {
-                document.getElementById('eb-columns').style.display = '';
-                if (hasRisks) {
-                    document.getElementById('eb-risks-col').style.display = '';
-                    document.getElementById('eb-risks-count').textContent = brief.risks_blockers.length;
-                    document.getElementById('eb-risks-list').innerHTML = brief.risks_blockers.slice(0, 6).map(r =>
-                        `<li class="eb-list-item eb-list-item--red">${escapeHtml(r)}</li>`
-                    ).join('');
-                }
-                if (hasActions) {
-                    document.getElementById('eb-actions-col').style.display = '';
-                    document.getElementById('eb-actions-count').textContent = brief.action_items.length;
-                    document.getElementById('eb-actions-list').innerHTML = brief.action_items.slice(0, 8).map(a =>
-                        `<li class="eb-list-item eb-list-item--indigo">${escapeHtml(a)}</li>`
-                    ).join('');
-                }
+            // Decisions
+            if (has(brief.decisions)) {
+                document.getElementById('eb-decisions-section').style.display = '';
+                document.getElementById('eb-decisions-list').innerHTML = brief.decisions.map(d =>
+                    `<li class="eb-list-item eb-list-item--indigo">
+                        <span class="eb-decision-date">${escapeHtml(formatDateShort(d.date))}</span>
+                        ${escapeHtml(d.text)}
+                        ${d.meeting_title ? `<span class="eb-decision-source">${escapeHtml(d.meeting_title)}</span>` : ''}
+                    </li>`
+                ).join('');
+            }
+
+            // To-Dos (reminder-item style)
+            if (has(brief.todos)) {
+                document.getElementById('eb-todos-section').style.display = '';
+                document.getElementById('eb-todos-list').innerHTML = brief.todos.map(t => {
+                    const prCls = t.priority === 'high' ? 'data-priority="high"' : t.priority === 'urgent' ? 'data-priority="urgent"' : '';
+                    return `<div class="reminder-item" ${prCls}>
+                        <div class="reminder-check ${t.is_done ? 'reminder-check--done' : ''}"></div>
+                        <div class="reminder-content">
+                            <div class="reminder-title ${t.is_done ? 'reminder-title--done' : ''}">${escapeHtml(t.title)}</div>
+                            <div class="reminder-time">
+                                ${t.priority ? `<span class="eb-todo-priority eb-todo-priority--${t.priority}">${escapeHtml(t.priority)}</span>` : ''}
+                                ${t.due_date ? escapeHtml(formatDateShort(t.due_date)) : ''}
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+            }
+
+            // Upcoming Meetings
+            if (has(brief.upcoming_meetings)) {
+                document.getElementById('eb-upcoming-section').style.display = '';
+                document.getElementById('eb-upcoming-list').innerHTML = brief.upcoming_meetings.map(m =>
+                    `<div class="eb-upcoming-item">
+                        <div class="eb-upcoming-header">
+                            <span class="eb-upcoming-date">${escapeHtml(formatDateShort(m.date))}${m.time ? ' ' + escapeHtml(m.time) : ''}</span>
+                            <span class="eb-upcoming-title">${escapeHtml(m.title)}</span>
+                        </div>
+                        ${m.prep_notes ? `<div class="eb-upcoming-prep">Remember: ${escapeHtml(m.prep_notes)}</div>` : ''}
+                    </div>`
+                ).join('');
             }
 
             // Key People
             if (has(brief.key_people)) {
                 document.getElementById('eb-people-section').style.display = '';
                 document.getElementById('eb-people-list').innerHTML = brief.key_people.map(p => {
-                    const initials = p.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-                    return `<span class="eb-person"><span class="eb-person-avatar">${initials}</span>${escapeHtml(p.name)}${p.role ? `<span class="eb-person-role">${escapeHtml(p.role)}</span>` : ''}</span>`;
+                    const name = typeof p === 'string' ? p : p.name || '';
+                    const role = typeof p === 'object' ? p.role : '';
+                    const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+                    return `<span class="eb-person"><span class="eb-person-avatar">${initials}</span>${escapeHtml(name)}${role ? `<span class="eb-person-role">${escapeHtml(role)}</span>` : ''}</span>`;
                 }).join('');
             }
+        }
 
-            // Next Challenges
-            if (has(brief.next_challenges)) {
-                document.getElementById('eb-challenges-section').style.display = '';
-                document.getElementById('eb-challenges-list').innerHTML = brief.next_challenges.slice(0, 6).map(c =>
-                    `<li class="eb-list-item eb-list-item--amber">${escapeHtml(c)}</li>`
-                ).join('');
-            }
+        function timeAgo(dateStr) {
+            const diff = Date.now() - new Date(dateStr).getTime();
+            const mins = Math.floor(diff / 60000);
+            if (mins < 60) return `${mins}m ago`;
+            const hrs = Math.floor(mins / 60);
+            if (hrs < 24) return `${hrs}h ago`;
+            return `${Math.floor(hrs / 24)}d ago`;
+        }
+
+        function formatDateShort(dateStr) {
+            if (!dateStr) return '';
+            try {
+                const d = new Date(dateStr + (dateStr.includes('T') ? '' : 'T00:00:00'));
+                return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            } catch { return dateStr; }
         }
 
         // ===== MEETINGS TAB =====
