@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0d1117">
     <title>Projeto - Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=28">
+    <link rel="stylesheet" href="css/style.css?v=29">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -152,9 +152,15 @@
                         <ul class="eb-list eb-list--indigo" id="eb-decisions-list"></ul>
                     </div>
 
-                    <!-- To-dos (LEMBRETES style) -->
+                    <!-- To-dos (LEMBRETES style, matching dashboard) -->
                     <div class="eb-section" id="eb-todos-section" style="display:none;">
-                        <h4 class="eb-section-title">To-Dos</h4>
+                        <div class="brief-detail-header">
+                            <div class="brief-detail-label brief-label-reminder">TO-DOS</div>
+                            <span class="brief-crud-add" onclick="ebTodoShowAdd()" title="Add">+</span>
+                        </div>
+                        <div class="brief-add-input-wrap" id="eb-todo-add" style="display:none;">
+                            <input class="brief-add-input" type="text" placeholder="New to-do..." onkeydown="ebTodoAddKeydown(event)" />
+                        </div>
                         <div class="eb-todos-list" id="eb-todos-list"></div>
                     </div>
 
@@ -687,23 +693,10 @@
                 ).join('');
             }
 
-            // To-Dos (LEMBRETES style with tags)
+            // To-Dos (LEMBRETES style — identical to dashboard)
             if (has(brief.todos)) {
                 document.getElementById('eb-todos-section').style.display = '';
-                document.getElementById('eb-todos-list').innerHTML = brief.todos.map(t => {
-                    const doneClass = t.is_done ? ' brief-item-completed' : '';
-                    const accentClass = t.priority === 'high' ? ' brief-action-important' : t.priority === 'urgent' ? ' eb-todo-urgent' : ' brief-action-reminder';
-                    const tags = (t.tags || []).map(tag =>
-                        `<span class="brief-action-deadline">${escapeHtml(tag)}</span>`
-                    ).join('');
-                    const priorityTag = (!t.tags || t.tags.length === 0) && t.priority
-                        ? `<span class="brief-action-deadline">${escapeHtml(t.priority.toUpperCase())}</span>` : '';
-                    return `<div class="brief-action-item${accentClass}${doneClass}">
-                        <span class="eb-todo-check${t.is_done ? ' eb-todo-check--done' : ''}">&#10003;</span>
-                        <span class="brief-action-text">${escapeHtml(t.title)}</span>
-                        ${tags}${priorityTag}
-                    </div>`;
-                }).join('');
+                renderEbTodos(brief.todos);
             }
 
             // Upcoming Meetings
@@ -730,6 +723,82 @@
                     return `<span class="eb-person"><span class="eb-person-avatar">${initials}</span>${escapeHtml(name)}${role ? `<span class="eb-person-role">${escapeHtml(role)}</span>` : ''}</span>`;
                 }).join('');
             }
+        }
+
+        // ===== TO-DO CRUD (matching dashboard LEMBRETES) =====
+        function renderEbTodos(todos) {
+            document.getElementById('eb-todos-list').innerHTML = todos.map((t, i) => {
+                const doneClass = t.is_done ? ' brief-item-completed' : '';
+                const accentClass = t.priority === 'high' ? ' brief-action-important' : t.priority === 'urgent' ? ' brief-action-important' : ' brief-action-reminder';
+                const tags = (t.tags || []).map(tag =>
+                    `<span class="brief-action-deadline">${escapeHtml(tag)}</span>`
+                ).join('');
+                const priorityTag = (!t.tags || t.tags.length === 0) && t.priority
+                    ? `<span class="brief-action-deadline">${escapeHtml(t.priority.toUpperCase())}</span>` : '';
+                return `<div class="brief-action-item${accentClass}${doneClass}">
+                    <span class="brief-crud-check" onclick="ebTodoToggle(${i})" title="${t.is_done ? 'Undo' : 'Complete'}">&#10003;</span>
+                    <span class="brief-action-text">${escapeHtml(t.title)}</span>
+                    ${tags}${priorityTag}
+                    <span class="brief-crud-remove" onclick="ebTodoRemove(${i})" title="Remove">&minus;</span>
+                </div>`;
+            }).join('');
+            if (todos.length === 0) {
+                document.getElementById('eb-todos-list').innerHTML = '<div class="brief-action-item brief-action-clear"><span class="brief-action-text" style="opacity:0.4;">No to-dos</span></div>';
+            }
+        }
+
+        async function _ebTodoPush(todos) {
+            if (!currentWorkSlug || !workProjectData) return;
+            const rc = workProjectData;
+            const brief = rc.executive_brief || {};
+            brief.todos = todos;
+            try {
+                await fetch(`${API_BASE}/executive-briefs/${currentWorkSlug}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-Atlas-Key': 'public' },
+                    body: JSON.stringify(brief)
+                });
+            } catch (e) { console.error('Failed to push todos:', e); }
+            renderEbTodos(todos);
+        }
+
+        function ebTodoToggle(idx) {
+            const brief = (workProjectData || {}).executive_brief || {};
+            const todos = brief.todos || [];
+            if (!todos[idx]) return;
+            todos[idx].is_done = !todos[idx].is_done;
+            _ebTodoPush(todos);
+        }
+
+        function ebTodoRemove(idx) {
+            const brief = (workProjectData || {}).executive_brief || {};
+            const todos = brief.todos || [];
+            todos.splice(idx, 1);
+            _ebTodoPush(todos);
+        }
+
+        function ebTodoShowAdd() {
+            const wrap = document.getElementById('eb-todo-add');
+            if (!wrap) return;
+            const visible = wrap.style.display !== 'none';
+            wrap.style.display = visible ? 'none' : 'block';
+            if (!visible) wrap.querySelector('input').focus();
+        }
+
+        function ebTodoAddKeydown(event) {
+            if (event.key !== 'Enter') return;
+            const input = event.target;
+            const text = input.value.trim();
+            if (!text) return;
+            input.disabled = true;
+            const brief = (workProjectData || {}).executive_brief || {};
+            const todos = brief.todos || [];
+            const slugTag = (currentWorkSlug || '').toUpperCase().replace('-', '/');
+            todos.push({ title: text, priority: 'normal', tags: [slugTag, 'NEW'], is_done: false, due_date: null });
+            input.value = '';
+            input.disabled = false;
+            document.getElementById('eb-todo-add').style.display = 'none';
+            _ebTodoPush(todos);
         }
 
         function timeAgo(dateStr) {
