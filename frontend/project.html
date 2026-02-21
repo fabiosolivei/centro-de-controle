@@ -6,7 +6,7 @@
     <meta name="theme-color" content="#0d1117">
     <title>Projeto - Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=27">
+    <link rel="stylesheet" href="css/style.css?v=28">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -821,12 +821,19 @@
                 ).join('');
             }
 
+            // Include executive brief meetings (richest data)
+            const briefMeetings = (brief.recent_meetings || []);
+
             // Combine and deduplicate by title
             const seen = new Set();
             const combined = [];
+            for (const m of briefMeetings) {
+                const key = (m.title || '').toLowerCase();
+                if (!seen.has(key)) { seen.add(key); combined.push({ title: m.title, date: m.date, summary: m.brief || m.summary, structured: m.structured, notion_url: m.notion_url, source: 'brief' }); }
+            }
             for (const m of weekMeetings) {
                 const key = (m.title || '').toLowerCase();
-                if (!seen.has(key)) { seen.add(key); combined.push({ title: m.title, date: m.date, summary: m.summary, source: 'week' }); }
+                if (!seen.has(key)) { seen.add(key); combined.push({ title: m.title, date: m.date, summary: m.summary, structured: m.structured, source: 'week' }); }
             }
             for (const m of allMeetings) {
                 const key = (m.title || '').toLowerCase();
