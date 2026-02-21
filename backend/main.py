@@ -9,7 +9,7 @@ import json
 import re
 import hashlib
 import asyncio
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import Optional, List
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -378,6 +378,23 @@ def init_db():
             full_markdown TEXT,
             generated_at TEXT,
             pushed_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+
+    # Executive Briefs (structured project intelligence, updated by Atlas subagent)
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS executive_briefs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_slug TEXT UNIQUE NOT NULL,
+            status_summary TEXT,
+            important_dates TEXT DEFAULT '[]',
+            recent_meetings TEXT DEFAULT '[]',
+            decisions TEXT DEFAULT '[]',
+            todos TEXT DEFAULT '[]',
+            upcoming_meetings TEXT DEFAULT '[]',
+            key_people TEXT DEFAULT '[]',
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_by TEXT DEFAULT 'atlas'
         )
     """)
 
@@ -2467,7 +2484,6 @@ WORK_PROJECTS_PATH = _LOCAL_WORK_PATH if os.path.exists(_LOCAL_WORK_PATH) else _
 
 WORK_PROJECTS_MAP = {
     "3tpm": {"folder": "3TPM", "type": "multi"},
-    "catalog-admin": {"file": "CATALOG-ADMIN.md", "type": "single"},
     "company-store": {"file": "COMPANY-STORE.md", "type": "single"},
     "cms-dam": {"file": "CMS-DAM-STRATEGY.md", "type": "single"},
     "pocs-ia": {"file": "POCS-IA.md", "type": "single"},
@@ -2764,8 +2780,7 @@ async def get_work_project(slug: str):
 
 # Keyword mapping for cross-referencing Notion meetings, Confluence, etc.
 PROJECT_KEYWORDS = {
-    "3tpm": ["3tpm", "3TPM", "marketplace", "skunk", "korea", "coreia", "catalog", "Catalog Admin", "Book AI", "Payment Method", "SKU", "produto", "variante"],
-    "catalog-admin": ["catalog", "Catalog Admin", "Book AI", "Payment Method", "3tpm", "3TPM", "taxonomy", "bulk import"],
+    "3tpm": ["3tpm", "3TPM", "marketplace", "skunk", "korea", "coreia", "catalog", "Catalog Admin", "Book AI", "Payment Method", "SKU", "produto", "variante", "taxonomy", "bulk import", "assortment"],
     "cms-dam": ["CMS", "DAM", "content", "braze", "banner", "Acquia", "DeepLink", "approval flow", "digicomms", "Strategy"],
     "company-store": ["Company", "Store Management", "company-store", "onboarding", "vendor", "seller"],
     "autonomy": ["autonomy", "automation", "Visagio", "CoE", "autonomia", "KPI", "Esmael"],
@@ -2775,7 +2790,6 @@ PROJECT_KEYWORDS = {
 # Intelligence deep-dive file mapping
 INTELLIGENCE_FILES = {
     "3tpm": "3TPM-DEEP-DIVE.md",
-    "catalog-admin": "3TPM-DEEP-DIVE.md",  # Catalog is part of 3TPM
     "cms-dam": "CMS-DAM-CONTENT-DEEP-DIVE.md",
     "company-store": None,
     "autonomy": "AUTONOMY-AUTOMATION-DEEP-DIVE.md",
@@ -2785,7 +2799,6 @@ INTELLIGENCE_FILES = {
 # Project intelligence files (enriched project docs in trabalho/projetos/)
 PROJECT_INTEL_FILES = {
     "3tpm": None,  # multi-type uses folder
-    "catalog-admin": "CATALOG-ADMIN.md",
     "cms-dam": "CMS-DAM-STRATEGY.md",
     "company-store": "COMPANY-STORE.md",
     "autonomy": "AUTONOMY-AUTOMATION.md",
@@ -2803,9 +2816,8 @@ _3TPM_FILES = {
 
 # Project display names
 PROJECT_DISPLAY_NAMES = {
-    "3tpm": "3TPM",
-    "catalog-admin": "Catalog Admin",
-    "cms-dam": "Content",
+    "3tpm": "Catalog & 3TPM",
+    "cms-dam": "Content (CMS + DAM)",
     "company-store": "Company & Store",
     "autonomy": "Autonomy & Automation",
     "pocs-ia": "POCs IA",
@@ -2820,11 +2832,50 @@ def _matches_keywords(text: str, keywords: list) -> bool:
     return any(kw.lower() in text_lower for kw in keywords)
 
 def _get_executive_brief(slug: str) -> dict:
-    """Build a structured executive brief from deep-dive + project intelligence files.
+    """Build a structured executive brief.
     
-    Returns structured dict with: executive_summary, kpis, risks_blockers,
-    recent_meetings, action_items, next_challenges, key_people.
+    Tries DB-stored brief first (populated by intelligence-updater subagent).
+    Falls back to file-parsing legacy logic if DB is empty.
     """
+    # --- Try DB-stored brief first ---
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM executive_briefs WHERE project_slug = ?", (slug,))
+        row = cursor.fetchone()
+        conn.close()
+        if row:
+            d = dict(row)
+            db_brief = {
+                "status_summary": d.get("status_summary"),
+                "important_dates": [],
+                "recent_meetings": [],
+                "decisions": [],
+                "todos": [],
+                "upcoming_meetings": [],
+                "key_people": [],
+                "updated_at": d.get("updated_at"),
+                "source": "database",
+                # Legacy compat fields so old frontend still works during migration
+                "executive_summary": d.get("status_summary"),
+                "kpis": [],
+                "risks_blockers": [],
+                "action_items": [],
+                "next_challenges": [],
+                "sources": ["database"],
+            }
+            for field in ("important_dates", "recent_meetings", "decisions", "todos", "upcoming_meetings", "key_people"):
+                try:
+                    db_brief[field] = json.loads(d[field]) if d[field] else []
+                except (json.JSONDecodeError, TypeError):
+                    db_brief[field] = []
+            # Only return DB brief if it has meaningful content
+            if db_brief.get("status_summary") or db_brief.get("recent_meetings"):
+                return db_brief
+    except Exception:
+        pass
+
+    # --- Legacy: parse from markdown files ---
     import re as _re
     
     brief = {
@@ -3286,6 +3337,98 @@ async def get_work_project_file(slug: str, file_path: str):
         "sections": parsed["sections"],
         "modified": stat.st_mtime
     }
+
+# ============================================
+# EXECUTIVE BRIEFS (Structured Project Intelligence)
+# ============================================
+
+@app.get("/api/executive-briefs/{slug}")
+async def get_executive_brief_stored(slug: str):
+    """Return stored executive brief for a project slug."""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM executive_briefs WHERE project_slug = ?", (slug,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="No executive brief found for this project")
+
+    d = dict(row)
+    for field in ("important_dates", "recent_meetings", "decisions", "todos", "upcoming_meetings", "key_people"):
+        try:
+            d[field] = json.loads(d[field]) if d[field] else []
+        except (json.JSONDecodeError, TypeError):
+            d[field] = []
+    return d
+
+
+@app.post("/api/executive-briefs/{slug}")
+async def upsert_executive_brief(slug: str, request: Request):
+    """Create or update an executive brief. Authenticated via X-Atlas-Key."""
+    verify_atlas_key(request)
+    body = await request.json()
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    fields_json = {}
+    for field in ("important_dates", "recent_meetings", "decisions", "todos", "upcoming_meetings", "key_people"):
+        val = body.get(field)
+        fields_json[field] = json.dumps(val, ensure_ascii=False) if val is not None else None
+
+    cursor.execute("SELECT id FROM executive_briefs WHERE project_slug = ?", (slug,))
+    existing = cursor.fetchone()
+
+    now_ts = datetime.now(timezone.utc).isoformat()
+
+    if existing:
+        sets = ["updated_at = ?", "updated_by = ?"]
+        params = [now_ts, body.get("updated_by", "atlas")]
+
+        if body.get("status_summary") is not None:
+            sets.append("status_summary = ?")
+            params.append(body["status_summary"])
+
+        for field, jval in fields_json.items():
+            if jval is not None:
+                sets.append(f"{field} = ?")
+                params.append(jval)
+
+        params.append(slug)
+        cursor.execute(f"UPDATE executive_briefs SET {', '.join(sets)} WHERE project_slug = ?", params)
+    else:
+        cursor.execute("""
+            INSERT INTO executive_briefs
+            (project_slug, status_summary, important_dates, recent_meetings, decisions, todos, upcoming_meetings, key_people, updated_at, updated_by)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            slug,
+            body.get("status_summary", ""),
+            fields_json.get("important_dates", "[]"),
+            fields_json.get("recent_meetings", "[]"),
+            fields_json.get("decisions", "[]"),
+            fields_json.get("todos", "[]"),
+            fields_json.get("upcoming_meetings", "[]"),
+            fields_json.get("key_people", "[]"),
+            now_ts,
+            body.get("updated_by", "atlas"),
+        ))
+
+    conn.commit()
+
+    cursor.execute("SELECT * FROM executive_briefs WHERE project_slug = ?", (slug,))
+    result = dict(cursor.fetchone())
+    conn.close()
+
+    for field in ("important_dates", "recent_meetings", "decisions", "todos", "upcoming_meetings", "key_people"):
+        try:
+            result[field] = json.loads(result[field]) if result[field] else []
+        except (json.JSONDecodeError, TypeError):
+            result[field] = []
+
+    return result
+
 
 # ============================================
 # UPDATES ENDPOINT
