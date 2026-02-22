@@ -96,33 +96,45 @@ BUTTON_LAYOUTS = {
 
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=10)
     conn.row_factory = sqlite3.Row
     return conn
 
 
-def send_telegram_message(text: str) -> bool:
-    """Send message via OpenClaw CLI (same as sibling relay)"""
+def send_via_openclaw(text: str) -> int:
+    """Send message via OpenClaw CLI. Returns message_id on success, 0 on failure."""
     try:
         result = subprocess.run(
             ["openclaw", "message", "send",
              "--channel", "telegram",
              "--target", TELEGRAM_CHAT_ID,
              "--message", text],
-            capture_output=True, text=True, timeout=15
+            capture_output=True, text=True, timeout=20
         )
         if result.returncode == 0:
-            return True
+            import re
+            match = re.search(r"Message ID:\s*(\d+)", result.stdout)
+            msg_id = int(match.group(1)) if match else 0
+            print(f"  [openclaw] sent, message_id={msg_id}")
+            return msg_id
         else:
-            print(f"  openclaw CLI error: {result.stderr[:200]}")
-            # Fallback: try direct Telegram API
-            return send_telegram_direct(text)
+            print(f"  [openclaw] error: {result.stderr[:200]}")
+            return 0
     except FileNotFoundError:
-        print("  openclaw CLI not found, trying direct Telegram API")
-        return send_telegram_direct(text)
+        print("  [openclaw] CLI not found")
+        return 0
     except Exception as e:
-        print(f"  openclaw CLI exception: {e}")
-        return send_telegram_direct(text)
+        print(f"  [openclaw] exception: {e}")
+        return 0
+
+
+def send_telegram_message(text: str) -> bool:
+    """Send message via OpenClaw CLI, fallback to direct Bot API."""
+    msg_id = send_via_openclaw(text)
+    if msg_id:
+        return True
+    print("  [fallback] trying direct Telegram API")
+    return send_telegram_direct(text)
 
 
 def send_telegram_direct(text: str) -> bool:
@@ -146,13 +158,44 @@ def send_telegram_direct(text: str) -> bool:
         return False
 
 
-def send_telegram_with_buttons(text: str, buttons: list) -> bool:
-    """Send message with inline keyboard buttons via Telegram Bot API directly.
-    OpenClaw CLI doesn't support reply_markup, so we always use the Bot API."""
+def add_buttons_to_message(message_id: int, buttons: list) -> bool:
+    """Add inline keyboard buttons to an existing message via editMessageReplyMarkup."""
     bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
     if not bot_token:
-        print(f"  No TELEGRAM_BOT_TOKEN, falling back to plain text")
-        return send_telegram_message(text)
+        print(f"  [buttons] no TELEGRAM_BOT_TOKEN, skipping buttons")
+        return False
+
+    try:
+        import httpx
+        url = f"https://api.telegram.org/bot{bot_token}/editMessageReplyMarkup"
+        response = httpx.post(url, json={
+            "chat_id": TELEGRAM_CHAT_ID,
+            "message_id": message_id,
+            "reply_markup": {"inline_keyboard": buttons},
+        }, timeout=10)
+        if response.status_code == 200:
+            print(f"  [buttons] added to message {message_id}")
+            return True
+        print(f"  [buttons] API error {response.status_code}: {response.text[:200]}")
+        return False
+    except Exception as e:
+        print(f"  [buttons] error: {e}")
+        return False
+
+
+def send_telegram_with_buttons(text: str, buttons: list) -> bool:
+    """Send message via OpenClaw (Nova gets context) then add buttons via Bot API.
+    Two-step: 1) OpenClaw send (Nova sees it) 2) editMessageReplyMarkup (buttons appear)."""
+    msg_id = send_via_openclaw(text)
+    if msg_id:
+        add_buttons_to_message(msg_id, buttons)
+        return True
+
+    print("  [fallback] OpenClaw failed, sending with buttons via Bot API directly")
+    bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+    if not bot_token:
+        print(f"  [fallback] no token, sending plain text")
+        return send_telegram_direct(text)
 
     try:
         import httpx
@@ -164,12 +207,13 @@ def send_telegram_with_buttons(text: str, buttons: list) -> bool:
             "reply_markup": {"inline_keyboard": buttons},
         }, timeout=10)
         if response.status_code == 200:
+            print(f"  [fallback] sent with buttons via Bot API")
             return True
-        print(f"  Telegram buttons API error {response.status_code}: {response.text[:200]}")
-        return send_telegram_message(text)
+        print(f"  [fallback] Bot API error {response.status_code}: {response.text[:200]}")
+        return send_telegram_direct(text)
     except Exception as e:
-        print(f"  Telegram buttons error: {e}, falling back to plain text")
-        return send_telegram_message(text)
+        print(f"  [fallback] error: {e}")
+        return send_telegram_direct(text)
 
 
 def process_one_time_reminders():
@@ -249,8 +293,9 @@ def process_scheduled_messages():
         
         text = f"{category_prefix} {msg['message']}"
         
-        print(f"  Sending scheduled: {msg['name']} ({current_time})")
         buttons = BUTTON_LAYOUTS.get(msg['name'])
+        mode = "buttons" if buttons else "plain"
+        print(f"  Sending scheduled: {msg['name']} ({current_time}) [{mode}]")
         success = send_telegram_with_buttons(text, buttons) if buttons else send_telegram_message(text)
         if success:
             cursor.execute(
@@ -259,9 +304,9 @@ def process_scheduled_messages():
             )
             conn.commit()
             sent_count += 1
-            print(f"  ✅ Sent: {msg['name']}")
+            print(f"  ✅ Sent: {msg['name']} [{mode}]")
         else:
-            print(f"  ⚠️ Failed: {msg['name']}")
+            print(f"  ⚠️ Failed: {msg['name']} [{mode}]")
     
     conn.close()
     return sent_count
