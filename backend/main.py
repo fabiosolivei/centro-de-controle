@@ -2489,8 +2489,7 @@ WORK_PROJECTS_MAP = {
     "3tpm": {"folder": "3TPM", "type": "multi"},
     "company-store": {"file": "COMPANY-STORE.md", "type": "single"},
     "cms-dam": {"file": "CMS-DAM-STRATEGY.md", "type": "single"},
-    "pocs-ia": {"file": "POCS-IA.md", "type": "single"},
-    "autonomy": {"file": "AUTONOMY-AUTOMATION.md", "type": "single"}
+    "ai-automation": {"file": "AI-AUTOMATION.md", "type": "single"}
 }
 
 def parse_markdown_file(file_path: str) -> dict:
@@ -2786,8 +2785,7 @@ PROJECT_KEYWORDS = {
     "3tpm": ["3tpm", "3TPM", "marketplace", "skunk", "korea", "coreia", "catalog", "Catalog Admin", "Book AI", "Payment Method", "SKU", "produto", "variante", "taxonomy", "bulk import", "assortment"],
     "cms-dam": ["CMS", "DAM", "content", "braze", "banner", "Acquia", "DeepLink", "approval flow", "digicomms", "Strategy"],
     "company-store": ["Company", "Store Management", "company-store", "onboarding", "vendor", "seller"],
-    "autonomy": ["autonomy", "automation", "Visagio", "CoE", "autonomia", "KPI", "Esmael"],
-    "pocs-ia": ["POC", "IA", "MultiPOC", "AI", "chatbot", "taxonomy score"],
+    "ai-automation": ["autonomy", "automation", "Visagio", "CoE", "autonomia", "KPI", "Esmael", "POC", "IA", "MultiPOC", "AI", "chatbot", "taxonomy score", "Igor"],
 }
 
 # Intelligence deep-dive file mapping
@@ -2795,8 +2793,7 @@ INTELLIGENCE_FILES = {
     "3tpm": "3TPM-DEEP-DIVE.md",
     "cms-dam": "CMS-DAM-CONTENT-DEEP-DIVE.md",
     "company-store": None,
-    "autonomy": "AUTONOMY-AUTOMATION-DEEP-DIVE.md",
-    "pocs-ia": None,
+    "ai-automation": "AI-AUTOMATION-DEEP-DIVE.md",
 }
 
 # Project intelligence files (enriched project docs in trabalho/projetos/)
@@ -2804,8 +2801,7 @@ PROJECT_INTEL_FILES = {
     "3tpm": None,  # multi-type uses folder
     "cms-dam": "CMS-DAM-STRATEGY.md",
     "company-store": "COMPANY-STORE.md",
-    "autonomy": "AUTONOMY-AUTOMATION.md",
-    "pocs-ia": "POCS-IA.md",
+    "ai-automation": "AI-AUTOMATION.md",
 }
 
 # 3TPM multi-folder files for executive brief consolidation
@@ -2822,8 +2818,7 @@ PROJECT_DISPLAY_NAMES = {
     "3tpm": "Catalog & 3TPM",
     "cms-dam": "Content (CMS + DAM)",
     "company-store": "Company & Store",
-    "autonomy": "Autonomy & Automation",
-    "pocs-ia": "POCs IA",
+    "ai-automation": "AI & Automation",
 }
 
 # Cache for report cards (30 min TTL)
