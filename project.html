@@ -7,7 +7,7 @@
     <meta name="description" content="Project detail - Centro de Controle">
     <title>Projeto - Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=31">
+    <link rel="stylesheet" href="css/style.css?v=32">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://srv1315519.hstgr.cloud" crossorigin>
@@ -107,9 +107,9 @@
 
             <!-- TAB BAR -->
             <nav class="sp-tabs" role="tablist" aria-label="Project sections">
-                <button class="sp-tab sp-tab--active" role="tab" aria-selected="true" aria-controls="tab-overview" id="tab-btn-overview" data-tab="overview">Overview</button>
-                <button class="sp-tab" role="tab" aria-selected="false" aria-controls="tab-meetings" id="tab-btn-meetings" data-tab="meetings">Meetings <span class="sp-tab-badge" id="tab-meetings-badge"></span></button>
-                <button class="sp-tab" role="tab" aria-selected="false" aria-controls="tab-docs" id="tab-btn-docs" data-tab="docs">Docs & Knowledge <span class="sp-tab-badge" id="tab-docs-badge"></span></button>
+                <button class="sp-tab sp-tab--active" role="tab" aria-selected="true" aria-controls="tab-overview" id="tab-btn-overview" data-tab="overview">Visão Geral</button>
+                <button class="sp-tab" role="tab" aria-selected="false" aria-controls="tab-meetings" id="tab-btn-meetings" data-tab="meetings">Reuniões <span class="sp-tab-badge" id="tab-meetings-badge"></span></button>
+                <button class="sp-tab" role="tab" aria-selected="false" aria-controls="tab-docs" id="tab-btn-docs" data-tab="docs">Docs <span class="sp-tab-badge" id="tab-docs-badge"></span></button>
             </nav>
 
             <!-- ===== OVERVIEW TAB ===== -->
@@ -124,26 +124,26 @@
                 <!-- Executive Brief v2 -->
                 <div class="eb-card" id="eb-card">
                     <div class="eb-header">
-                        <h3 class="eb-title">Executive Brief</h3>
+                        <h2 class="eb-title">Resumo Executivo</h2>
                         <span class="eb-updated" id="eb-updated"></span>
                     </div>
 
                     <!-- Status -->
                     <div class="eb-section" id="eb-status-section">
                         <h4 class="eb-section-title">Status</h4>
-                        <div class="eb-status-text" id="eb-status-text" aria-live="polite">Loading...</div>
+                        <div class="eb-status-text" id="eb-status-text" aria-live="polite">Carregando...</div>
                     </div>
 
                     <!-- Important Dates -->
                     <div class="eb-section" id="eb-dates-section" style="display:none;">
-                        <h4 class="eb-section-title">Important Dates</h4>
+                        <h4 class="eb-section-title">Datas Importantes</h4>
                         <div class="eb-dates-list" id="eb-dates-list"></div>
                     </div>
 
                     <!-- Last Meetings (horizontal tabs) -->
                     <div class="eb-section" id="eb-meetings-section" style="display:none;">
                         <div class="eb-section-header">
-                            <h4 class="eb-section-title">Last Meetings</h4>
+                            <h4 class="eb-section-title">Últimas Reuniões</h4>
                             <button class="eb-link-btn" id="eb-meetings-more" onclick="switchTab('meetings')">Ver mais &rarr;</button>
                         </div>
                         <div class="eb-meeting-tabs" id="eb-meeting-tabs"></div>
@@ -153,7 +153,7 @@
                     <!-- Decisions (collapsed by default) -->
                     <div class="eb-section eb-collapsible" id="eb-decisions-section" style="display:none;">
                         <h4 class="eb-section-title eb-collapse-toggle" onclick="this.parentElement.classList.toggle('eb-collapsed')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" role="button" tabindex="0" aria-expanded="true">
-                            Decisions <span class="eb-collapse-icon">&#x25BC;</span>
+                            Decisões <span class="eb-collapse-icon">&#x25BC;</span>
                         </h4>
                         <ul class="eb-list eb-list--indigo eb-collapse-body" id="eb-decisions-list"></ul>
                     </div>
@@ -162,24 +162,24 @@
                     <div class="eb-section" id="eb-todos-section" style="display:none;">
                         <div class="brief-detail-header">
                             <div class="brief-detail-label brief-label-reminder">TO-DOS</div>
-                            <span class="brief-crud-add" onclick="ebTodoShowAdd()" title="Add">+</span>
+                            <span class="brief-crud-add" onclick="ebTodoShowAdd()" title="Adicionar">+</span>
                         </div>
                         <div class="brief-add-input-wrap" id="eb-todo-add" style="display:none;">
-                            <input class="brief-add-input" type="text" placeholder="New to-do..." onkeydown="ebTodoAddKeydown(event)" />
+                            <input class="brief-add-input" type="text" placeholder="Novo to-do..." onkeydown="ebTodoAddKeydown(event)" />
                         </div>
                         <div class="eb-todos-list" id="eb-todos-list"></div>
                     </div>
 
                     <!-- Upcoming Meetings -->
                     <div class="eb-section" id="eb-upcoming-section" style="display:none;">
-                        <h4 class="eb-section-title">Upcoming Meetings</h4>
+                        <h4 class="eb-section-title">Próximas Reuniões</h4>
                         <div class="eb-upcoming-list" id="eb-upcoming-list"></div>
                     </div>
 
                     <!-- Key People (collapsed by default) -->
                     <div class="eb-section eb-collapsible eb-collapsed" id="eb-people-section" style="display:none;">
                         <h4 class="eb-section-title eb-collapse-toggle" onclick="this.parentElement.classList.toggle('eb-collapsed')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}" role="button" tabindex="0" aria-expanded="false">
-                            Key People <span class="eb-collapse-icon">&#x25BC;</span>
+                            Pessoas-Chave <span class="eb-collapse-icon">&#x25BC;</span>
                         </h4>
                         <div class="eb-people eb-collapse-body" id="eb-people-list"></div>
                     </div>
@@ -192,12 +192,12 @@
                 <div class="mt-upcoming" id="mt-upcoming" style="display:none;"></div>
                 <!-- Key Insights from exec brief -->
                 <div class="mt-insights" id="mt-insights" style="display:none;">
-                    <h4 class="mt-insights-title">Key Insights</h4>
+                    <h4 class="mt-insights-title">Insights</h4>
                     <div class="mt-insights-list" id="mt-insights-list"></div>
                 </div>
                 <!-- Timeline -->
                 <div class="sp-timeline" id="sp-timeline">
-                    <div class="sp-empty-state">Loading meetings...</div>
+                    <div class="sp-empty-state">Carregando reuniões...</div>
                 </div>
             </div>
 
@@ -206,30 +206,30 @@
                 <!-- Project Identity -->
                 <div class="sp-identity" id="sp-identity" style="display:none;">
                     <div class="sp-id-card" id="sp-id-definition" style="display:none;">
-                        <h4 class="sp-id-label">Definition</h4>
+                        <h4 class="sp-id-label">Definição</h4>
                         <p class="sp-id-text" id="sp-id-def-text"></p>
                     </div>
                     <div class="sp-id-card" id="sp-id-context" style="display:none;">
-                        <h4 class="sp-id-label">Context</h4>
+                        <h4 class="sp-id-label">Contexto</h4>
                         <p class="sp-id-text" id="sp-id-ctx-text"></p>
                     </div>
                     <div class="sp-id-card" id="sp-id-status" style="display:none;">
-                        <h4 class="sp-id-label">Current Status</h4>
+                        <h4 class="sp-id-label">Status Atual</h4>
                         <p class="sp-id-text" id="sp-id-st-text"></p>
                     </div>
                 </div>
 
                 <!-- Documentation List -->
                 <div class="dl-section" id="dl-docs-section">
-                    <h3 class="dl-heading">Documentation <span class="dl-count" id="dl-docs-count"></span></h3>
+                    <h3 class="dl-heading">Documentação <span class="dl-count" id="dl-docs-count"></span></h3>
                     <div class="dl-list" id="dl-docs-list">
-                        <div class="sp-empty-state">Loading...</div>
+                        <div class="sp-empty-state">Carregando...</div>
                     </div>
                 </div>
 
                 <!-- Cases -->
                 <div class="dl-section" id="dl-cases-section" style="display:none;">
-                    <h3 class="dl-heading">Cases</h3>
+                    <h3 class="dl-heading">Casos</h3>
                     <div class="dl-list" id="dl-cases-list"></div>
                 </div>
             </div>
@@ -521,7 +521,7 @@
             const isWork = isWorkProject(project.name, project.category);
             if (isWork) {
                 backBtn.href = 'work';
-                backBtn.textContent = '← Work Status';
+                backBtn.textContent = '← Work';
             } else if (project.category === 'mba') {
                 backBtn.href = 'mba';
                 backBtn.textContent = '← MBA';
@@ -560,7 +560,7 @@
         function setHeroHealth(health, reason) {
             const el = document.getElementById('hero-health');
             const colors = { green: '#22c55e', yellow: '#eab308', red: '#ef4444' };
-            const labels = { green: 'On Track', yellow: 'Attention', red: 'Critical' };
+            const labels = { green: 'No Prazo', yellow: 'Atenção', red: 'Crítico' };
             const c = colors[health] || colors.green;
             el.style.display = '';
             el.innerHTML = `<span class="ph-health-badge" style="background:${c}18;color:${c};border:1px solid ${c}33;">
@@ -580,9 +580,9 @@
                 btn.setAttribute('aria-expanded', open);
             };
             const rows = [];
-            if (conf.initiatives) rows.push(`<div class="ph-sd-row"><span class="ph-sd-label">Initiatives</span><span class="ph-sd-val">${conf.initiatives}</span></div>`);
-            if (conf.epics_open || conf.epics_closed) rows.push(`<div class="ph-sd-row"><span class="ph-sd-label">Epics</span><span class="ph-sd-val">${conf.epics_open || 0} open${conf.epics_closed ? `, ${conf.epics_closed} closed` : ''}</span></div>`);
-            if (conf.risks) rows.push(`<div class="ph-sd-row ph-sd-row--red"><span class="ph-sd-label">Risks</span><span class="ph-sd-val">${conf.risks}</span></div>`);
+            if (conf.initiatives) rows.push(`<div class="ph-sd-row"><span class="ph-sd-label">Iniciativas</span><span class="ph-sd-val">${conf.initiatives}</span></div>`);
+            if (conf.epics_open || conf.epics_closed) rows.push(`<div class="ph-sd-row"><span class="ph-sd-label">Épicos</span><span class="ph-sd-val">${conf.epics_open || 0} abertos${conf.epics_closed ? `, ${conf.epics_closed} fechados` : ''}</span></div>`);
+            if (conf.risks) rows.push(`<div class="ph-sd-row ph-sd-row--red"><span class="ph-sd-label">Riscos</span><span class="ph-sd-val">${conf.risks}</span></div>`);
             if (conf.bugs) rows.push(`<div class="ph-sd-row ph-sd-row--red"><span class="ph-sd-label">Bugs</span><span class="ph-sd-val">${conf.bugs}</span></div>`);
             drawer.innerHTML = rows.join('');
         }
@@ -696,7 +696,7 @@
             const weekMeetings = rc.meetings_this_week || [];
             if (weekMeetings.length > 0) {
                 document.getElementById('sp-week-bar').style.display = '';
-                document.getElementById('sp-week-label').textContent = rc.week ? `This Week (${rc.week})` : 'This Week';
+                document.getElementById('sp-week-label').textContent = rc.week ? `Esta Semana (${rc.week})` : 'Esta Semana';
                 document.getElementById('sp-week-list').innerHTML = weekMeetings.slice(0, 5).map(m =>
                     `<span class="sp-week-pill"><span class="sp-week-pill-date">${formatMeetingDate(m.date)}</span> ${escapeHtml(m.title)}</span>`
                 ).join('');
@@ -705,7 +705,7 @@
             // Updated timestamp
             if (brief.updated_at) {
                 const ago = timeAgo(brief.updated_at);
-                document.getElementById('eb-updated').textContent = `Updated ${ago}`;
+                document.getElementById('eb-updated').textContent = `Atualizado ${ago}`;
             }
 
             // Status (truncated with expand for ADHD friendliness)
@@ -714,9 +714,9 @@
             if (statusText) {
                 const parsed = marked.parse(statusText);
                 statusEl.innerHTML = `<div class="eb-status-truncated">${parsed}</div>
-                    <button class="eb-status-expand" onclick="this.previousElementSibling.classList.toggle('eb-status-expanded');this.textContent=this.previousElementSibling.classList.contains('eb-status-expanded')?'Show less \u25B2':'Show more \u25BC';">Show more &#x25BC;</button>`;
+                    <button class="eb-status-expand" onclick="this.previousElementSibling.classList.toggle('eb-status-expanded');this.textContent=this.previousElementSibling.classList.contains('eb-status-expanded')?'Menos \u25B2':'Mais \u25BC';">Mais &#x25BC;</button>`;
             } else {
-                statusEl.innerHTML = '<span class="sp-text-muted">No status available. Run /update-executive-briefs to populate.</span>';
+                statusEl.innerHTML = '<span class="sp-text-muted">Sem status disponível. Execute /update-executive-briefs.</span>';
             }
 
             // Important Dates
@@ -774,7 +774,7 @@
                             <span class="eb-upcoming-date">${escapeHtml(formatDateShort(m.date))}${m.time ? ' ' + escapeHtml(m.time) : ''}</span>
                             <span class="eb-upcoming-title">${escapeHtml(m.title)}</span>
                         </div>
-                        ${m.prep_notes ? `<div class="eb-upcoming-prep">Remember: ${escapeHtml(m.prep_notes)}</div>` : ''}
+                        ${m.prep_notes ? `<div class="eb-upcoming-prep">Lembrete: ${escapeHtml(m.prep_notes)}</div>` : ''}
                     </div>`
                 ).join('');
             }
@@ -802,14 +802,14 @@
                 const priorityTag = (!t.tags || t.tags.length === 0) && t.priority
                     ? `<span class="brief-action-deadline">${escapeHtml(t.priority.toUpperCase())}</span>` : '';
                 return `<div class="brief-action-item${accentClass}${doneClass}">
-                    <span class="brief-crud-check" onclick="ebTodoToggle(${i})" title="${t.is_done ? 'Undo' : 'Complete'}" role="button" tabindex="0" aria-label="${t.is_done ? 'Reabrir' : 'Completar'}: ${escapeHtml(t.title)}" onkeydown="if(event.key==='Enter')this.click()">&#10003;</span>
+                    <span class="brief-crud-check" onclick="ebTodoToggle(${i})" title="${t.is_done ? 'Desfazer' : 'Completar'}" role="button" tabindex="0" aria-label="${t.is_done ? 'Reabrir' : 'Completar'}: ${escapeHtml(t.title)}" onkeydown="if(event.key==='Enter')this.click()">&#10003;</span>
                     <span class="brief-action-text">${escapeHtml(t.title)}</span>
                     ${tags}${priorityTag}
-                    <span class="brief-crud-remove" onclick="ebTodoRemove(${i})" title="Remove" role="button" tabindex="0" aria-label="Remover: ${escapeHtml(t.title)}" onkeydown="if(event.key==='Enter')this.click()">&minus;</span>
+                    <span class="brief-crud-remove" onclick="ebTodoRemove(${i})" title="Remover" role="button" tabindex="0" aria-label="Remover: ${escapeHtml(t.title)}" onkeydown="if(event.key==='Enter')this.click()">&minus;</span>
                 </div>`;
             }).join('');
             if (todos.length === 0) {
-                document.getElementById('eb-todos-list').innerHTML = '<div class="brief-action-item brief-action-clear"><span class="brief-action-text" style="opacity:0.4;">No to-dos</span></div>';
+                document.getElementById('eb-todos-list').innerHTML = '<div class="brief-action-item brief-action-clear"><span class="brief-action-text" style="opacity:0.4;">Sem to-dos</span></div>';
             }
         }
 
@@ -887,27 +887,31 @@
         function timeAgo(dateStr) {
             const diff = Date.now() - new Date(dateStr).getTime();
             const mins = Math.floor(diff / 60000);
-            if (mins < 60) return `${mins}m ago`;
+            if (mins < 60) return `${mins} min`;
             const hrs = Math.floor(mins / 60);
-            if (hrs < 24) return `${hrs}h ago`;
-            return `${Math.floor(hrs / 24)}d ago`;
+            if (hrs < 24) return `${hrs}h`;
+            return `${Math.floor(hrs / 24)}d`;
         }
 
         function formatDateShort(dateStr) {
             if (!dateStr) return '';
             try {
-                const raw = dateStr.trim();
+                const raw = String(dateStr).trim();
+                if (!raw || raw === 'null' || raw === 'undefined') return '';
                 let d;
                 if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
                     const [y,m,day] = raw.split('T')[0].split('-');
                     d = new Date(parseInt(y), parseInt(m)-1, parseInt(day));
+                } else if (/^\d{2}\/\d{2}\/\d{4}/.test(raw)) {
+                    const [day,m,y] = raw.split('/');
+                    d = new Date(parseInt(y), parseInt(m)-1, parseInt(day));
                 } else {
                     d = new Date(raw);
                 }
-                if (isNaN(d.getTime())) return raw || 'TBD';
+                if (isNaN(d.getTime())) return 'A definir';
                 const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
                 return `${d.getDate()} ${months[d.getMonth()]}`;
-            } catch { return dateStr || 'TBD'; }
+            } catch { return 'A definir'; }
         }
 
         // ===== MEETING TAB SELECTION (for horizontal tabs) =====
@@ -924,7 +928,7 @@
             const el = document.getElementById('eb-meeting-detail');
             if (!el) return;
             const s = m.structured || {};
-            const notionLink = m.notion_url ? `<a href="${m.notion_url}" target="_blank" class="eb-md-notion-link">Open in Notion</a>` : '';
+            const notionLink = m.notion_url ? `<a href="${m.notion_url}" target="_blank" class="eb-md-notion-link">Abrir no Notion</a>` : '';
             const peopleBadges = (s.key_people || m.people || []).map(p => {
                 const name = typeof p === 'string' ? p : p.name || '';
                 const role = typeof p === 'object' ? p.role || '' : '';
@@ -952,12 +956,12 @@
                 <h5 class="eb-md-title">${escapeHtml(m.title)}</h5>
                 <div class="eb-md-meta">${escapeHtml(formatDateShort(m.date))} ${notionLink}</div>
                 ${summaryHtml && !hasSections ? `<div class="eb-md-section"><div class="eb-md-content">${marked.parse(summaryHtml)}</div></div>` : ''}
-                ${peopleBadges ? `<div class="eb-md-section"><div class="eb-md-label">KEY PEOPLE</div><div class="eb-md-people">${peopleBadges}</div></div>` : ''}
-                ${objectivesList ? `<div class="eb-md-section"><div class="eb-md-label">OBJECTIVES</div><ul class="eb-md-list">${objectivesList}</ul></div>` : ''}
-                ${decisionsList ? `<div class="eb-md-section"><div class="eb-md-label">DECISIONS</div><ul class="eb-md-list eb-md-list--indigo">${decisionsList}</ul></div>` : ''}
-                ${contextHtml ? `<div class="eb-md-section"><div class="eb-md-label">CONTEXT</div><div class="eb-md-content">${contextHtml}</div></div>` : ''}
-                ${nextStepsList ? `<div class="eb-md-section"><div class="eb-md-label">NEXT STEPS</div>${nextStepsList}</div>` : ''}
-                ${!hasSections && !summaryHtml ? '<div class="eb-md-empty">Run /update-executive-briefs to parse structured meeting data.</div>' : ''}
+                ${peopleBadges ? `<div class="eb-md-section"><div class="eb-md-label">PESSOAS-CHAVE</div><div class="eb-md-people">${peopleBadges}</div></div>` : ''}
+                ${objectivesList ? `<div class="eb-md-section"><div class="eb-md-label">OBJETIVOS</div><ul class="eb-md-list">${objectivesList}</ul></div>` : ''}
+                ${decisionsList ? `<div class="eb-md-section"><div class="eb-md-label">DECISÕES</div><ul class="eb-md-list eb-md-list--indigo">${decisionsList}</ul></div>` : ''}
+                ${contextHtml ? `<div class="eb-md-section"><div class="eb-md-label">CONTEXTO</div><div class="eb-md-content">${contextHtml}</div></div>` : ''}
+                ${nextStepsList ? `<div class="eb-md-section"><div class="eb-md-label">PRÓXIMOS PASSOS</div>${nextStepsList}</div>` : ''}
+                ${!hasSections && !summaryHtml ? '<div class="eb-md-empty">Execute /update-executive-briefs para preencher dados estruturados.</div>' : ''}
             `;
         }
 
@@ -1025,7 +1029,7 @@
                             const ini = p.name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
                             return `<span class="eb-person"><span class="eb-person-avatar" style="width:22px;height:22px;font-size:0.55rem;">${ini}</span>${escapeHtml(p.name)}${p.role ? `<span class="eb-person-role">${escapeHtml(p.role)}</span>` : ''}</span>`;
                         }).join('');
-                        prepParts.push(`<div class="mt-prep-section"><span class="mt-prep-label">Key People</span><div class="mt-prep-people">${peopleHtml}</div></div>`);
+                        prepParts.push(`<div class="mt-prep-section"><span class="mt-prep-label">Pessoas-Chave</span><div class="mt-prep-people">${peopleHtml}</div></div>`);
                     }
 
                     // Open action items
@@ -1033,7 +1037,7 @@
                         const actionsHtml = brief.action_items.slice(0, 4).map(a =>
                             `<span class="mt-prep-action">${escapeHtml(a)}</span>`
                         ).join('');
-                        prepParts.push(`<div class="mt-prep-section"><span class="mt-prep-label">Open Action Items</span><div class="mt-prep-actions">${actionsHtml}</div></div>`);
+                        prepParts.push(`<div class="mt-prep-section"><span class="mt-prep-label">Ações Pendentes</span><div class="mt-prep-actions">${actionsHtml}</div></div>`);
                     }
 
                     // Relevant risks
@@ -1041,23 +1045,23 @@
                         const risksHtml = brief.risks_blockers.slice(0, 3).map(r =>
                             `<span class="mt-prep-risk">${escapeHtml(r)}</span>`
                         ).join('');
-                        prepParts.push(`<div class="mt-prep-section"><span class="mt-prep-label">Watch Out</span><div class="mt-prep-risks">${risksHtml}</div></div>`);
+                        prepParts.push(`<div class="mt-prep-section"><span class="mt-prep-label">Atenção</span><div class="mt-prep-risks">${risksHtml}</div></div>`);
                     }
 
                     // Related docs count
                     const docCount = _workData ? (_workData.sections || []).length : 0;
                     if (docCount > 0) {
-                        prepParts.push(`<div class="mt-prep-docs"><a href="#" onclick="switchTab('docs');return false;">📄 ${docCount} docs available for reference</a></div>`);
+                        prepParts.push(`<div class="mt-prep-docs"><a href="#" onclick="switchTab('docs');return false;">📄 ${docCount} docs disponíveis</a></div>`);
                     }
 
                     return `<div class="mt-prep-card">
                         <div class="mt-prep-header">
-                            <div class="mt-prep-badge">UPCOMING</div>
+                            <div class="mt-prep-badge">PRÓXIMA</div>
                             <span class="mt-prep-date">${formatMeetingDate(m.date)}</span>
                             <span class="mt-prep-title">${escapeHtml(m.title)}</span>
                         </div>
                         <details class="mt-prep-details">
-                            <summary class="mt-prep-toggle">Meeting Prep</summary>
+                            <summary class="mt-prep-toggle">Preparação</summary>
                             <div class="mt-prep-body">${prepParts.join('')}</div>
                         </details>
                     </div>`;
@@ -1065,7 +1069,7 @@
             }
 
             if (past.length === 0 && upcoming.length === 0) {
-                timeline.innerHTML = '<div class="sp-empty-state">No meetings recorded yet</div>';
+                timeline.innerHTML = '<div class="sp-empty-state">Nenhuma reunião registrada</div>';
                 return;
             }
 
@@ -1100,8 +1104,8 @@
             if (!el) return;
             const s = m.structured || {};
             const notionUrl = m.notion_url || '';
-            const notionLink = notionUrl ? `<a href="${notionUrl}" target="_blank" class="eb-md-notion-link">Open in Notion</a>` : '';
-            const fileLink = m.file ? `<a href="#" onclick="openWorkFile('${m.file}');return false;" class="eb-md-notion-link">Open File</a>` : '';
+            const notionLink = notionUrl ? `<a href="${notionUrl}" target="_blank" class="eb-md-notion-link">Abrir no Notion</a>` : '';
+            const fileLink = m.file ? `<a href="#" onclick="openWorkFile('${m.file}');return false;" class="eb-md-notion-link">Abrir Arquivo</a>` : '';
             const peopleBadges = (s.key_people || []).map(p => {
                 const name = typeof p === 'string' ? p : p.name || '';
                 const initials = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
@@ -1125,12 +1129,12 @@
                 <h5 class="eb-md-title">${escapeHtml(m.title)}</h5>
                 <div class="eb-md-meta">${escapeHtml(formatMeetingDate(m.date))} ${notionLink || fileLink}</div>
                 ${summaryText && !hasSections ? `<div class="eb-md-section"><div class="eb-md-content">${marked.parse(summaryText)}</div></div>` : ''}
-                ${peopleBadges ? `<div class="eb-md-section"><div class="eb-md-label">KEY PEOPLE</div><div class="eb-md-people">${peopleBadges}</div></div>` : ''}
-                ${objectivesList ? `<div class="eb-md-section"><div class="eb-md-label">OBJECTIVES</div><ul class="eb-md-list">${objectivesList}</ul></div>` : ''}
-                ${decisionsList ? `<div class="eb-md-section"><div class="eb-md-label">DECISIONS</div><ul class="eb-md-list eb-md-list--indigo">${decisionsList}</ul></div>` : ''}
-                ${contextHtml ? `<div class="eb-md-section"><div class="eb-md-label">CONTEXT</div><div class="eb-md-content">${contextHtml}</div></div>` : ''}
-                ${nextStepsList ? `<div class="eb-md-section"><div class="eb-md-label">NEXT STEPS</div>${nextStepsList}</div>` : ''}
-                ${!hasSections && !summaryText ? '<div class="eb-md-empty">No structured content yet.</div>' : ''}
+                ${peopleBadges ? `<div class="eb-md-section"><div class="eb-md-label">PESSOAS-CHAVE</div><div class="eb-md-people">${peopleBadges}</div></div>` : ''}
+                ${objectivesList ? `<div class="eb-md-section"><div class="eb-md-label">OBJETIVOS</div><ul class="eb-md-list">${objectivesList}</ul></div>` : ''}
+                ${decisionsList ? `<div class="eb-md-section"><div class="eb-md-label">DECISÕES</div><ul class="eb-md-list eb-md-list--indigo">${decisionsList}</ul></div>` : ''}
+                ${contextHtml ? `<div class="eb-md-section"><div class="eb-md-label">CONTEXTO</div><div class="eb-md-content">${contextHtml}</div></div>` : ''}
+                ${nextStepsList ? `<div class="eb-md-section"><div class="eb-md-label">PRÓXIMOS PASSOS</div>${nextStepsList}</div>` : ''}
+                ${!hasSections && !summaryText ? '<div class="eb-md-empty">Sem conteúdo estruturado.</div>' : ''}
             `;
         }
 
@@ -1138,7 +1142,9 @@
         function renderDocsTab(data) {
             // Project Identity
             const ov = data.overview || {};
-            const defText = ov.definition || '', ctxText = ov.context || '', stText = ov.current_status || '';
+            const defText = ov.definition || '', ctxText = ov.context || '';
+            const stRaw = ov.current_status || '';
+            const stText = /^reuni[ãa]o\b/i.test(stRaw.trim()) ? '' : stRaw;
             const hasIdentity = defText || ctxText || stText;
             if (hasIdentity) {
                 document.getElementById('sp-identity').style.display = '';
@@ -1153,7 +1159,7 @@
             const docsList = document.getElementById('dl-docs-list');
             const icons = { context:'🎯', definition:'📋', history:'📜', architecture:'🏗️', people:'👥', timeline:'📅', status:'📍', roadmap:'🗺️', readme:'📖' };
             if (sections.length === 0) {
-                docsList.innerHTML = '<div class="sp-empty-state">No documentation sections</div>';
+                docsList.innerHTML = '<div class="sp-empty-state">Sem seções de documentação</div>';
                 docsCount.textContent = '';
             } else {
                 docsCount.textContent = sections.length;

@@ -7,7 +7,7 @@
     <meta name="description" content="Centro de Controle - Dashboard do Fábio">
     <title>Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=31">
+    <link rel="stylesheet" href="css/style.css?v=32">
     <link rel="manifest" href="manifest.json">
     <!-- Inter Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -270,9 +270,9 @@
                 <!-- Weekly Brief moved to top-context-row -->
                 
                 <!-- Observability Summary -->
-                <section class="card" data-collapsible="observability">
+                <section class="card card--collapsed" data-collapsible="observability">
                     <div class="section-header-row" onclick="toggleCardCollapse(this.parentElement)">
-                        <h2 class="section-title">📡 Observability</h2>
+                        <h2 class="section-title">📡 Observabilidade</h2>
                         <a href="observability" class="section-action" style="text-decoration:none;color:var(--accent-blue);" onclick="event.stopPropagation();">Ver detalhes</a>
                     </div>
                     <div class="card-body">
@@ -283,7 +283,7 @@
                                     <div style="font-size:1.2rem;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;" id="obs-tool-health">--</div>
                                 </div>
                                 <div style="background:var(--bg-card);padding:8px 12px;border-radius:8px;">
-                                    <div style="font-size:0.7rem;color:var(--text-muted);" title="Ultima avaliacao de qualidade do routing da Nova">Last Eval</div>
+                                    <div style="font-size:0.7rem;color:var(--text-muted);" title="Ultima avaliacao de qualidade do routing da Nova">Última Avaliação</div>
                                     <div style="font-size:1.2rem;font-weight:700;color:var(--text-primary);font-family:'JetBrains Mono',monospace;" id="obs-last-eval">--</div>
                                 </div>
                             </div>
@@ -556,10 +556,10 @@
             const summaryEl = document.getElementById('obs-report-summary');
             if (report) {
                 if (lastEvalEl) lastEvalEl.textContent = report.report_date || '--';
-                if (summaryEl) summaryEl.textContent = report.summary || 'No summary';
+                if (summaryEl) summaryEl.textContent = report.summary || 'Sem resumo';
             } else {
-                if (lastEvalEl) lastEvalEl.textContent = 'None';
-                if (summaryEl) summaryEl.textContent = 'No reports yet';
+                if (lastEvalEl) lastEvalEl.textContent = '--';
+                if (summaryEl) summaryEl.textContent = 'Sem relatórios';
             }
         }
 
@@ -1444,14 +1444,14 @@
                 const summaryEl = document.getElementById('obs-report-summary');
                 if (report) {
                     if (lastEvalEl) lastEvalEl.textContent = report.report_date || '--';
-                    if (summaryEl) summaryEl.textContent = report.summary || 'No summary';
+                    if (summaryEl) summaryEl.textContent = report.summary || 'Sem resumo';
                 } else {
-                    if (lastEvalEl) lastEvalEl.textContent = 'None';
-                    if (summaryEl) summaryEl.textContent = 'No reports yet';
+                    if (lastEvalEl) lastEvalEl.textContent = '--';
+                    if (summaryEl) summaryEl.textContent = 'Sem relatórios';
                 }
             } catch (e) {
                 const el = document.getElementById('obs-report-summary');
-                if (el) el.textContent = 'Failed to load';
+                if (el) el.textContent = 'Erro ao carregar';
             }
         }
 
