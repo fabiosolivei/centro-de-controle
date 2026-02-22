@@ -90,6 +90,9 @@
                         </div>
                     </div>
                 </div>
+                <button class="btn-icon" onclick="logout()" title="Sair" aria-label="Sair" style="opacity:0.6;">
+                    <span>🚪</span>
+                </button>
             </div>
         </div>
     </header>
@@ -431,7 +434,7 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="js/api.js?v=8"></script>
+    <script src="js/api.js?v=9" defer></script>
     <script>
         // ===========================================
         // GPM DASHBOARD - MAIN SCRIPT
@@ -495,14 +498,24 @@
             document.getElementById('mba-andamento').textContent = andamento;
             document.getElementById('mba-concluidas').textContent = concluidas;
             _mbaDeadlines = prazos;
+            const total = pendentes + andamento + concluidas;
+            if (total > 0) {
+                const pctDone = Math.round((concluidas / total) * 100);
+                const progressHtml = `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                    <div class="progress-bar-mini progress-bar-gradient" style="flex:1;"><div class="progress-fill-mini progress-fill-gradient" style="width:${pctDone}%"></div></div>
+                    <span style="font-size:0.75rem;color:var(--text-muted);white-space:nowrap;">${pctDone}% concluído</span>
+                </div>`;
+                document.getElementById('mba-deadlines').innerHTML = progressHtml;
+            }
             if (prazos.length > 0) {
-                const deadlinesHtml = prazos.slice(0, 2).map(d => {
+                const deadlinesHtml = prazos.slice(0, 3).map(d => {
                     const isOverdue = parseMBADate(d.data) < new Date();
-                    return `<div style="padding: 8px; background: ${isOverdue ? 'rgba(239, 68, 68, 0.1)' : 'rgba(234, 179, 8, 0.1)'}; border-radius: 6px; margin-bottom: 4px; font-size: 0.875rem; border-left: 3px solid ${isOverdue ? '#ef4444' : 'transparent'};">
-                        ${isOverdue ? '⚠️' : '📅'} ${escapeHtml(d.title)} - ${d.data}${isOverdue ? ' <span style="color:#ef4444;font-weight:600;font-size:0.75rem;">ATRASADO</span>' : ''}
+                    return `<div style="padding: 8px; background: ${isOverdue ? 'rgba(239, 68, 68, 0.1)' : 'rgba(234, 179, 8, 0.1)'}; border-radius: 6px; margin-bottom: 4px; font-size: 0.8rem; border-left: 3px solid ${isOverdue ? '#ef4444' : 'transparent'};">
+                        <div>${isOverdue ? '⚠️' : '📅'} ${escapeHtml(d.title)}${isOverdue ? ' <span style="color:#ef4444;font-weight:600;font-size:0.7rem;">ATRASADO</span>' : ''}</div>
+                        <div style="font-size:0.7rem;color:var(--text-muted);margin-top:2px;">${d.data}${d.turma ? ' · ' + escapeHtml(d.turma) : ''}</div>
                     </div>`;
                 }).join('');
-                document.getElementById('mba-deadlines').innerHTML = deadlinesHtml;
+                document.getElementById('mba-deadlines').insertAdjacentHTML('beforeend', deadlinesHtml);
             }
             if (isCache) {
                 const headerRow = document.querySelector('.card:has(#mba-pendentes) .section-header-row');
@@ -796,17 +809,21 @@
                     const color = colors[rc.health] || colors.green;
                     healthDot = `<span class="health-dot" style="background:${color};" title="${escapeHtml(rc.health_reason || '')}"></span>`;
                     
-                    // Build subtitle chips
                     const chips = [];
-                    if (rc.meetings_count > 0) chips.push(`${rc.meetings_count} meeting${rc.meetings_count > 1 ? 's' : ''}`);
+                    if (rc.meetings_count > 0) chips.push(`${rc.meetings_count} reuniõe${rc.meetings_count > 1 ? 's' : ''}`);
                     if (rc.confluence && rc.confluence.current_sprint) chips.push(rc.confluence.current_sprint);
-                    if (rc.confluence && rc.confluence.risks > 0) chips.push(`${rc.confluence.risks} risk${rc.confluence.risks > 1 ? 's' : ''}`);
-                    if (rc.confluence && rc.confluence.epics_open > 0) chips.push(`${rc.confluence.epics_open} epics`);
+                    if (rc.confluence && rc.confluence.risks > 0) chips.push(`${rc.confluence.risks} risco${rc.confluence.risks > 1 ? 's' : ''}`);
+                    if (rc.confluence && rc.confluence.epics_open > 0) chips.push(`${rc.confluence.epics_open} épicos`);
                     
                     if (chips.length > 0) {
                         healthMeta = `<div class="portfolio-meta">${chips.join(' · ')}</div>`;
                     }
                 }
+                
+                const preview = rc && rc.executive_brief && rc.executive_brief.status_summary
+                    ? rc.executive_brief.status_summary.replace(/\*\*/g, '').replace(/\n/g, ' ').substring(0, 100)
+                    : '';
+                const previewHtml = preview ? `<div class="portfolio-preview">${escapeHtml(preview)}${preview.length >= 100 ? '...' : ''}</div>` : '';
                 
                 return `
                 <div class="portfolio-card ${project.priority === 'high' ? 'high-priority' : ''}" 
@@ -816,11 +833,12 @@
                         <div class="portfolio-status">
                             ${project.status === 'active' ? '🟢 Ativo' : project.status === 'paused' ? '🟡 Pausado' : '✅ Concluído'}
                         </div>
+                        ${previewHtml}
                         ${healthMeta}
                     </div>
                     <div class="portfolio-progress">
-                        <div class="progress-bar-mini">
-                            <div class="progress-fill-mini" style="width: ${project.progress || 0}%"></div>
+                        <div class="progress-bar-mini progress-bar-gradient">
+                            <div class="progress-fill-mini progress-fill-gradient" style="width: ${project.progress || 0}%"></div>
                         </div>
                         <span class="progress-text">${project.progress || 0}%</span>
                     </div>
@@ -1269,7 +1287,7 @@
                     <div class="brief-calendar-split">
                         <div class="brief-cal-days">${dayListHtml}</div>
                         <div class="brief-cal-agenda" id="brief-day-agenda">
-                            <div class="brief-agenda-loading">Carregando...</div>
+                            <div class="brief-agenda-loading"><div class="skeleton skeleton-text" style="height:12px;width:60%;"></div></div>
                         </div>
                     </div>`;
                 
@@ -1347,7 +1365,7 @@
         async function loadBriefDayAgenda(dateStr) {
             const agendaEl = document.getElementById('brief-day-agenda');
             if (!agendaEl || !dateStr) return;
-            agendaEl.innerHTML = '<div class="brief-agenda-loading">Carregando...</div>';
+            agendaEl.innerHTML = '<div class="brief-agenda-loading"><div class="skeleton skeleton-text" style="height:12px;width:60%;"></div></div>';
             try {
                 const data = await CalendarAPI.getByDate(dateStr);
                 const events = data.events || data || [];
@@ -2391,6 +2409,6 @@
             }
         }
     </script>
-    <script src="js/mobile-nav.js?v=7"></script>
+    <script src="js/mobile-nav.js?v=8" defer></script>
 </body>
 </html>

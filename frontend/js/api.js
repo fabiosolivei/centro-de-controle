@@ -123,13 +123,14 @@ async function apiRequest(endpoint, options = {}) {
         }
     }
     
+    const token = sessionStorage.getItem('auth_token');
     const defaultOptions = {
         headers: {
             'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         },
     };
     
-    // Merge options; add timeout if caller didn't provide a signal
     const config = { ...defaultOptions, ...options };
     if (!config.signal) {
         config.signal = AbortSignal.timeout(API_TIMEOUT_MS);
@@ -137,6 +138,14 @@ async function apiRequest(endpoint, options = {}) {
     
     try {
         const response = await fetch(url, config);
+        
+        if (response.status === 401) {
+            sessionStorage.removeItem('auth_token');
+            APICache.clear();
+            APICache.clearStorage();
+            window.location.href = 'login';
+            throw new Error('Session expired');
+        }
         
         if (!response.ok) {
             const error = await response.json().catch(() => ({ detail: 'Erro desconhecido' }));
@@ -713,7 +722,14 @@ async function safeLoad(fn, containerId) {
     }
 }
 
-// Export para uso global
+function logout() {
+    sessionStorage.removeItem('auth_token');
+    APICache.clear();
+    APICache.clearStorage();
+    window.location.href = 'login';
+}
+
+window.logout = logout;
 window.TasksAPI = TasksAPI;
 window.RemindersAPI = RemindersAPI;
 window.NotesAPI = NotesAPI;

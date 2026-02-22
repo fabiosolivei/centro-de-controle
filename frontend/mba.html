@@ -546,7 +546,7 @@
             <div class="mba-user-info">
                 <div class="mba-user-avatar">👤</div>
                 <div>
-                    <div class="mba-user-name" id="user-name">Carregando...</div>
+                    <div class="mba-user-name" id="user-name"><span class="skeleton skeleton-text" style="display:inline-block;height:16px;width:120px;"></span></div>
                     <div class="mba-user-email" id="user-email"></div>
                 </div>
             </div>
@@ -592,7 +592,7 @@
                 <h2>⏰ Proximos Prazos</h2>
             </div>
             <div class="card-body" id="prazos-list">
-                <p class="empty-state">Carregando...</p>
+                <div class="empty-state"><div class="skeleton skeleton-text" style="height:14px;width:50%;margin:0 auto;"></div></div>
             </div>
         </section>
     </main>
@@ -611,7 +611,7 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="js/api.js?v=8"></script>
+    <script src="js/api.js?v=9" defer></script>
     <script>
         // ============================================
         // MBA PAGE - Main Script
@@ -1104,6 +1104,6 @@
         });
     </script>
     <footer class="site-footer">Centro de Controle &mdash; Nova &amp; Atlas</footer>
-    <script src="js/mobile-nav.js?v=7"></script>
+    <script src="js/mobile-nav.js?v=8" defer></script>
 </body>
 </html>

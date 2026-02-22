@@ -38,8 +38,11 @@ import shutil
 import uuid
 import logging
 import sys
+import secrets
 
 import sqlite3
+import jwt as pyjwt
+from datetime import timedelta
 
 # ============================================
 # STRUCTURED LOGGING
@@ -575,6 +578,39 @@ DASHBOARD_PASSWORD_HASH = os.environ.get(
     "f379eaffb6d3420d190c693e60b4e0c50f018cca3ec9c9bea2ca3ee069ae1f4d"
 )
 
+JWT_SECRET = os.environ.get("JWT_SECRET", secrets.token_hex(32))
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRE_HOURS = 24
+
+def create_jwt_token(subject: str = "fabio") -> str:
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": subject,
+        "iat": now,
+        "exp": now + timedelta(hours=JWT_EXPIRE_HOURS),
+    }
+    return pyjwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+def verify_jwt_token(token: str) -> dict:
+    try:
+        return pyjwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+    except pyjwt.ExpiredSignatureError:
+        raise HTTPException(401, "Token expired")
+    except pyjwt.InvalidTokenError:
+        raise HTTPException(401, "Invalid token")
+
+async def get_current_user(request: Request) -> dict:
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        return verify_jwt_token(auth[7:])
+    token = request.query_params.get("token")
+    if token:
+        return verify_jwt_token(token)
+    old_token = request.headers.get("X-Auth-Token", "")
+    if old_token == DASHBOARD_PASSWORD_HASH:
+        return {"sub": "fabio"}
+    raise HTTPException(401, "Authentication required")
+
 class LoginRequest(BaseModel):
     password: str
 
@@ -862,15 +898,50 @@ async def log_requests(request: Request, call_next):
     return response
 
 # ============================================
+# JWT AUTH MIDDLEWARE
+# ============================================
+JWT_PUBLIC_PATHS = {
+    "/api/auth/login", "/api/health",
+}
+JWT_PUBLIC_PREFIXES = (
+    "/api/push/", "/api/sibling/", "/api/atlas/", "/api/nova/",
+    "/api/metrics/", "/api/observability/",
+)
+
+from starlette.responses import JSONResponse as StarletteJSONResponse
+
+@app.middleware("http")
+async def jwt_auth_middleware(request: Request, call_next):
+    path = request.url.path
+    if not path.startswith("/api/"):
+        return await call_next(request)
+    if path in JWT_PUBLIC_PATHS or any(path.startswith(p) for p in JWT_PUBLIC_PREFIXES):
+        return await call_next(request)
+    if request.headers.get("X-Atlas-Key"):
+        return await call_next(request)
+    auth = request.headers.get("Authorization", "")
+    if auth.startswith("Bearer "):
+        try:
+            pyjwt.decode(auth[7:], JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            return await call_next(request)
+        except (pyjwt.ExpiredSignatureError, pyjwt.InvalidTokenError):
+            return StarletteJSONResponse({"detail": "Token expired or invalid"}, status_code=401)
+    old_token = request.headers.get("X-Auth-Token", "")
+    if old_token == DASHBOARD_PASSWORD_HASH:
+        return await call_next(request)
+    return StarletteJSONResponse({"detail": "Authentication required"}, status_code=401)
+
+# ============================================
 # AUTHENTICATION ROUTE
 # ============================================
 
 @app.post("/api/auth/login")
 async def auth_login(req: LoginRequest):
-    """Validate dashboard password server-side"""
+    """Validate dashboard password and return JWT"""
     pw_hash = hashlib.sha256(req.password.encode()).hexdigest()
     if pw_hash == DASHBOARD_PASSWORD_HASH:
-        return {"authenticated": True, "token": pw_hash}
+        token = create_jwt_token()
+        return {"authenticated": True, "token": token}
     raise HTTPException(401, "Invalid password")
 
 # ============================================
