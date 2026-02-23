@@ -910,10 +910,21 @@ JWT_PUBLIC_PREFIXES = (
 
 from starlette.responses import JSONResponse as StarletteJSONResponse
 
+def _cors_headers(request: Request) -> dict:
+    origin = request.headers.get("origin", "*")
+    return {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD",
+        "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Auth-Token, X-Atlas-Key",
+    }
+
 @app.middleware("http")
 async def jwt_auth_middleware(request: Request, call_next):
     path = request.url.path
     if not path.startswith("/api/"):
+        return await call_next(request)
+    if request.method == "OPTIONS":
         return await call_next(request)
     if path in JWT_PUBLIC_PATHS or any(path.startswith(p) for p in JWT_PUBLIC_PREFIXES):
         return await call_next(request)
@@ -925,11 +936,11 @@ async def jwt_auth_middleware(request: Request, call_next):
             pyjwt.decode(auth[7:], JWT_SECRET, algorithms=[JWT_ALGORITHM])
             return await call_next(request)
         except (pyjwt.ExpiredSignatureError, pyjwt.InvalidTokenError):
-            return StarletteJSONResponse({"detail": "Token expired or invalid"}, status_code=401)
+            return StarletteJSONResponse({"detail": "Token expired or invalid"}, status_code=401, headers=_cors_headers(request))
     old_token = request.headers.get("X-Auth-Token", "")
     if old_token == DASHBOARD_PASSWORD_HASH:
         return await call_next(request)
-    return StarletteJSONResponse({"detail": "Authentication required"}, status_code=401)
+    return StarletteJSONResponse({"detail": "Authentication required"}, status_code=401, headers=_cors_headers(request))
 
 # ============================================
 # AUTHENTICATION ROUTE
