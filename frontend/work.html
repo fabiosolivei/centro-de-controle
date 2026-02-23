@@ -911,11 +911,9 @@
                 
                 const NAME_TO_SLUG = {
                     'Catalog': '3tpm', 'Catalog Admin': '3tpm', 'Catalog & 3TPM': '3tpm', '3TPM': '3tpm',
-                    'CMS': 'cms-dam', 'CMS DAM': 'cms-dam', 'DAM': 'cms-dam',
-                    'DAM - Documentação': 'cms-dam', 'Content': 'cms-dam', 'Content (CMS + DAM)': 'cms-dam',
+                    'CMS': 'cms-dam', 'CMS/Content': 'cms-dam', 'Content': 'cms-dam',
+                    'DAM': 'cms-dam', 'DAM - Documentação': 'cms-dam', 'Content (CMS + DAM)': 'cms-dam',
                     'AI & Automation': 'ai-automation', 'AI-AUTOMATION': 'ai-automation',
-                    'Autonomy': 'autonomy', 'Autonomy & Automation': 'autonomy', 'AUTONOMY': 'autonomy',
-                    'POCs IA': 'pocs-ia', 'POCS-IA': 'pocs-ia',
                     'Company Store': 'company-store', 'COMPANY-STORE': 'company-store'
                 };
                 
@@ -938,10 +936,6 @@
                         <div class="work-proj-name">${healthDot} ${escapeHtml(p.name)}</div>
                         <div class="work-proj-status">${statusLabel}</div>
                         ${chips.length > 0 ? `<div class="work-proj-meta">${chips.join(' · ')}</div>` : ''}
-                        <div class="work-proj-progress">
-                            <div class="work-proj-bar"><div class="work-proj-fill" style="width:${p.progress || 0}%"></div></div>
-                            <span class="work-proj-pct">${p.progress || 0}%</span>
-                        </div>
                     </div>`;
                 }).join('');
             } catch (error) {
