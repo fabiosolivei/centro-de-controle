@@ -898,8 +898,8 @@
             try {
                 // Use /projects (database) for IDs, plus report-cards for enrichment
                 const [allProjects, rcData] = await Promise.all([
-                    fetch(`${API_BASE}/projects`).then(r => r.json()),
-                    fetch(`${API_BASE}/work-projects/report-cards`).then(r => r.json()).catch(() => ({ report_cards: {} }))
+                    apiRequest('/projects'),
+                    apiRequest('/work-projects/report-cards').catch(() => ({ report_cards: {} }))
                 ]);
                 const projects = (Array.isArray(allProjects) ? allProjects : []).filter(p => p.category === 'trabalho');
                 const rcs = rcData.report_cards || {};
@@ -914,8 +914,9 @@
                     'CMS': 'cms-dam', 'CMS DAM': 'cms-dam', 'DAM': 'cms-dam',
                     'DAM - Documentação': 'cms-dam', 'Content': 'cms-dam', 'Content (CMS + DAM)': 'cms-dam',
                     'AI & Automation': 'ai-automation', 'AI-AUTOMATION': 'ai-automation',
-                    'Autonomy': 'ai-automation', 'Autonomy & Automation': 'ai-automation',
-                    'POCs IA': 'ai-automation', 'POCS-IA': 'ai-automation'
+                    'Autonomy': 'autonomy', 'Autonomy & Automation': 'autonomy', 'AUTONOMY': 'autonomy',
+                    'POCs IA': 'pocs-ia', 'POCS-IA': 'pocs-ia',
+                    'Company Store': 'company-store', 'COMPANY-STORE': 'company-store'
                 };
                 
                 container.innerHTML = projects.map(p => {

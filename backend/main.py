@@ -2560,7 +2560,9 @@ WORK_PROJECTS_MAP = {
     "3tpm": {"folder": "3TPM", "type": "multi"},
     "company-store": {"file": "COMPANY-STORE.md", "type": "single"},
     "cms-dam": {"file": "CMS-DAM-STRATEGY.md", "type": "single"},
-    "ai-automation": {"file": "AI-AUTOMATION.md", "type": "single"}
+    "ai-automation": {"file": "AI-AUTOMATION.md", "type": "single"},
+    "autonomy": {"file": "AUTONOMY-AUTOMATION.md", "type": "single"},
+    "pocs-ia": {"file": "POCS-IA.md", "type": "single"},
 }
 
 def parse_markdown_file(file_path: str) -> dict:

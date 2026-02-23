@@ -108,6 +108,21 @@ const APICache = {
     }
 };
 
+// Intercept all fetch calls to API_BASE to inject JWT token
+const _originalFetch = window.fetch;
+window.fetch = function(url, options = {}) {
+    const token = sessionStorage.getItem('auth_token');
+    if (token && typeof url === 'string' && url.includes('/api/')) {
+        options = options ? { ...options } : {};
+        const existingHeaders = options.headers || {};
+        options.headers = {
+            ...existingHeaders,
+            'Authorization': `Bearer ${token}`,
+        };
+    }
+    return _originalFetch.call(this, url, options);
+};
+
 /**
  * Helper para fazer requisições à API (com cache, timeout, SWR)
  */
