@@ -2869,7 +2869,9 @@ PROJECT_KEYWORDS = {
     "3tpm": ["3tpm", "3TPM", "marketplace", "skunk", "korea", "coreia", "catalog", "Catalog Admin", "Book AI", "Payment Method", "SKU", "produto", "variante", "taxonomy", "bulk import", "assortment"],
     "cms-dam": ["CMS", "DAM", "content", "braze", "banner", "Acquia", "DeepLink", "approval flow", "digicomms", "Strategy"],
     "company-store": ["Company", "Store Management", "company-store", "onboarding", "vendor", "seller"],
-    "ai-automation": ["autonomy", "automation", "Visagio", "CoE", "autonomia", "KPI", "Esmael", "POC", "IA", "MultiPOC", "AI", "chatbot", "taxonomy score", "Igor"],
+    "ai-automation": ["automation", "Visagio", "CoE", "KPI", "Esmael", "chatbot", "taxonomy score", "Igor"],
+    "autonomy": ["autonomy", "autonomia", "self-serve", "self serve", "GPM autonomy"],
+    "pocs-ia": ["POC", "IA", "MultiPOC", "AI", "proof of concept", "POCs IA"],
 }
 
 # Intelligence deep-dive file mapping
@@ -2878,6 +2880,8 @@ INTELLIGENCE_FILES = {
     "cms-dam": "CMS-DAM-CONTENT-DEEP-DIVE.md",
     "company-store": None,
     "ai-automation": "AI-AUTOMATION-DEEP-DIVE.md",
+    "autonomy": None,
+    "pocs-ia": None,
 }
 
 # Project intelligence files (enriched project docs in trabalho/projetos/)
@@ -2886,6 +2890,8 @@ PROJECT_INTEL_FILES = {
     "cms-dam": "CMS-DAM-STRATEGY.md",
     "company-store": "COMPANY-STORE.md",
     "ai-automation": "AI-AUTOMATION.md",
+    "autonomy": "AUTONOMY-AUTOMATION.md",
+    "pocs-ia": "POCS-IA.md",
 }
 
 # 3TPM multi-folder files for executive brief consolidation
@@ -2903,6 +2909,8 @@ PROJECT_DISPLAY_NAMES = {
     "cms-dam": "Content (CMS + DAM)",
     "company-store": "Company & Store",
     "ai-automation": "AI & Automation",
+    "autonomy": "Autonomy",
+    "pocs-ia": "POCs IA",
 }
 
 # Cache for report cards (30 min TTL)
