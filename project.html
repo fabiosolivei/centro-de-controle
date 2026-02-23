@@ -18,7 +18,6 @@
             window.location.href = 'login';
         }
     </script>
-    <script src="js/api.js?v=10" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js" defer></script>
 </head>
 <body>
@@ -379,6 +378,17 @@
     </main>
 
     <script>
+        // Inject JWT token into all /api/ fetch calls
+        const _origFetch = window.fetch;
+        window.fetch = function(url, opts = {}) {
+            const tk = sessionStorage.getItem('auth_token');
+            if (tk && typeof url === 'string' && url.includes('/api/')) {
+                opts = opts ? { ...opts } : {};
+                opts.headers = { ...(opts.headers || {}), 'Authorization': 'Bearer ' + tk };
+            }
+            return _origFetch.call(this, url, opts);
+        };
+
         const isGitHubPages = window.location.hostname.includes('github.io');
         const API_BASE = isGitHubPages
             ? 'https://srv1315519.hstgr.cloud/api'
@@ -403,8 +413,8 @@
             'Content': 'cms-dam', 'Content (CMS + DAM)': 'cms-dam', 'CMS DAM': 'cms-dam', 'CMS-DAM': 'cms-dam',
             'CMS': 'cms-dam', 'DAM': 'cms-dam', 'DAM - Documentação': 'cms-dam', 'CMS / DAM': 'cms-dam',
             'AI & Automation': 'ai-automation', 'AI-AUTOMATION': 'ai-automation',
-            'Autonomy': 'ai-automation', 'Autonomy & Automation': 'ai-automation',
-            'POCs IA': 'ai-automation', 'POCS-IA': 'ai-automation'
+            'Autonomy': 'autonomy', 'Autonomy & Automation': 'autonomy', 'AUTONOMY': 'autonomy',
+            'POCs IA': 'pocs-ia', 'POCS-IA': 'pocs-ia'
         };
 
         function isWorkProject(name, cat) { return cat === 'trabalho' || !!WORK_PROJECT_SLUGS[name]; }
