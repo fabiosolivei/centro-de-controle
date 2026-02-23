@@ -408,13 +408,10 @@
         // ===== WORK PROJECT SLUG MAPPING =====
         const WORK_PROJECT_SLUGS = {
             '3TPM': '3tpm', '3tpm': '3tpm',
-            'Catalog & 3TPM': '3tpm', 'Catalog Admin': '3tpm', 'Catalog': '3tpm', 'CATALOG-ADMIN': '3tpm',
-            'Company Store': 'company-store', 'Company & Store': 'company-store', 'COMPANY-STORE': 'company-store',
-            'Content': 'cms-dam', 'Content (CMS + DAM)': 'cms-dam', 'CMS DAM': 'cms-dam', 'CMS-DAM': 'cms-dam',
-            'CMS': 'cms-dam', 'DAM': 'cms-dam', 'DAM - Documentação': 'cms-dam', 'CMS / DAM': 'cms-dam',
+            'Catalog & 3TPM': '3tpm', 'Catalog Admin': '3tpm', 'Catalog': '3tpm',
+            'Company Store': 'company-store', 'COMPANY-STORE': 'company-store',
+            'CMS/Content': 'cms-dam', 'Content': 'cms-dam', 'CMS': 'cms-dam', 'DAM': 'cms-dam',
             'AI & Automation': 'ai-automation', 'AI-AUTOMATION': 'ai-automation',
-            'Autonomy': 'autonomy', 'Autonomy & Automation': 'autonomy', 'AUTONOMY': 'autonomy',
-            'POCs IA': 'pocs-ia', 'POCS-IA': 'pocs-ia'
         };
 
         function isWorkProject(name, cat) { return cat === 'trabalho' || !!WORK_PROJECT_SLUGS[name]; }
@@ -510,20 +507,14 @@
         // DB project ID -> work slug lookup (for project switcher)
         const WORK_PROJECT_DB = [
             { id: 1, name: 'Catalog & 3TPM', slug: '3tpm' },
-            { id: 2, name: 'Content (CMS)', slug: 'cms-dam' },
-            { id: 3, name: 'Content (DAM)', slug: 'cms-dam' },
+            { id: 2, name: 'CMS/Content', slug: 'cms-dam' },
             { id: 8, name: 'AI & Automation', slug: 'ai-automation' },
             { id: 10, name: 'Company Store', slug: 'company-store' },
-            { id: 11, name: 'Autonomy', slug: 'autonomy' },
-            { id: 12, name: 'POCs IA', slug: 'pocs-ia' },
         ];
 
         const DISPLAY_NAMES = {
-            'Catalog': 'Catalog & 3TPM', 'Catalog Admin': 'Catalog & 3TPM', '3TPM': 'Catalog & 3TPM',
-            'CMS': 'Content (CMS+DAM)', 'DAM': 'Content (CMS+DAM)', 'DAM - Documentação': 'Content (CMS+DAM)',
-            'Content': 'Content (CMS+DAM)',
-            'AUTONOMY-AUTOMATION': 'Autonomy', 'Autonomy & Automation': 'Autonomy',
-            'POCS-IA': 'POCs IA',
+            'Catalog': 'Catalog & 3TPM', '3TPM': 'Catalog & 3TPM',
+            'CMS': 'CMS/Content', 'Content': 'CMS/Content',
         };
 
         function renderHeroCard(project) {
@@ -1320,12 +1311,8 @@
                 document.getElementById('stat-docs').textContent = stats.total_docs;
             }
 
-            // Show progress bar only if progress > 0
-            if (project.progress > 0) {
-                document.getElementById('progress-section').style.display = '';
-                document.getElementById('progress-fill').style.width = project.progress + '%';
-                document.getElementById('progress-text').textContent = project.progress + '%';
-            }
+            // Progress bar hidden for work projects (no meaningful %)
+            document.getElementById('progress-section').style.display = 'none';
 
             renderTasks(tasks);
             renderDocs(docs);
