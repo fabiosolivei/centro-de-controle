@@ -222,15 +222,15 @@
                 <!-- Documentation List -->
                 <div class="dl-section" id="dl-docs-section">
                     <h3 class="dl-heading">Documentação <span class="dl-count" id="dl-docs-count"></span></h3>
-                    <div class="dl-list" id="dl-docs-list">
-                        <div class="sp-empty-state"><div class="skeleton skeleton-text" style="height:14px;width:50%;margin:0 auto;"></div></div>
-                    </div>
+                    <div class="eb-meeting-tabs" id="dl-docs-tabs"></div>
+                    <div class="eb-meeting-detail" id="dl-docs-detail" style="display:none;"></div>
                 </div>
 
                 <!-- Cases -->
                 <div class="dl-section" id="dl-cases-section" style="display:none;">
                     <h3 class="dl-heading">Casos</h3>
-                    <div class="dl-list" id="dl-cases-list"></div>
+                    <div class="eb-meeting-tabs" id="dl-cases-tabs"></div>
+                    <div class="eb-meeting-detail" id="dl-cases-detail" style="display:none;"></div>
                 </div>
             </div>
 
@@ -1157,42 +1157,84 @@
                 if (stText) { document.getElementById('sp-id-status').style.display = ''; document.getElementById('sp-id-st-text').innerHTML = marked.parse(stText); }
             }
 
-            // Documentation list
+            const icons = { context:'🎯', definition:'📋', history:'📜', architecture:'🏗️', people:'👥', timeline:'📅', status:'📍', roadmap:'🗺️', readme:'📖' };
+
+            // Documentation tabs + detail
             const sections = data.sections || [];
             const docsCount = document.getElementById('dl-docs-count');
-            const docsList = document.getElementById('dl-docs-list');
-            const icons = { context:'🎯', definition:'📋', history:'📜', architecture:'🏗️', people:'👥', timeline:'📅', status:'📍', roadmap:'🗺️', readme:'📖' };
+            const tabsEl = document.getElementById('dl-docs-tabs');
             if (sections.length === 0) {
-                docsList.innerHTML = '<div class="sp-empty-state">Sem seções de documentação</div>';
+                tabsEl.innerHTML = '<div class="sp-empty-state">Sem seções de documentação</div>';
                 docsCount.textContent = '';
             } else {
                 docsCount.textContent = sections.length;
-                docsList.innerHTML = sections.map(s => `
-                    <div class="dl-item" onclick="openWorkFile('${s.file}')">
-                        <span class="dl-icon">${icons[s.key] || '📄'}</span>
-                        <div class="dl-item-body">
-                            <div class="dl-item-name">${escapeHtml(s.name)}</div>
-                            ${s.summary ? `<div class="dl-item-summary">${escapeHtml(s.summary)}</div>` : ''}
-                        </div>
-                        <span class="dl-arrow">›</span>
-                    </div>
-                `).join('');
+                window._docSections = sections;
+                tabsEl.innerHTML = sections.map((s, i) =>
+                    `<button class="eb-meeting-tab${i === 0 ? ' eb-meeting-tab--active' : ''}" data-doc-idx="${i}" onclick="selectDocTab(${i})">
+                        <span class="eb-mt-date">${icons[s.key] || '📄'}</span>
+                        <span class="eb-mt-title">${escapeHtml(s.name)}</span>
+                    </button>`
+                ).join('');
+                selectDocTab(0);
             }
 
-            // Cases
+            // Cases tabs + detail
             const cases = data.cases || [];
             if (cases.length > 0) {
                 document.getElementById('dl-cases-section').style.display = '';
-                document.getElementById('dl-cases-list').innerHTML = cases.map(c => `
-                    <div class="dl-item" onclick="openWorkFile('${c.file}')">
-                        <span class="dl-icon">📋</span>
-                        <div class="dl-item-body">
-                            <div class="dl-item-name">${escapeHtml(c.title)}</div>
-                            ${c.summary ? `<div class="dl-item-summary">${escapeHtml(c.summary)}</div>` : ''}
-                        </div>
-                        <span class="dl-arrow">›</span>
-                    </div>
-                `).join('');
+                window._docCases = cases;
+                const casesTabsEl = document.getElementById('dl-cases-tabs');
+                casesTabsEl.innerHTML = cases.map((c, i) =>
+                    `<button class="eb-meeting-tab${i === 0 ? ' eb-meeting-tab--active' : ''}" data-case-idx="${i}" onclick="selectCaseTab(${i})">
+                        <span class="eb-mt-date">📋</span>
+                        <span class="eb-mt-title">${escapeHtml(c.title)}</span>
+                    </button>`
+                ).join('');
+                selectCaseTab(0);
+            }
+        }
+
+        async function selectDocTab(idx) {
+            const sections = window._docSections || [];
+            if (!sections[idx]) return;
+            document.querySelectorAll('[data-doc-idx]').forEach(t => t.classList.remove('eb-meeting-tab--active'));
+            const btn = document.querySelector(`[data-doc-idx="${idx}"]`);
+            if (btn) btn.classList.add('eb-meeting-tab--active');
+            const s = sections[idx];
+            const el = document.getElementById('dl-docs-detail');
+            el.style.display = '';
+            el.innerHTML = '<div class="sp-empty-state">Carregando...</div>';
+            try {
+                const resp = await fetch(`${API_BASE}/work-projects/${currentWorkSlug}/file/${s.file}`);
+                if (!resp.ok) throw new Error('Not found');
+                const d = await resp.json();
+                el.innerHTML = `<h5 class="eb-md-title">${escapeHtml(d.title || s.name)}</h5>
+                    <div class="eb-md-content">${marked.parse(d.content || '')}</div>`;
+            } catch (e) {
+                el.innerHTML = `<h5 class="eb-md-title">${escapeHtml(s.name)}</h5>
+                    ${s.summary ? `<div class="eb-md-content">${marked.parse(s.summary)}</div>` : '<div class="eb-md-empty">Conteúdo não disponível.</div>'}`;
+            }
+        }
+
+        async function selectCaseTab(idx) {
+            const cases = window._docCases || [];
+            if (!cases[idx]) return;
+            document.querySelectorAll('[data-case-idx]').forEach(t => t.classList.remove('eb-meeting-tab--active'));
+            const btn = document.querySelector(`[data-case-idx="${idx}"]`);
+            if (btn) btn.classList.add('eb-meeting-tab--active');
+            const c = cases[idx];
+            const el = document.getElementById('dl-cases-detail');
+            el.style.display = '';
+            el.innerHTML = '<div class="sp-empty-state">Carregando...</div>';
+            try {
+                const resp = await fetch(`${API_BASE}/work-projects/${currentWorkSlug}/file/${c.file}`);
+                if (!resp.ok) throw new Error('Not found');
+                const d = await resp.json();
+                el.innerHTML = `<h5 class="eb-md-title">${escapeHtml(d.title || c.title)}</h5>
+                    <div class="eb-md-content">${marked.parse(d.content || '')}</div>`;
+            } catch (e) {
+                el.innerHTML = `<h5 class="eb-md-title">${escapeHtml(c.title)}</h5>
+                    ${c.summary ? `<div class="eb-md-content">${marked.parse(c.summary)}</div>` : '<div class="eb-md-empty">Conteúdo não disponível.</div>'}`;
             }
         }
 
