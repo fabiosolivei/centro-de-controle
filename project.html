@@ -826,7 +826,7 @@
             try {
                 await fetch(`${API_BASE}/executive-briefs/${currentWorkSlug}`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-Atlas-Key': 'public' },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(brief)
                 });
             } catch (e) { console.error('Failed to push todos:', e); }
