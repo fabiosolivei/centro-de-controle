@@ -2572,8 +2572,6 @@ WORK_PROJECTS_MAP = {
     "company-store": {"file": "COMPANY-STORE.md", "type": "single"},
     "cms-dam": {"file": "CMS-DAM-STRATEGY.md", "type": "single"},
     "ai-automation": {"file": "AI-AUTOMATION.md", "type": "single"},
-    "autonomy": {"file": "AUTONOMY-AUTOMATION.md", "type": "single"},
-    "pocs-ia": {"file": "POCS-IA.md", "type": "single"},
 }
 
 def parse_markdown_file(file_path: str) -> dict:
@@ -3464,8 +3462,18 @@ async def get_executive_brief_stored(slug: str):
 
 @app.post("/api/executive-briefs/{slug}")
 async def upsert_executive_brief(slug: str, request: Request):
-    """Create or update an executive brief. Authenticated via X-Atlas-Key."""
-    verify_atlas_key(request)
+    """Create or update an executive brief. Authenticated via X-Atlas-Key or JWT."""
+    atlas_key = request.headers.get("X-Atlas-Key", "")
+    auth_header = request.headers.get("Authorization", "")
+    jwt_valid = False
+    if auth_header.startswith("Bearer "):
+        try:
+            pyjwt.decode(auth_header[7:], JWT_SECRET, algorithms=[JWT_ALGORITHM])
+            jwt_valid = True
+        except Exception:
+            pass
+    if not jwt_valid and atlas_key != ATLAS_PUSH_KEY:
+        verify_atlas_key(request)
     body = await request.json()
 
     conn = get_db()
