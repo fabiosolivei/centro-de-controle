@@ -937,12 +937,12 @@
         document.getElementById('langfuse-link').title = 'Open Langfuse (requires Tailscale or local access)';
         document.getElementById('grafana-link').title = 'Open Grafana';
 
-        // Initial load
-        loadAllData();
-        setupEmbeds();
-
-        // Auto-refresh every 60 seconds
-        setInterval(loadAllData, 60000);
+        // Wait for deferred scripts (api.js) to load before calling APIs
+        document.addEventListener('DOMContentLoaded', () => {
+            loadAllData();
+            setupEmbeds();
+            setInterval(loadAllData, 60000);
+        });
     </script>
     <script src="js/mobile-nav.js?v=8" defer></script>
 </body>
