@@ -3728,6 +3728,80 @@ async def get_recent_updates(limit: int = 20):
 # CONFLUENCE ENDPOINTS
 # ============================================
 
+@app.get("/api/work-projects/{slug}/sprint")
+async def get_project_sprint(slug: str):
+    """Sprint view for a work project: current sprint + epics + initiatives filtered by project keywords."""
+    slug_lower = slug.lower()
+    keywords = PROJECT_KEYWORDS.get(slug_lower)
+    if not keywords:
+        raise HTTPException(404, f"No keyword config for '{slug}'")
+
+    conn = get_db()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM confluence_sprints WHERE is_current = 1 LIMIT 1")
+    current = cursor.fetchone()
+    if not current:
+        cursor.execute("SELECT * FROM confluence_sprints ORDER BY sprint_number DESC LIMIT 1")
+        current = cursor.fetchone()
+
+    nearby_sprints = []
+    if current:
+        sn = current["sprint_number"]
+        cursor.execute("SELECT * FROM confluence_sprints WHERE sprint_number BETWEEN ? AND ? ORDER BY sprint_number", (sn - 1, sn + 2))
+        nearby_sprints = [dict(r) for r in cursor.fetchall()]
+
+    all_epics = []
+    cursor.execute("SELECT * FROM confluence_epics ORDER BY sprint DESC, status")
+    for row in cursor.fetchall():
+        text = (row["title"] or "") + " " + (row["sprint"] or "")
+        if _matches_keywords(text, keywords):
+            epic = dict(row)
+            epic["initiative_title"] = None
+            all_epics.append(epic)
+
+    initiative_ids = list({e["initiative_beesip"] for e in all_epics if e.get("initiative_beesip")})
+    initiatives = []
+    if initiative_ids:
+        placeholders = ",".join("?" * len(initiative_ids))
+        cursor.execute(f"SELECT * FROM confluence_initiatives WHERE beesip_id IN ({placeholders})", initiative_ids)
+        initiatives = [dict(r) for r in cursor.fetchall()]
+        ini_map = {i["beesip_id"]: i["title"] for i in initiatives}
+        for e in all_epics:
+            e["initiative_title"] = ini_map.get(e.get("initiative_beesip"))
+
+    risks = []
+    cursor.execute("SELECT * FROM confluence_risks WHERE status != 'Resolved'")
+    for row in cursor.fetchall():
+        if _matches_keywords(row["title"] or "", keywords):
+            risks.append(dict(row))
+
+    bugs = []
+    cursor.execute("SELECT * FROM confluence_bugs WHERE status NOT IN ('Done', 'Closed')")
+    for row in cursor.fetchall():
+        text = (row["title"] or "") + " " + (row["team"] or "")
+        if _matches_keywords(text, keywords):
+            bugs.append(dict(row))
+
+    conn.close()
+
+    current_sprint_name = f"SP-{current['sprint_number']}" if current else None
+    current_epics = [e for e in all_epics if e.get("sprint") == current_sprint_name]
+    next_epics = [e for e in all_epics if e.get("sprint") and e["sprint"] != current_sprint_name and e["sprint"] > (current_sprint_name or "")]
+    backlog_epics = [e for e in all_epics if not e.get("sprint")]
+
+    return {
+        "current_sprint": dict(current) if current else None,
+        "nearby_sprints": nearby_sprints,
+        "current_epics": current_epics,
+        "next_epics": next_epics,
+        "backlog_epics": backlog_epics,
+        "initiatives": initiatives,
+        "risks": risks,
+        "bugs": bugs,
+    }
+
+
 @app.get("/api/confluence/sprints")
 async def get_confluence_sprints():
     """Lista sprints do Confluence com o atual destacado"""

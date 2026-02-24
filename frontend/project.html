@@ -110,6 +110,7 @@
                 <button class="sp-tab sp-tab--active" role="tab" aria-selected="true" aria-controls="tab-overview" id="tab-btn-overview" data-tab="overview">Visão Geral</button>
                 <button class="sp-tab" role="tab" aria-selected="false" aria-controls="tab-meetings" id="tab-btn-meetings" data-tab="meetings">Reuniões <span class="sp-tab-badge" id="tab-meetings-badge"></span></button>
                 <button class="sp-tab" role="tab" aria-selected="false" aria-controls="tab-docs" id="tab-btn-docs" data-tab="docs">Docs <span class="sp-tab-badge" id="tab-docs-badge"></span></button>
+                <button class="sp-tab" role="tab" aria-selected="false" aria-controls="tab-sprint" id="tab-btn-sprint" data-tab="sprint">Sprint <span class="sp-tab-badge" id="tab-sprint-badge"></span></button>
             </nav>
 
             <!-- ===== OVERVIEW TAB ===== -->
@@ -231,6 +232,18 @@
                     <h3 class="dl-heading">Casos</h3>
                     <div class="eb-meeting-tabs" id="dl-cases-tabs"></div>
                     <div class="eb-meeting-detail" id="dl-cases-detail" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- ===== SPRINT TAB ===== -->
+            <div class="sp-panel sp-panel--hidden" id="tab-sprint" role="tabpanel" aria-labelledby="tab-btn-sprint">
+                <div class="sprint-view" id="sprint-view">
+                    <div class="sprint-header" id="sprint-header"></div>
+                    <div class="sprint-epics" id="sprint-epics"></div>
+                    <div class="sprint-next" id="sprint-next" style="display:none;"></div>
+                    <div class="sprint-backlog" id="sprint-backlog" style="display:none;"></div>
+                    <div class="sprint-risks" id="sprint-risks" style="display:none;"></div>
+                    <div class="sprint-bugs" id="sprint-bugs" style="display:none;"></div>
                 </div>
             </div>
 
@@ -662,6 +675,9 @@
 
             // Render Docs tab content (static data, always ready)
             renderDocsTab(data);
+
+            // Load sprint data (async)
+            if (currentWorkSlug) loadSprintData(currentWorkSlug);
 
             // Init tabs
             initTabs();
@@ -1255,6 +1271,121 @@
             document.getElementById('work-doc-preview').innerHTML = marked.parse(content);
             document.getElementById('work-doc-preview-section').style.display = 'block';
             document.getElementById('work-doc-preview-section').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // ===== SPRINT TAB =====
+        async function loadSprintData(slug) {
+            try {
+                const resp = await fetch(`${API_BASE}/work-projects/${slug}/sprint`);
+                if (!resp.ok) return;
+                const data = await resp.json();
+                renderSprintTab(data);
+                const totalEpics = (data.current_epics || []).length + (data.next_epics || []).length + (data.backlog_epics || []).length;
+                if (totalEpics > 0) document.getElementById('tab-sprint-badge').textContent = totalEpics;
+            } catch (e) { console.error('Sprint load error:', e); }
+        }
+
+        function renderSprintTab(data) {
+            const sp = data.current_sprint;
+            const headerEl = document.getElementById('sprint-header');
+            const statusColors = {
+                'In Development': '#6366f1', 'In Production': '#10b981', 'In UAT Tests': '#f59e0b',
+                'Ready for Prod': '#22d3ee', 'Ready for Story Detailing': '#a78bfa', 'Ready for High Level Solution': '#818cf8',
+                'In Product Discovery': '#e879f9', 'Backlog': '#64748b'
+            };
+
+            if (sp) {
+                headerEl.innerHTML = `
+                    <div class="sprint-info-card">
+                        <div class="sprint-info-row">
+                            <div class="sprint-info-main">
+                                <h3 class="sprint-info-name">${escapeHtml(sp.sprint_name)}</h3>
+                                <span class="sprint-info-dates">${escapeHtml(sp.start_date || '?')} → ${escapeHtml(sp.end_date || '?')}</span>
+                            </div>
+                            <div class="sprint-info-stats">
+                                <span class="sprint-stat">${data.current_epics.length} épicos</span>
+                                <span class="sprint-stat">${data.risks.length} riscos</span>
+                                <span class="sprint-stat">${data.bugs.length} bugs</span>
+                            </div>
+                        </div>
+                    </div>`;
+            } else {
+                headerEl.innerHTML = '<div class="sp-empty-state">Sem sprint ativa</div>';
+            }
+
+            function epicCard(e) {
+                const color = statusColors[e.status] || '#64748b';
+                const sizeTag = e.size ? `<span class="sprint-epic-size">${escapeHtml(e.size)}</span>` : '';
+                const jiraLink = e.jira_url ? `<a href="${e.jira_url}" target="_blank" class="sprint-epic-jira" title="Abrir no Jira">${escapeHtml(e.beescad_id)}</a>` : `<span class="sprint-epic-id">${escapeHtml(e.beescad_id)}</span>`;
+                const initTitle = e.initiative_title ? `<span class="sprint-epic-initiative">${escapeHtml(e.initiative_title.replace(/^\[.*?\]\s*/, ''))}</span>` : '';
+                return `<div class="sprint-epic-card">
+                    <span class="sprint-epic-status" style="background:${color}"></span>
+                    <div class="sprint-epic-body">
+                        <div class="sprint-epic-title">${escapeHtml(e.title.replace(/^\[.*?\]\s*/, ''))}</div>
+                        <div class="sprint-epic-meta">${jiraLink} ${sizeTag} <span class="sprint-epic-status-label" style="color:${color}">${escapeHtml(e.status)}</span></div>
+                        ${initTitle}
+                    </div>
+                </div>`;
+            }
+
+            // Current sprint epics
+            const epicsEl = document.getElementById('sprint-epics');
+            if (data.current_epics.length > 0) {
+                epicsEl.innerHTML = `<h4 class="sprint-section-title">Sprint Atual</h4>` +
+                    data.current_epics.map(epicCard).join('');
+            } else {
+                epicsEl.innerHTML = '<div class="sp-empty-state">Nenhum épico nesta sprint para este projeto</div>';
+            }
+
+            // Next sprints
+            if (data.next_epics.length > 0) {
+                const nextEl = document.getElementById('sprint-next');
+                nextEl.style.display = '';
+                nextEl.innerHTML = `<h4 class="sprint-section-title">Próximas Sprints</h4>` +
+                    data.next_epics.map(e => {
+                        const sprintLabel = e.sprint ? `<span class="sprint-epic-sprint-tag">${escapeHtml(e.sprint)}</span>` : '';
+                        return `<div class="sprint-epic-card sprint-epic-card--next">
+                            <span class="sprint-epic-status" style="background:${statusColors[e.status] || '#64748b'}"></span>
+                            <div class="sprint-epic-body">
+                                <div class="sprint-epic-title">${escapeHtml(e.title.replace(/^\[.*?\]\s*/, ''))}</div>
+                                <div class="sprint-epic-meta">${e.jira_url ? `<a href="${e.jira_url}" target="_blank" class="sprint-epic-jira">${escapeHtml(e.beescad_id)}</a>` : escapeHtml(e.beescad_id)} ${e.size ? `<span class="sprint-epic-size">${escapeHtml(e.size)}</span>` : ''} ${sprintLabel} <span class="sprint-epic-status-label" style="color:${statusColors[e.status] || '#64748b'}">${escapeHtml(e.status)}</span></div>
+                            </div>
+                        </div>`;
+                    }).join('');
+            }
+
+            // Backlog
+            if (data.backlog_epics.length > 0) {
+                const blEl = document.getElementById('sprint-backlog');
+                blEl.style.display = '';
+                blEl.innerHTML = `<h4 class="sprint-section-title">Backlog (sem sprint)</h4>` +
+                    data.backlog_epics.map(epicCard).join('');
+            }
+
+            // Risks
+            if (data.risks.length > 0) {
+                const rEl = document.getElementById('sprint-risks');
+                rEl.style.display = '';
+                rEl.innerHTML = `<h4 class="sprint-section-title">Riscos Ativos</h4>` +
+                    data.risks.map(r => {
+                        const gutBadge = r.gut_score ? `<span class="sprint-risk-gut">GUT ${escapeHtml(String(r.gut_score))}</span>` : '';
+                        return `<div class="sprint-risk-card">
+                            <div class="sprint-risk-title">${escapeHtml(r.title)}</div>
+                            <div class="sprint-risk-meta">${r.assignee ? escapeHtml(r.assignee) : ''} ${gutBadge} <span class="sprint-epic-status-label">${escapeHtml(r.status)}</span></div>
+                        </div>`;
+                    }).join('');
+            }
+
+            // Bugs
+            if (data.bugs.length > 0) {
+                const bEl = document.getElementById('sprint-bugs');
+                bEl.style.display = '';
+                bEl.innerHTML = `<h4 class="sprint-section-title">Bugs Ativos</h4>` +
+                    data.bugs.map(b => `<div class="sprint-bug-card">
+                        <div class="sprint-bug-title">${escapeHtml(b.title)}</div>
+                        <div class="sprint-bug-meta">${b.jira_url ? `<a href="${b.jira_url}" target="_blank" class="sprint-epic-jira">${escapeHtml(b.beescad_id)}</a>` : escapeHtml(b.beescad_id)} <span class="sprint-epic-status-label">${escapeHtml(b.status || '')}</span> ${b.priority ? `<span class="sprint-bug-priority">${escapeHtml(b.priority)}</span>` : ''}</div>
+                    </div>`).join('');
+            }
         }
 
         // ===== MBA PROJECT VIEW =====
