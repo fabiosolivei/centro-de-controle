@@ -5517,20 +5517,49 @@ table {
 .eb-person--sm { font-size: 0.72rem; padding: 2px 8px 2px 2px; }
 .eb-person-avatar--sm { width: 20px; height: 20px; font-size: 0.5rem; }
 
+/* Carousel wrapper with arrows */
+.carousel-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    position: relative;
+    margin-bottom: 12px;
+}
+.carousel-arrow {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-subtle);
+    border-radius: 50%;
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    z-index: 2;
+}
+.carousel-arrow:hover {
+    background: var(--accent-primary);
+    color: #fff;
+    border-color: var(--accent-primary);
+}
+
 /* Horizontal Meeting/Doc Tabs — Carousel */
 .eb-meeting-tabs {
     display: flex;
     flex-wrap: nowrap;
+    flex: 1;
+    min-width: 0;
     gap: 6px;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
     scroll-snap-type: x proximity;
-    padding-bottom: 4px;
-    margin-bottom: 12px;
-    mask-image: linear-gradient(to right, black calc(100% - 32px), transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent 100%);
+    padding: 0 8px 4px;
 }
 .eb-meeting-tabs::-webkit-scrollbar { display: none; }
 .eb-meeting-tab {
