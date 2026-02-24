@@ -5451,7 +5451,7 @@ async def get_quality_metrics(days: int = Query(30, ge=1, le=365)):
 # COST TRACKING ENDPOINTS
 # ============================================
 
-MOONSHOT_API_KEY = os.environ.get("MOONSHOT_API_KEY", "")
+MONTHLY_LLM_BUDGET = float(os.environ.get("MONTHLY_LLM_BUDGET", "50.0"))
 
 
 class CostSnapshotIn(BaseModel):
@@ -5591,29 +5591,25 @@ async def get_cost_metrics(days: int = Query(30, ge=1, le=365)):
 
 
 @app.get("/api/metrics/costs/balance")
-async def get_cost_balance_live():
-    """Real-time balance from Moonshot API (proxied)."""
-    if not MOONSHOT_API_KEY:
-        raise HTTPException(503, "MOONSHOT_API_KEY not configured")
+async def get_cost_budget_status():
+    """Monthly budget status derived from Langfuse cost tracking."""
     try:
-        import urllib.request
-        req = urllib.request.Request(
-            "https://api.moonshot.ai/v1/users/me/balance",
-            headers={"Authorization": f"Bearer {MOONSHOT_API_KEY}"}
-        )
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read())
-        balance_data = data.get("data", data)
+        stats = await get_langfuse_stats(days=30)
+        spent = float(stats.get("total_cost", 0)) if isinstance(stats, dict) else 0
+        remaining = max(0, MONTHLY_LLM_BUDGET - spent)
+        pct_used = (spent / MONTHLY_LLM_BUDGET * 100) if MONTHLY_LLM_BUDGET > 0 else 0
         return {
-            "available_balance": balance_data.get("available_balance"),
-            "voucher_balance": balance_data.get("voucher_balance"),
-            "cash_balance": balance_data.get("cash_balance"),
+            "budget": MONTHLY_LLM_BUDGET,
+            "spent": round(spent, 4),
+            "remaining": round(remaining, 4),
+            "pct_used": round(pct_used, 1),
+            "period": "30d",
             "timestamp": datetime.now().isoformat(),
-            "source": "moonshot_api_live",
+            "source": "langfuse_derived",
         }
     except Exception as e:
-        logger.error(f"Failed to fetch Moonshot balance: {e}")
-        raise HTTPException(502, f"Failed to fetch Moonshot balance: {str(e)}")
+        logger.error(f"Failed to compute budget status: {e}")
+        raise HTTPException(502, f"Failed to compute budget status: {str(e)}")
 
 
 @app.get("/api/metrics/costs/timeseries")
@@ -5759,14 +5755,12 @@ async def get_langfuse_stats(days: int = Query(30, ge=1, le=365)):
             non_cached_input = max(0, total_input - total_cached)
             cache_hit_rate = (total_cached / total_input * 100) if total_input > 0 else 0
 
-            # Calculate cost savings from caching
-            # Without cache: all input at $0.60/1M
-            # With cache: non-cached at $0.60/1M + cached at $0.10/1M
-            cost_without_cache = total_input * 0.60 / 1_000_000 + total_output * 3.00 / 1_000_000
+            # Calculate cost savings from caching (GPT-5.2 pricing)
+            cost_without_cache = total_input * 1.75 / 1_000_000 + total_output * 14.00 / 1_000_000
             cost_with_cache = (
-                non_cached_input * 0.60 / 1_000_000
-                + total_cached * 0.10 / 1_000_000
-                + total_output * 3.00 / 1_000_000
+                non_cached_input * 1.75 / 1_000_000
+                + total_cached * 0.175 / 1_000_000
+                + total_output * 14.00 / 1_000_000
             )
             cache_savings = max(0, cost_without_cache - cost_with_cache)
 

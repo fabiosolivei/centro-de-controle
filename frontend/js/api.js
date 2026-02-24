@@ -602,7 +602,7 @@ const ObservabilityAPI = {
     },
 
     /**
-     * Get live Moonshot balance
+     * Get monthly budget status (spent vs budget from Langfuse)
      */
     async getCostBalance() {
         return apiRequest(`/metrics/costs/balance`);

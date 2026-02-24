@@ -274,7 +274,7 @@
                 <div class="stat-card">
                     <div class="stat-icon">💰</div>
                     <div class="stat-value" id="stat-balance">--</div>
-                    <div class="stat-label" title="Saldo atual da conta Moonshot AI">Moonshot Balance</div>
+                    <div class="stat-label" title="Gasto mensal vs budget de $50/mês (OpenAI GPT-5.2)">Monthly Budget</div>
                     <div class="stat-trend neutral" id="stat-balance-trend">loading...</div>
                 </div>
                 <div class="stat-card">
@@ -299,7 +299,7 @@
                 <div class="stat-card">
                     <div class="stat-icon" style="font-size:1.3rem;">⚡</div>
                     <div class="stat-value" id="stat-cache-rate">--</div>
-                    <div class="stat-label" title="Porcentagem dos tokens de input servidos pelo cache de contexto do Moonshot">Cache Hit Rate</div>
+                    <div class="stat-label" title="Porcentagem dos tokens de input servidos pelo cache de contexto">Cache Hit Rate</div>
                     <div class="stat-trend neutral" id="stat-cache-rate-trend">loading...</div>
                 </div>
                 <div class="stat-card">
@@ -311,7 +311,7 @@
                 <div class="stat-card">
                     <div class="stat-icon" style="font-size:1.3rem;">💎</div>
                     <div class="stat-value" id="stat-cache-savings">--</div>
-                    <div class="stat-label" title="Economia estimada usando tokens cacheados ($0.10/1M) vs preco cheio ($0.60/1M)">Cache Savings</div>
+                    <div class="stat-label" title="Economia estimada usando tokens cacheados ($0.175/1M) vs preco cheio ($1.75/1M)">Cache Savings</div>
                     <div class="stat-trend neutral" id="stat-cache-savings-trend">loading...</div>
                 </div>
             </div>
@@ -325,8 +325,8 @@
                 <div id="token-bar-noncached" style="background:linear-gradient(135deg,#6366f1,#4f46e5); transition:width 0.6s ease;" title="Non-cached tokens"></div>
             </div>
             <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:0.7rem; color:var(--text-muted);">
-                <span><span style="color:#10b981;">&#9632;</span> Cached (<span id="token-bar-cached-pct">0</span>%) &mdash; $0.10/1M</span>
-                <span><span style="color:#6366f1;">&#9632;</span> Non-cached (<span id="token-bar-noncached-pct">0</span>%) &mdash; $0.60/1M</span>
+                <span><span style="color:#10b981;">&#9632;</span> Cached (<span id="token-bar-cached-pct">0</span>%) &mdash; $0.175/1M</span>
+                <span><span style="color:#6366f1;">&#9632;</span> Non-cached (<span id="token-bar-noncached-pct">0</span>%) &mdash; $1.75/1M</span>
             </div>
         </div>
 
@@ -432,7 +432,7 @@
                             <div class="placeholder-icon">📈</div>
                             <div id="grafana-status">Checking connection...</div>
                             <div style="font-size: 0.75rem; color: var(--text-muted);">
-                                Cost tracking, token usage, balance history
+                                Cost tracking, token usage, budget history
                             </div>
                         </div>
                     </div>
@@ -475,17 +475,23 @@
                     ObservabilityAPI.getLangfuseStats(30).catch(() => null),
                 ]);
 
-                // Moonshot Balance (from cost-collector snapshots)
-                if (balanceData && balanceData.available_balance != null) {
-                    const bal = balanceData.available_balance;
-                    document.getElementById('stat-balance').textContent = `$${bal.toFixed(2)}`;
+                // Monthly Budget (from Langfuse cost tracking)
+                if (balanceData && balanceData.budget != null) {
+                    const spent = balanceData.spent || 0;
+                    const budget = balanceData.budget || 50;
+                    const remaining = balanceData.remaining || 0;
+                    const pctUsed = balanceData.pct_used || 0;
+                    document.getElementById('stat-balance').textContent = `$${spent.toFixed(2)} / $${budget}`;
+                    const pctRemaining = 100 - pctUsed;
                     document.getElementById('stat-balance-trend').textContent = 
-                        bal > 10 ? 'Healthy' : bal > 2 ? 'Getting low' : 'Critical!';
+                        pctRemaining > 60 ? `$${remaining.toFixed(2)} remaining` : 
+                        pctRemaining > 30 ? `${pctUsed.toFixed(0)}% used — watch spending` : 
+                        `${pctUsed.toFixed(0)}% used — budget critical!`;
                     document.getElementById('stat-balance-trend').className = 
-                        'stat-trend ' + (bal > 10 ? 'positive' : bal > 2 ? 'neutral' : 'negative');
+                        'stat-trend ' + (pctRemaining > 60 ? 'positive' : pctRemaining > 30 ? 'neutral' : 'negative');
                 } else {
                     document.getElementById('stat-balance').textContent = 'N/A';
-                    document.getElementById('stat-balance-trend').textContent = 'Balance unavailable';
+                    document.getElementById('stat-balance-trend').textContent = 'Budget data unavailable';
                     document.getElementById('stat-balance-trend').className = 'stat-trend neutral';
                 }
 
