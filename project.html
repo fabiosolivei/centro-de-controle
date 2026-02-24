@@ -7,7 +7,7 @@
     <meta name="description" content="Project detail - Centro de Controle">
     <title>Projeto - Centro de Controle</title>
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="css/style.css?v=32">
+    <link rel="stylesheet" href="css/style.css?v=33">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://srv1315519.hstgr.cloud" crossorigin>
@@ -1317,11 +1317,11 @@
                 const color = statusColors[e.status] || '#64748b';
                 const sizeTag = e.size ? `<span class="sprint-epic-size">${escapeHtml(e.size)}</span>` : '';
                 const jiraLink = e.jira_url ? `<a href="${e.jira_url}" target="_blank" class="sprint-epic-jira" title="Abrir no Jira">${escapeHtml(e.beescad_id)}</a>` : `<span class="sprint-epic-id">${escapeHtml(e.beescad_id)}</span>`;
-                const initTitle = e.initiative_title ? `<span class="sprint-epic-initiative">${escapeHtml(e.initiative_title.replace(/^\[.*?\]\s*/, ''))}</span>` : '';
+                const initTitle = e.initiative_title ? `<span class="sprint-epic-initiative">${escapeHtml(e.initiative_title.replace(/^(\[.*?\]\s*)+/, ''))}</span>` : '';
                 return `<div class="sprint-epic-card">
                     <span class="sprint-epic-status" style="background:${color}"></span>
                     <div class="sprint-epic-body">
-                        <div class="sprint-epic-title">${escapeHtml(e.title.replace(/^\[.*?\]\s*/, ''))}</div>
+                        <div class="sprint-epic-title">${escapeHtml(e.title.replace(/^(\[.*?\]\s*)+/, ''))}</div>
                         <div class="sprint-epic-meta">${jiraLink} ${sizeTag} <span class="sprint-epic-status-label" style="color:${color}">${escapeHtml(e.status)}</span></div>
                         ${initTitle}
                     </div>
@@ -1347,7 +1347,7 @@
                         return `<div class="sprint-epic-card sprint-epic-card--next">
                             <span class="sprint-epic-status" style="background:${statusColors[e.status] || '#64748b'}"></span>
                             <div class="sprint-epic-body">
-                                <div class="sprint-epic-title">${escapeHtml(e.title.replace(/^\[.*?\]\s*/, ''))}</div>
+                                <div class="sprint-epic-title">${escapeHtml(e.title.replace(/^(\[.*?\]\s*)+/, ''))}</div>
                                 <div class="sprint-epic-meta">${e.jira_url ? `<a href="${e.jira_url}" target="_blank" class="sprint-epic-jira">${escapeHtml(e.beescad_id)}</a>` : escapeHtml(e.beescad_id)} ${e.size ? `<span class="sprint-epic-size">${escapeHtml(e.size)}</span>` : ''} ${sprintLabel} <span class="sprint-epic-status-label" style="color:${statusColors[e.status] || '#64748b'}">${escapeHtml(e.status)}</span></div>
                             </div>
                         </div>`;
