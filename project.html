@@ -819,9 +819,8 @@
         }
 
         async function _ebTodoPush(todos) {
-            if (!currentWorkSlug || !workProjectData) return;
-            const rc = workProjectData;
-            const brief = rc.executive_brief || {};
+            if (!currentWorkSlug || !_reportCard) return;
+            const brief = _reportCard.executive_brief || {};
             brief.todos = todos;
             try {
                 await fetch(`${API_BASE}/executive-briefs/${currentWorkSlug}`, {
@@ -834,7 +833,7 @@
         }
 
         function ebTodoToggle(idx) {
-            const brief = (workProjectData || {}).executive_brief || {};
+            const brief = (_reportCard || {}).executive_brief || {};
             const todos = brief.todos || [];
             if (!todos[idx]) return;
             todos[idx].is_done = !todos[idx].is_done;
@@ -844,7 +843,7 @@
 
         function ebTodoRemove(idx) {
             if (!confirm('Remover este to-do?')) return;
-            const brief = (workProjectData || {}).executive_brief || {};
+            const brief = (_reportCard || {}).executive_brief || {};
             const todos = brief.todos || [];
             todos.splice(idx, 1);
             _ebTodoPush(todos);
@@ -879,7 +878,7 @@
             const text = input.value.trim();
             if (!text) return;
             input.disabled = true;
-            const brief = (workProjectData || {}).executive_brief || {};
+            const brief = (_reportCard || {}).executive_brief || {};
             const todos = brief.todos || [];
             const slugTag = (currentWorkSlug || '').toUpperCase().replace('-', '/');
             todos.push({ title: text, priority: 'normal', tags: [slugTag, 'NEW'], is_done: false, due_date: null });
