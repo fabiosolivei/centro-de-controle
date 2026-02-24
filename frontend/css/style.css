@@ -5517,14 +5517,20 @@ table {
 .eb-person--sm { font-size: 0.72rem; padding: 2px 8px 2px 2px; }
 .eb-person-avatar--sm { width: 20px; height: 20px; font-size: 0.5rem; }
 
-/* Horizontal Meeting Tabs */
+/* Horizontal Meeting/Doc Tabs — Carousel */
 .eb-meeting-tabs {
     display: flex;
+    flex-wrap: nowrap;
     gap: 6px;
     overflow-x: auto;
+    overflow-y: hidden;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
     padding-bottom: 4px;
     margin-bottom: 12px;
+    mask-image: linear-gradient(to right, black calc(100% - 32px), transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent 100%);
 }
 .eb-meeting-tabs::-webkit-scrollbar { display: none; }
 .eb-meeting-tab {
@@ -5542,6 +5548,7 @@ table {
     text-align: left;
     min-width: 120px;
     max-width: 200px;
+    scroll-snap-align: start;
 }
 .eb-meeting-tab:hover { background: rgba(99,102,241,0.06); border-color: rgba(99,102,241,0.3); }
 .eb-meeting-tab--active {
